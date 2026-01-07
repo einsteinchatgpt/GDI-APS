@@ -1,6 +1,6 @@
 const ROLES = ['Médico(a)', 'Enfermeiro(a)', 'Técnico(a) de Enfermagem', 'ACS', 'Coordenador(a)', 'Gestor(a)', 'Dentista', 'Administrador', 'Outro'];
 
-const LoginView = ({ onLogin }) => {
+const LoginView = ({ onLogin, onBack }) => {
     const [isRegister, setIsRegister] = React.useState(false);
     const [step, setStep] = React.useState(1);
     const [form, setForm] = React.useState({ name: '', email: '', password: '', role: '', unit: '', municipality: '', bio: '', specialties: [], experience: '' });
@@ -59,7 +59,10 @@ const LoginView = ({ onLogin }) => {
     const specialtyOptions = ['Saúde da Família', 'Pré-natal', 'Puerpério', 'Saúde da Criança', 'Saúde do Idoso', 'Saúde Mental', 'Vigilância Epidemiológica', 'Gestão em Saúde', 'Atenção Primária'];
 
     return React.createElement('div', { className: 'min-h-screen flex items-center justify-center p-4', style: { background: 'linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #06b6d4 100%)' } },
-        React.createElement('div', { className: 'card p-8 w-full max-w-md animate-fadeInUp' },
+        React.createElement('div', { className: 'card p-8 w-full max-w-md animate-fadeInUp relative' },
+            onBack && React.createElement('button', { className: 'absolute top-4 left-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all', onClick: onBack, title: 'Voltar ao painel' },
+                React.createElement('i', { className: 'fas fa-arrow-left text-gray-600' })
+            ),
             React.createElement('div', { className: 'text-center mb-8' },
                 React.createElement('div', { className: 'w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg animate-float' },
                     React.createElement('i', { className: 'fas fa-heartbeat text-white text-3xl' })

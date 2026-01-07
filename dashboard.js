@@ -73,7 +73,6 @@ const Dashboard = () => {
     const getUnique = (field, data = rawData) => {
         let vals = [...new Set(data.map(r => r[field]).filter(Boolean))];
         if (field === 'competencia') {
-            vals = vals.filter(v => v.toLowerCase() !== 'fevereiro');
             return vals.sort((a,b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
         }
         return vals.sort();
@@ -125,8 +124,7 @@ const Dashboard = () => {
         let data = [...rawData];
         if (filters.regiao !== 'Todas') data = data.filter(r => r.regiao === filters.regiao);
         if (filters.municipio !== 'Todos') data = data.filter(r => r.municipio === filters.municipio);
-        // Remove fevereiro da evolução
-        return MONTH_ORDER.filter(m => m.toLowerCase() !== 'fevereiro').map(m => {
+        return MONTH_ORDER.map(m => {
             const d = data.filter(r => r.competencia === m);
             if (!d.length) return null;
             const sm = d.reduce((s,r) => s + r.somatorio, 0);
@@ -143,7 +141,7 @@ const Dashboard = () => {
                 </div>
             </div>
             <div className="mt-4">
-                {[['home','fa-home','Painel'],['indicators','fa-chart-pie','Análises'],['map','fa-map-marked-alt','Mapa'],['forum','fa-comments','Fórum'],['profile','fa-user','Perfil']].map(([v,i,t]) => (
+                {[['home','fa-home','Painel'],['indicators','fa-chart-pie','Análises'],['map','fa-map-marked-alt','Mapa'],['data','fa-table','Dados'],['predictions','fa-brain','Predições'],['forum','fa-comments','Fórum'],['profile','fa-user','Perfil']].map(([v,i,t]) => (
                     <div key={v} className={`sidebar-icon ${activeView===v?'active':''}`} onClick={() => setActiveView(v)} title={t}>
                         <i className={`fas ${i} text-lg`}></i>
                     </div>
@@ -679,6 +677,425 @@ const Dashboard = () => {
         );
     };
 
+    const DataTableView = () => {
+        const [page, setPage] = useState(0);
+        const [search, setSearch] = useState('');
+        const [sortField, setSortField] = useState('municipio');
+        const [sortDir, setSortDir] = useState('asc');
+        const pageSize = 20;
+
+        const columns = [
+            { key: 'estabelecimento', label: 'Estabelecimento' },
+            { key: 'municipio', label: 'Município' },
+            { key: 'regiao', label: 'Região' },
+            { key: 'competencia', label: 'Competência' },
+            { key: 'totalGestantes', label: 'Total Gestantes' },
+            { key: 'somatorio', label: 'Somatório' },
+            { key: 'ind1', label: 'C1' },
+            { key: 'ind2', label: 'C2' },
+            { key: 'ind3', label: 'C3' },
+            { key: 'ind4', label: 'C4' },
+            { key: 'ind5', label: 'C5' },
+            { key: 'ind6', label: 'C6' },
+            { key: 'ind7', label: 'C7' },
+            { key: 'ind8', label: 'C8' },
+            { key: 'ind9', label: 'C9' },
+            { key: 'ind10', label: 'C10' },
+            { key: 'ind11', label: 'C11' }
+        ];
+
+        const searchedData = search 
+            ? filteredData.filter(r => 
+                r.estabelecimento?.toLowerCase().includes(search.toLowerCase()) ||
+                r.municipio?.toLowerCase().includes(search.toLowerCase()) ||
+                r.regiao?.toLowerCase().includes(search.toLowerCase())
+            )
+            : filteredData;
+
+        const sortedData = [...searchedData].sort((a, b) => {
+            const aVal = a[sortField] || '';
+            const bVal = b[sortField] || '';
+            if (typeof aVal === 'number') return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+            return sortDir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
+        });
+
+        const totalPages = Math.ceil(sortedData.length / pageSize);
+        const pagedData = sortedData.slice(page * pageSize, (page + 1) * pageSize);
+
+        const handleSort = (field) => {
+            if (sortField === field) {
+                setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+            } else {
+                setSortField(field);
+                setSortDir('asc');
+            }
+        };
+
+        const exportCSV = () => {
+            const headers = columns.map(c => c.label).join(';');
+            const rows = sortedData.map(r => columns.map(c => r[c.key] || '').join(';'));
+            const csv = [headers, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `dados_gestantes_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        };
+
+        return (
+            <div className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Tabela de Dados</h1>
+                        <p className="text-gray-500">Visualização dos dados brutos para análise técnica</p>
+                    </div>
+                    <button onClick={exportCSV} className="btn-primary flex items-center gap-2">
+                        <i className="fas fa-download"></i> Exportar CSV
+                    </button>
+                </div>
+                <FilterBar />
+                <div className="card p-6 mb-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+                        <div className="relative flex-1 max-w-md">
+                            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" className="w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Buscar por estabelecimento, município ou região..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                            <span><i className="fas fa-database mr-2"></i>{sortedData.length.toLocaleString()} registros</span>
+                            <span><i className="fas fa-file-alt mr-2"></i>Página {page + 1} de {totalPages || 1}</span>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    {columns.map(col => (
+                                        <th key={col.key} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors whitespace-nowrap" onClick={() => handleSort(col.key)}>
+                                            {col.label}
+                                            {sortField === col.key && <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'} ml-1 text-blue-500`}></i>}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pagedData.map((row, i) => (
+                                    <tr key={i} className="border-b hover:bg-blue-50 transition-colors">
+                                        {columns.map(col => (
+                                            <td key={col.key} className="px-3 py-2 whitespace-nowrap">
+                                                {typeof row[col.key] === 'number' ? row[col.key] : row[col.key] || '-'}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-6">
+                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page === 0} onClick={() => setPage(0)}>
+                                <i className="fas fa-angle-double-left"></i>
+                            </button>
+                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                                <i className="fas fa-angle-left"></i>
+                            </button>
+                            <span className="px-4 py-2 font-medium">{page + 1} / {totalPages}</span>
+                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                                <i className="fas fa-angle-right"></i>
+                            </button>
+                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>
+                                <i className="fas fa-angle-double-right"></i>
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const PredictionsView = () => {
+        const ind = calcIndicators();
+        const trend = getTrend();
+        
+        // Análise de tendência para cada indicador
+        const analyzeIndicator = (indicator) => {
+            const monthlyData = MONTH_ORDER.map(month => {
+                let data = [...rawData];
+                if (filters.regiao !== 'Todas') data = data.filter(r => r.regiao === filters.regiao);
+                if (filters.municipio !== 'Todos') data = data.filter(r => r.municipio === filters.municipio);
+                const d = data.filter(r => r.competencia === month);
+                if (!d.length) return null;
+                const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
+                const t = d.reduce((s,r) => s + r[`ind${indicator.index}`], 0);
+                return { month, pct: tg ? (t/tg)*100 : 0 };
+            }).filter(Boolean);
+
+            if (monthlyData.length < 2) return { trend: 'stable', change: 0, prediction: indicator.pct };
+
+            const first = monthlyData.slice(0, Math.ceil(monthlyData.length/2));
+            const last = monthlyData.slice(Math.ceil(monthlyData.length/2));
+            const avgFirst = first.reduce((s,d) => s + d.pct, 0) / first.length;
+            const avgLast = last.reduce((s,d) => s + d.pct, 0) / last.length;
+            const change = avgLast - avgFirst;
+            const prediction = Math.max(0, Math.min(100, indicator.pct + change));
+
+            return {
+                trend: change > 2 ? 'up' : change < -2 ? 'down' : 'stable',
+                change: change,
+                prediction: prediction,
+                monthlyData
+            };
+        };
+
+        const indicatorAnalysis = ind.map(i => ({
+            ...i,
+            analysis: analyzeIndicator(i)
+        }));
+
+        const criticalIndicators = indicatorAnalysis.filter(i => i.pct < 50).sort((a,b) => a.pct - b.pct);
+        const decliningIndicators = indicatorAnalysis.filter(i => i.analysis.trend === 'down').sort((a,b) => a.analysis.change - b.analysis.change);
+        const improvingIndicators = indicatorAnalysis.filter(i => i.analysis.trend === 'up').sort((a,b) => b.analysis.change - a.analysis.change);
+
+        const getRiskLevel = (pct, trend) => {
+            if (pct < 25) return { level: 'Crítico', color: 'red', icon: 'fa-exclamation-triangle' };
+            if (pct < 50 || trend === 'down') return { level: 'Atenção', color: 'yellow', icon: 'fa-exclamation-circle' };
+            if (pct >= 75 && trend !== 'down') return { level: 'Bom', color: 'green', icon: 'fa-check-circle' };
+            return { level: 'Regular', color: 'blue', icon: 'fa-info-circle' };
+        };
+
+        const getBarriers = (indicator) => {
+            const barriers = [];
+            if (indicator.pct < 30) barriers.push('Baixa adesão das equipes ao protocolo');
+            if (indicator.pct < 50) barriers.push('Possível falta de insumos ou recursos');
+            if (indicator.analysis.trend === 'down') barriers.push('Tendência de queda requer ação imediata');
+            if (indicator.index <= 3) barriers.push('Captação precoce de gestantes pode estar comprometida');
+            if (indicator.index >= 9) barriers.push('Acompanhamento puerperal precisa de reforço');
+            return barriers.length ? barriers : ['Manter monitoramento contínuo'];
+        };
+
+        const getRecommendations = (indicator) => {
+            const recs = [];
+            if (indicator.pct < 50) {
+                recs.push('Realizar capacitação das equipes');
+                recs.push('Revisar fluxo de atendimento');
+            }
+            if (indicator.analysis.trend === 'down') {
+                recs.push('Investigar causas da queda');
+                recs.push('Implementar busca ativa');
+            }
+            if (indicator.pct >= 75) {
+                recs.push('Manter boas práticas');
+                recs.push('Compartilhar experiências com outras equipes');
+            }
+            return recs.length ? recs : ['Continuar monitoramento regular'];
+        };
+
+        return (
+            <div className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Predições e Tendências</h1>
+                        <p className="text-gray-500">Análise preditiva para ação estratégica do gestor</p>
+                    </div>
+                </div>
+                <FilterBar />
+
+                {/* Resumo Executivo */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="card p-5 border-l-4 border-red-500">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-3xl font-bold text-gray-900">{criticalIndicators.length}</p>
+                                <p className="text-sm text-gray-500">Indicadores Críticos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card p-5 border-l-4 border-yellow-500">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-arrow-down text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-3xl font-bold text-gray-900">{decliningIndicators.length}</p>
+                                <p className="text-sm text-gray-500">Em Declínio</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card p-5 border-l-4 border-green-500">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-arrow-up text-green-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-3xl font-bold text-gray-900">{improvingIndicators.length}</p>
+                                <p className="text-sm text-gray-500">Em Melhoria</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card p-5 border-l-4 border-blue-500">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-chart-line text-blue-500 text-xl"></i>
+                            </div>
+                            <div>
+                                <p className="text-3xl font-bold text-gray-900">{(ind.reduce((s,i) => s + i.pct, 0) / ind.length).toFixed(1)}%</p>
+                                <p className="text-sm text-gray-500">Média Geral</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Alertas Prioritários */}
+                {criticalIndicators.length > 0 && (
+                    <div className="card p-6 mb-6 border-l-4 border-red-500">
+                        <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center gap-2">
+                            <i className="fas fa-exclamation-triangle"></i> Alertas Prioritários
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {criticalIndicators.slice(0, 4).map(i => (
+                                <div key={i.index} className="p-4 bg-red-50 rounded-xl">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="font-bold text-red-800">Componente {i.index}</span>
+                                        <span className="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-bold">{i.pct.toFixed(1)}%</span>
+                                    </div>
+                                    <p className="text-sm text-red-700 mb-2">{i.fullName}</p>
+                                    <p className="text-xs text-red-600">
+                                        <i className="fas fa-arrow-right mr-1"></i>
+                                        Previsão: {i.analysis.prediction.toFixed(1)}% 
+                                        ({i.analysis.trend === 'up' ? '↑' : i.analysis.trend === 'down' ? '↓' : '→'})
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Análise Detalhada por Indicador */}
+                <div className="card p-6 mb-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i className="fas fa-microscope text-blue-500"></i> Análise Detalhada por Indicador
+                    </h3>
+                    <div className="space-y-4">
+                        {indicatorAnalysis.map(i => {
+                            const risk = getRiskLevel(i.pct, i.analysis.trend);
+                            const barriers = getBarriers(i);
+                            const recs = getRecommendations(i);
+                            return (
+                                <div key={i.index} className="p-4 border rounded-xl hover:shadow-md transition-all">
+                                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                                        <div className="flex items-center gap-3 lg:w-1/3">
+                                            <span className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">C{i.index}</span>
+                                            <div>
+                                                <p className="font-semibold text-gray-800">{i.fullName.slice(0, 50)}...</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold bg-${risk.color}-100 text-${risk.color}-700`}>
+                                                        <i className={`fas ${risk.icon} mr-1`}></i>{risk.level}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {i.analysis.trend === 'up' && <span className="text-green-600"><i className="fas fa-arrow-up mr-1"></i>Subindo</span>}
+                                                        {i.analysis.trend === 'down' && <span className="text-red-600"><i className="fas fa-arrow-down mr-1"></i>Caindo</span>}
+                                                        {i.analysis.trend === 'stable' && <span className="text-gray-600"><i className="fas fa-minus mr-1"></i>Estável</span>}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="lg:w-1/6 text-center">
+                                            <p className="text-2xl font-bold" style={{color: getColor(i.pct)}}>{i.pct.toFixed(1)}%</p>
+                                            <p className="text-xs text-gray-500">Atual</p>
+                                        </div>
+                                        <div className="lg:w-1/6 text-center">
+                                            <p className="text-2xl font-bold text-blue-600">{i.analysis.prediction.toFixed(1)}%</p>
+                                            <p className="text-xs text-gray-500">Previsão</p>
+                                        </div>
+                                        <div className="lg:w-1/3">
+                                            <div className="indicator-bar"><div className="indicator-fill" style={{width:`${Math.min(i.pct,100)}%`, backgroundColor: getColor(i.pct)}}></div></div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                                        <div>
+                                            <p className="text-sm font-semibold text-red-700 mb-2"><i className="fas fa-exclamation-circle mr-1"></i>Barreiras Identificadas</p>
+                                            <ul className="text-xs text-gray-600 space-y-1">
+                                                {barriers.map((b, idx) => <li key={idx} className="flex items-start gap-2"><i className="fas fa-times text-red-400 mt-0.5"></i>{b}</li>)}
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-semibold text-green-700 mb-2"><i className="fas fa-lightbulb mr-1"></i>Recomendações</p>
+                                            <ul className="text-xs text-gray-600 space-y-1">
+                                                {recs.map((r, idx) => <li key={idx} className="flex items-start gap-2"><i className="fas fa-check text-green-400 mt-0.5"></i>{r}</li>)}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Matriz de Risco */}
+                <div className="card p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i className="fas fa-th text-purple-500"></i> Matriz de Risco e Priorização
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-red-50 rounded-xl border-2 border-red-200">
+                            <h4 className="font-bold text-red-700 mb-3"><i className="fas fa-fire mr-2"></i>Alta Prioridade</h4>
+                            <p className="text-xs text-red-600 mb-2">Baixo desempenho + Tendência de queda</p>
+                            <div className="space-y-2">
+                                {indicatorAnalysis.filter(i => i.pct < 50 && i.analysis.trend === 'down').map(i => (
+                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <span className="text-sm font-medium">C{i.index}</span>
+                                        <span className="text-sm text-red-600 font-bold">{i.pct.toFixed(1)}%</span>
+                                    </div>
+                                ))}
+                                {indicatorAnalysis.filter(i => i.pct < 50 && i.analysis.trend === 'down').length === 0 && 
+                                    <p className="text-sm text-gray-500 italic">Nenhum indicador nesta categoria</p>
+                                }
+                            </div>
+                        </div>
+                        <div className="p-4 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+                            <h4 className="font-bold text-yellow-700 mb-3"><i className="fas fa-exclamation mr-2"></i>Média Prioridade</h4>
+                            <p className="text-xs text-yellow-600 mb-2">Desempenho moderado ou em declínio</p>
+                            <div className="space-y-2">
+                                {indicatorAnalysis.filter(i => (i.pct >= 50 && i.pct < 75) || (i.pct >= 50 && i.analysis.trend === 'down')).slice(0, 4).map(i => (
+                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <span className="text-sm font-medium">C{i.index}</span>
+                                        <span className="text-sm text-yellow-600 font-bold">{i.pct.toFixed(1)}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
+                            <h4 className="font-bold text-blue-700 mb-3"><i className="fas fa-eye mr-2"></i>Monitorar</h4>
+                            <p className="text-xs text-blue-600 mb-2">Desempenho estável</p>
+                            <div className="space-y-2">
+                                {indicatorAnalysis.filter(i => i.pct >= 50 && i.pct < 75 && i.analysis.trend === 'stable').slice(0, 4).map(i => (
+                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <span className="text-sm font-medium">C{i.index}</span>
+                                        <span className="text-sm text-blue-600 font-bold">{i.pct.toFixed(1)}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-200">
+                            <h4 className="font-bold text-green-700 mb-3"><i className="fas fa-star mr-2"></i>Boas Práticas</h4>
+                            <p className="text-xs text-green-600 mb-2">Alto desempenho + Tendência positiva</p>
+                            <div className="space-y-2">
+                                {indicatorAnalysis.filter(i => i.pct >= 75 && i.analysis.trend !== 'down').slice(0, 4).map(i => (
+                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
+                                        <span className="text-sm font-medium">C{i.index}</span>
+                                        <span className="text-sm text-green-600 font-bold">{i.pct.toFixed(1)}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const handleLogin = (userData) => {
         setUser(userData);
         const saved = localStorage.getItem('gdiaps_users');
@@ -699,7 +1116,7 @@ const Dashboard = () => {
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
 
     if (activeView === 'profile' && !user) {
-        return <LoginView onLogin={handleLogin} />;
+        return <LoginView onLogin={handleLogin} onBack={() => setActiveView('home')} />;
     }
 
     return (
@@ -709,6 +1126,8 @@ const Dashboard = () => {
                 {activeView === 'home' && <HomeView />}
                 {activeView === 'indicators' && <IndicatorsView />}
                 {activeView === 'map' && <MapView />}
+                {activeView === 'data' && <DataTableView />}
+                {activeView === 'predictions' && <PredictionsView />}
                 {activeView === 'forum' && <ForumView user={user} topics={topics} setTopics={setTopics} onLoginRequired={() => setActiveView('profile')} />}
                 {activeView === 'profile' && user && <ProfileView user={user} setUser={setUser} onLogout={handleLogout} topics={topics} />}
             </div>
