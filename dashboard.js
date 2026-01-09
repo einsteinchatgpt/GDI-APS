@@ -1,65 +1,437 @@
 const { useState, useEffect, useRef } = React;
 
+const fixMunicipioDisplay = (name) => {
+    if (!name) return name;
+    const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus' };
+    return fixes[name] || name;
+};
+const normalizeMunicipioForGeoJSON = (name) => name ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+
+const FloatingParticles = () => {
+    const particles = Array.from({ length: 20 }, (_, i) => ({
+        id: i,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        size: Math.random() * 15 + 5,
+        delay: Math.random() * 5,
+        duration: Math.random() * 3 + 3
+    }));
+    return (
+        <div className="floating-shapes">
+            {particles.map(p => (
+                <div key={p.id} className="floating-shape" style={{
+                    left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}px`, height: `${p.size}px`,
+                    animation: `particleFloat ${p.duration}s ease-in-out ${p.delay}s infinite`
+                }} />
+            ))}
+        </div>
+    );
+};
+
+const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', cargo: '', municipio: '' });
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setTimeout(() => {
+            if (mode === 'login') {
+                onLogin({ name: formData.email.split('@')[0], email: formData.email, cargo: 'Profissional de Saúde' });
+            } else {
+                onLogin({ name: formData.name, email: formData.email, cargo: formData.cargo || 'Profissional de Saúde', municipio: formData.municipio });
+            }
+            setLoading(false);
+            onClose();
+        }, 1500);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 auth-modal" onClick={onClose}>
+            <FloatingParticles />
+            <div className="auth-card w-full max-w-md animate-scaleIn relative z-10" onClick={e => e.stopPropagation()}>
+                <div className="auth-header">
+                    <div className="w-20 h-20 mx-auto bg-white/20 rounded-2xl flex items-center justify-center mb-4 animate-float">
+                        <i className={`fas ${mode === 'login' ? 'fa-user-shield' : 'fa-user-plus'} text-white text-3xl`}></i>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white text-glow">{mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}</h2>
+                    <p className="text-blue-200 mt-2">{mode === 'login' ? 'Acesse o painel de indicadores' : 'Junte-se à comunidade GDI-APS'}</p>
+                </div>
+                <form onSubmit={handleSubmit} className="p-8 space-y-4">
+                    {mode === 'register' && (
+                        <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-user mr-2 text-blue-500"></i>Nome Completo</label>
+                            <input type="text" className="input-field" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                        </div>
+                    )}
+                    <div className="animate-slideUp" style={{ animationDelay: '0.2s' }}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-envelope mr-2 text-blue-500"></i>E-mail</label>
+                        <input type="email" className="input-field" placeholder="seu@email.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                    </div>
+                    <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-lock mr-2 text-blue-500"></i>Senha</label>
+                        <input type="password" className="input-field" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                    </div>
+                    {mode === 'register' && (
+                        <>
+                            <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-briefcase mr-2 text-blue-500"></i>Cargo</label>
+                                <select className="input-field" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})}>
+                                    <option value="">Selecione seu cargo</option>
+                                    <option>Enfermeiro(a)</option>
+                                    <option>Médico(a)</option>
+                                    <option>Gestor(a) de Saúde</option>
+                                    <option>Coordenador(a) APS</option>
+                                    <option>Técnico(a) de Enfermagem</option>
+                                    <option>Agente Comunitário de Saúde</option>
+                                </select>
+                            </div>
+                            <div className="animate-slideUp" style={{ animationDelay: '0.5s' }}>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-map-marker-alt mr-2 text-blue-500"></i>Município</label>
+                                <input type="text" className="input-field" placeholder="Seu município" value={formData.municipio} onChange={e => setFormData({...formData, municipio: e.target.value})} />
+                            </div>
+                        </>
+                    )}
+                    <button type="submit" disabled={loading} className="w-full btn-primary py-4 text-lg mt-6 flex items-center justify-center gap-3">
+                        {loading ? <><i className="fas fa-spinner fa-spin"></i> Processando...</> : <><i className={`fas ${mode === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i> {mode === 'login' ? 'Entrar' : 'Cadastrar'}</>}
+                    </button>
+                    <div className="text-center pt-4 border-t border-gray-200 mt-6">
+                        <p className="text-gray-600">
+                            {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                            <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="ml-2 text-blue-600 font-semibold hover:underline">
+                                {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
+                            </button>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
+    const indicators = [
+        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: 'from-pink-500 to-rose-600', desc: 'Acompanhamento de pré-natal e puerpério', states: ['acre', 'rn'], stats: '11 componentes' },
+        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: 'from-red-500 to-red-700', desc: 'Monitoramento de pacientes hipertensos', states: ['rn'], stats: '4 componentes' },
+        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: 'from-blue-500 to-indigo-600', desc: 'Controle de pacientes diabéticos', states: ['rn'], stats: '6 componentes' }
+    ];
+    const [sel, setSel] = useState(null);
+    const [hoveredCard, setHoveredCard] = useState(null);
+    const [showGuide, setShowGuide] = useState(true);
+    const [guideStep, setGuideStep] = useState(0);
+    
+    const guideMessages = [
+        { text: "Oi! Eu sou o Bebê APS! Vou te mostrar como usar esse painel super legal!", icon: "fa-hand-sparkles" },
+        { text: "Aqui a gente acompanha a saúde das pessoas do seu território. É muito importante!", icon: "fa-heart" },
+        { text: "Escolhe um dos cartões coloridos ali embaixo pra começar a explorar!", icon: "fa-arrow-down" },
+        { text: "Se você cuida de uma equipe, faz login pra ver coisas especiais de planejamento!", icon: "fa-star" }
+    ];
+    
+    const skipGuide = () => {
+        setShowGuide(false);
+    };
+    
+    const nextStep = () => {
+        if (guideStep < guideMessages.length - 1) {
+            setGuideStep(guideStep + 1);
+        } else {
+            skipGuide();
+        }
+    };
+
+    return (
+        <div className="min-h-screen landing-bg relative overflow-hidden">
+            <FloatingParticles />
+            
+            {/* Avatar Guia Interativo - Bebê APS */}
+            {showGuide && (
+                <div className="fixed bottom-6 left-6 z-50 animate-slideUp">
+                    <div className="flex items-end gap-3">
+                        {/* Avatar Bebê */}
+                        <div className="relative">
+                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-2xl border-4 border-white/50 animate-float overflow-hidden">
+                                {/* Rosto do bebê */}
+                                <div className="relative">
+                                    {/* Cabelo */}
+                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                                        <div className="w-2 h-4 bg-amber-600 rounded-full transform -rotate-12"></div>
+                                        <div className="w-2 h-5 bg-amber-700 rounded-full"></div>
+                                        <div className="w-2 h-4 bg-amber-600 rounded-full transform rotate-12"></div>
+                                    </div>
+                                    {/* Carinha */}
+                                    <div className="w-14 h-14 bg-gradient-to-b from-amber-100 to-amber-200 rounded-full flex flex-col items-center justify-center">
+                                        {/* Olhos */}
+                                        <div className="flex gap-3 mb-1">
+                                            <div className="w-2.5 h-2.5 bg-gray-800 rounded-full relative">
+                                                <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-white rounded-full"></div>
+                                            </div>
+                                            <div className="w-2.5 h-2.5 bg-gray-800 rounded-full relative">
+                                                <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-white rounded-full"></div>
+                                            </div>
+                                        </div>
+                                        {/* Bochechas */}
+                                        <div className="flex gap-6 absolute">
+                                            <div className="w-2 h-1.5 bg-pink-300 rounded-full opacity-70"></div>
+                                            <div className="w-2 h-1.5 bg-pink-300 rounded-full opacity-70"></div>
+                                        </div>
+                                        {/* Boca sorrindo */}
+                                        <div className="w-4 h-2 border-b-2 border-pink-400 rounded-b-full mt-0.5"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Chupeta */}
+                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                                <div className="w-4 h-3 bg-blue-400 rounded-full border border-blue-500"></div>
+                            </div>
+                            {/* Indicador online */}
+                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white animate-pulse flex items-center justify-center">
+                                <i className="fas fa-heart text-white text-xs"></i>
+                            </div>
+                        </div>
+                        {/* Balão de Fala */}
+                        <div className="bg-white rounded-2xl rounded-bl-none p-4 shadow-2xl max-w-sm relative animate-scaleIn">
+                            <div className="absolute -left-2 bottom-4 w-4 h-4 bg-white transform rotate-45"></div>
+                            <div className="flex items-start gap-3 mb-3">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                    <i className={`fas ${guideMessages[guideStep].icon} text-blue-600`}></i>
+                                </div>
+                                <p className="text-gray-700 text-sm leading-relaxed">{guideMessages[guideStep].text}</p>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex gap-1">
+                                    {guideMessages.map((_, i) => (
+                                        <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === guideStep ? 'bg-blue-500 w-4' : 'bg-gray-300'}`}></div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={skipGuide} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1">
+                                        Pular
+                                    </button>
+                                    <button onClick={nextStep} className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">
+                                        {guideStep < guideMessages.length - 1 ? 'Próximo' : 'Entendi!'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Header com Login */}
+            <div className="absolute top-6 right-6 z-50">
+                <button onClick={onOpenAuth} className="login-btn flex items-center gap-3 text-white">
+                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                        <i className="fas fa-user text-xl"></i>
+                    </div>
+                    <div className="text-left pr-2">
+                        <p className="font-semibold">{user ? user.name : 'Acessar'}</p>
+                        <p className="text-xs text-blue-200">{user ? user.cargo : 'Entre ou cadastre-se'}</p>
+                    </div>
+                    <i className="fas fa-chevron-down text-sm"></i>
+                </button>
+            </div>
+
+            {/* Modal de seleção de estado */}
+            {sel && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setSel(null)}>
+                    <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 animate-scaleIn" onClick={e => e.stopPropagation()}>
+                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${sel.color} flex items-center justify-center mx-auto mb-4`}>
+                            <i className={`fas ${sel.icon} text-white text-2xl`}></i>
+                        </div>
+                        <h3 className="text-2xl font-bold mb-2 text-center text-gray-800">{sel.title}</h3>
+                        <p className="text-gray-500 text-center mb-6">Selecione o estado para visualizar</p>
+                        <div className="space-y-3">
+                            {sel.states.map(s => (
+                                <button key={s} onClick={() => onSelectIndicator(sel.key, s)} className="w-full p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-between group">
+                                    <span className="flex items-center gap-3">
+                                        <i className="fas fa-map-marker-alt"></i>
+                                        {STATE_CONFIG[s].name}
+                                    </span>
+                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Conteúdo Principal */}
+            <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-10">
+                {/* Logo e Título */}
+                <div className="text-center mb-12 animate-slideUp">
+                    <div className="w-24 h-24 mx-auto mb-6 bg-white/10 rounded-3xl flex items-center justify-center border border-white/20 animate-float">
+                        <i className="fas fa-heartbeat text-white text-4xl"></i>
+                    </div>
+                    <h1 className="text-6xl font-extrabold text-white mb-4 text-glow">GDI-APS</h1>
+                    <p className="text-2xl text-blue-200 mb-4">Gestão de Desempenho de Indicadores</p>
+                    <p className="text-lg text-blue-300/80 max-w-2xl mx-auto italic">
+                        "O painel que te auxilia a entender melhor as boas práticas na APS do seu território"
+                    </p>
+                </div>
+
+                {/* Cards de Indicadores */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
+                    {indicators.map((ind, idx) => (
+                        <button
+                            key={ind.key}
+                            onClick={() => ind.states.length === 1 ? onSelectIndicator(ind.key, ind.states[0]) : setSel(ind)}
+                            onMouseEnter={() => setHoveredCard(ind.key)}
+                            onMouseLeave={() => setHoveredCard(null)}
+                            className={`bg-white/10 rounded-3xl p-8 border-2 border-white/20 hover:bg-white/20 transition-all duration-500 animate-slideUp border-glow group ${hoveredCard === ind.key ? 'scale-105 shadow-2xl' : ''}`}
+                            style={{ animationDelay: `${idx * 0.15}s` }}
+                        >
+                            <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${ind.color} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                                <i className={`fas ${ind.icon} text-white text-4xl`}></i>
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mb-3">{ind.title}</h3>
+                            <p className="text-blue-200 mb-4">{ind.desc}</p>
+                            <div className="flex items-center justify-center gap-2 text-blue-300 text-sm">
+                                <i className="fas fa-layer-group"></i>
+                                <span>{ind.stats}</span>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-white/10">
+                                <span className="text-white/70 text-sm flex items-center justify-center gap-2 group-hover:text-white transition-colors">
+                                    <span>Acessar painel</span>
+                                    <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                                </span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Footer */}
+                <div className="mt-16 text-center text-blue-300/60 text-sm animate-fadeIn" style={{ animationDelay: '0.8s' }}>
+                    <p>Desenvolvido para apoiar a gestão da Atenção Primária à Saúde</p>
+                    <div className="flex items-center justify-center gap-6 mt-4">
+                        <span className="flex items-center gap-2"><i className="fas fa-chart-line"></i> Análises em tempo real</span>
+                        <span className="flex items-center gap-2"><i className="fas fa-map"></i> Visualização espacial</span>
+                        <span className="flex items-center gap-2"><i className="fas fa-brain"></i> Insights estratégicos</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Dashboard = () => {
-    const [rawData, setRawData] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [activeView, setActiveView] = useState('home');
+    const [indicatorType, setIndicatorType] = useState(null), [selectedState, setSelectedState] = useState(null);
+    const [rawData, setRawData] = useState([]), [filteredData, setFilteredData] = useState([]);
+    const [loading, setLoading] = useState(false), [error, setError] = useState(null), [activeView, setActiveView] = useState('home');
     const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas' });
-    const [geoJson, setGeoJson] = useState(null);
-    const [user, setUser] = useState(() => {
-        const saved = localStorage.getItem('gdiaps_user');
-        return saved ? JSON.parse(saved) : null;
-    });
-    const [topics, setTopics] = useState(() => {
-        const saved = localStorage.getItem('gdiaps_topics');
-        return saved ? JSON.parse(saved) : DEFAULT_TOPICS;
-    });
+    const [geoJson, setGeoJson] = useState(null), [showProfile, setShowProfile] = useState(false);
+    const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('gdiaps_user')) || null);
+    const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('gdiaps_topics')) || []);
+    const [authModal, setAuthModal] = useState(false), [authMode, setAuthMode] = useState('login');
+    const [babyTipsShown, setBabyTipsShown] = useState(() => JSON.parse(sessionStorage.getItem('gdiaps_baby_tips_shown')) || {});
+    const config = indicatorType ? INDICATOR_CONFIG[indicatorType] : null;
+    const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2', '#c026d3', '#ea580c'];
+    
+    const markBabyTipShown = (view) => {
+        const newTips = { ...babyTipsShown, [view]: true };
+        setBabyTipsShown(newTips);
+        sessionStorage.setItem('gdiaps_baby_tips_shown', JSON.stringify(newTips));
+    };
+    
+    const babyTips = {
+        home: "Esse é o painel principal! Aqui você vê um resumo de tudo. Os cards coloridos mostram as métricas mais importantes!",
+        indicators: "Aqui você compara regiões e municípios! Veja quem está mandando bem e quem precisa de ajuda.",
+        components: "Cada componente é uma ação de saúde. Veja a evolução de cada um ao longo do tempo!",
+        strategic: "Visão para gestores! Aqui tem projeções e análises para tomar decisões importantes.",
+        goals: "Defina suas metas aqui! Acompanhe o progresso e veja se está no caminho certo.",
+        evaluation: "Avalie o desempenho! Gráficos e tabelas mostram como está indo em relação às metas.",
+        notes: "Anote tudo importante aqui! Problemas, ideias, ações... Não deixe nada escapar!",
+        map: "O mapa mostra tudo visualmente! As cores indicam o desempenho de cada município.",
+        dataCollection: "Importe novos dados aqui! Arquivos Excel com informações atualizadas.",
+        profile: "Seu perfil! Personalize suas informações e veja seus feedbacks."
+    };
+    
+    const BabyAPSTip = ({ view }) => {
+        if (babyTipsShown[view]) return null;
+        return (
+            <div className="fixed bottom-6 left-24 z-40 animate-slideUp">
+                <div className="flex items-end gap-3">
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-xl border-3 border-white/50 animate-float overflow-hidden">
+                            <div className="relative">
+                                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                                    <div className="w-1.5 h-3 bg-amber-600 rounded-full transform -rotate-12"></div>
+                                    <div className="w-1.5 h-3.5 bg-amber-700 rounded-full"></div>
+                                    <div className="w-1.5 h-3 bg-amber-600 rounded-full transform rotate-12"></div>
+                                </div>
+                                <div className="w-10 h-10 bg-gradient-to-b from-amber-100 to-amber-200 rounded-full flex flex-col items-center justify-center">
+                                    <div className="flex gap-2 mb-0.5">
+                                        <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
+                                        <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
+                                    </div>
+                                    <div className="w-3 h-1.5 border-b-2 border-pink-400 rounded-b-full"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-2xl rounded-bl-none p-3 shadow-xl max-w-xs relative animate-scaleIn">
+                        <div className="absolute -left-2 bottom-3 w-3 h-3 bg-white transform rotate-45"></div>
+                        <p className="text-gray-700 text-sm leading-relaxed mb-2">{babyTips[view]}</p>
+                        <button onClick={() => markBabyTipShown(view)} className="text-xs bg-pink-500 text-white px-3 py-1 rounded-full hover:bg-pink-600 transition-colors">
+                            Entendi!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     useEffect(() => { localStorage.setItem('gdiaps_topics', JSON.stringify(topics)); }, [topics]);
     useEffect(() => { user ? localStorage.setItem('gdiaps_user', JSON.stringify(user)) : localStorage.removeItem('gdiaps_user'); }, [user]);
+    useEffect(() => { if (selectedState) fetch(STATE_CONFIG[selectedState].geojson).then(r => r.json()).then(setGeoJson).catch(console.error); }, [selectedState]);
+    useEffect(() => { if (indicatorType && selectedState) loadData(indicatorType, selectedState); }, [indicatorType, selectedState]);
 
-    useEffect(() => {
-        loadData();
-        fetch(ACRE_GEOJSON).then(r => r.json()).then(setGeoJson).catch(console.error);
-    }, []);
-
-    const loadData = () => {
+    const loadData = (type, state) => {
+        const cfg = INDICATOR_CONFIG[type]; if (!cfg?.csvFiles[state]) return;
         setLoading(true);
-        fetch('./Gestantes.csv')
-            .then(r => r.arrayBuffer())
-            .then(buf => {
-                const text = new TextDecoder('windows-1252').decode(buf);
-                return Papa.parse(text, { header: false, skipEmptyLines: true });
-            })
-            .then(results => {
-                const rows = results.data.slice(1).filter(r => r[0]?.trim());
-                const data = rows.map(r => {
-                    const parseNum = v => {
-                        if (!v) return 0;
-                        let c = String(v).replace(/"/g, '').trim();
-                        if (c.includes(',')) c = c.replace(/\./g, '').replace(',', '.');
-                        return Math.round(parseFloat(c)) || 0;
-                    };
-                    let regiao = r[7] || '';
-                    if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
-                    return {
-                        cnes: r[0], estabelecimento: r[1], municipio: r[6], regiao, competencia: r[8],
-                        ine: r[3],
-                        ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]),
-                        ind4: parseNum(r[13]), ind5: parseNum(r[14]), ind6: parseNum(r[15]),
-                        ind7: parseNum(r[16]), ind8: parseNum(r[17]), ind9: parseNum(r[18]),
-                        ind10: parseNum(r[19]), ind11: parseNum(r[20]),
-                        somatorio: parseNum(r[21]), totalGestantes: parseNum(r[22])
-                    };
-                });
-                setRawData(data);
-                setFilteredData(data);
-                setLoading(false);
-            })
-            .catch(e => { setError(e.message); setLoading(false); });
+        const encoding = cfg.csvFiles[state].encoding || 'windows-1252';
+        fetch(cfg.csvFiles[state].file).then(r => r.arrayBuffer()).then(buf => Papa.parse(new TextDecoder(encoding).decode(buf), { header: false, skipEmptyLines: true, delimiter: cfg.csvFiles[state].delimiter, quoteChar: '"' })).then(results => {
+            const parseNum = v => { 
+                if (!v) return 0; 
+                let c = String(v).replace(/"/g, '').trim(); 
+                
+                // Detectar formato baseado no estado
+                if (state === 'acre') {
+                    // Acre: vírgula é separador de milhar (formato americano: 1,007 = 1007)
+                    c = c.replace(/,/g, '');
+                } else {
+                    // RN e outros: vírgula é separador decimal (formato brasileiro: 34,32 = 34.32)
+                    // Se tem ponto E vírgula, ponto é milhar e vírgula é decimal
+                    if (c.includes('.') && c.includes(',')) {
+                        c = c.replace(/\./g, '').replace(',', '.');
+                    } else if (c.includes(',')) {
+                        c = c.replace(',', '.');
+                    }
+                }
+                return Math.round(parseFloat(c)) || 0; 
+            };
+            // Debug: log primeira linha para verificar índices
+            if (results.data.length > 1) {
+                console.log('CSV Debug - Primeira linha de dados:', results.data[1]);
+                console.log('CSV Debug - Número de colunas:', results.data[1]?.length);
+                console.log('CSV Debug - Coluna 21 (somatorio):', results.data[1]?.[21]);
+                console.log('CSV Debug - Coluna 22 (total):', results.data[1]?.[22]);
+            }
+            const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
+                let regiao = r[7] || ''; if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                const base = { cnes: r[0], estabelecimento: r[1], municipio: fixMunicipioDisplay(r[6]), regiao, competencia: normalizeMonth(r[8]), ine: r[3] };
+                if (type === 'gestantes') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), ind5: parseNum(r[14]), ind6: parseNum(r[15]), ind7: parseNum(r[16]), ind8: parseNum(r[17]), ind9: parseNum(r[18]), ind10: parseNum(r[19]), ind11: parseNum(r[20]), somatorio: parseNum(r[21]), totalPacientes: parseNum(r[22]) };
+                if (type === 'has') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), somatorio: parseNum(r[14]), totalPacientes: parseNum(r[15]) };
+                if (type === 'dm') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), ind5: parseNum(r[14]), ind6: parseNum(r[15]), somatorio: parseNum(r[16]), totalPacientes: parseNum(r[17]) };
+                return base;
+            });
+            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas' }); setLoading(false);
+        }).catch(e => { setError(e.message); setLoading(false); });
     };
+
+    const handleSelectIndicator = (type, state) => { setIndicatorType(type); setSelectedState(state); setActiveView('home'); };
+    const handleBackToLanding = () => { setIndicatorType(null); setSelectedState(null); setRawData([]); setFilteredData([]); };
 
     useEffect(() => {
         if (!rawData.length) return;
@@ -70,604 +442,402 @@ const Dashboard = () => {
         setFilteredData(f);
     }, [filters, rawData]);
 
-    const getUnique = (field, data = rawData) => {
-        let vals = [...new Set(data.map(r => r[field]).filter(Boolean))];
-        if (field === 'competencia') {
-            return vals.sort((a,b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
-        }
-        return vals.sort();
-    };
+    const getUnique = (field, data = rawData) => { let vals = [...new Set(data.map(r => r[field]).filter(Boolean))]; return field === 'competencia' ? vals.sort((a,b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b)) : vals.sort(); };
+    const getRegioes = () => getUnique('regiao');
+    const calcMetrics = (data = filteredData) => { if (!data.length) return { somatorio: 0, totalPacientes: 0, taxa: 0, equipes: 0, municipios: 0 }; const s = data.reduce((a,r) => a + r.somatorio, 0), t = data.reduce((a,r) => a + (r.totalPacientes||0), 0); return { somatorio: s, totalPacientes: t, taxa: t ? s/t : 0, equipes: new Set(data.map(r => r.ine)).size, municipios: new Set(data.map(r => r.municipio)).size }; };
+    const calcIndicators = (data = filteredData) => { if (!data.length || !config) return []; const total = data.reduce((s,r) => s + (r.totalPacientes||0), 0); return Array.from({length: config.indicatorCount}, (_,i) => { const sum = data.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0); return { index: i+1, name: config.shortNames[i], fullName: config.fullNames[i], total: sum, pct: total ? (sum/total)*100 : 0 }; }); };
+    const getHeatmap = (data = filteredData, indFilter = 'taxa') => { if (!config) return []; return [...new Set(data.map(r => r.municipio))].filter(Boolean).map(m => { const d = data.filter(r => r.municipio === m), tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0), sm = d.reduce((s,r) => s + r.somatorio, 0); let valor = 0; if (indFilter === 'taxa') { valor = tg ? sm/tg : 0; } else { const idx = parseInt(indFilter.replace('ind','')); const t = d.reduce((s,r) => s + (r['ind'+idx]||0), 0); valor = tg ? (t/tg)*100 : 0; } return { municipio: m, taxa: valor, tg, sm, comps: Array.from({length: config.indicatorCount}, (_,i) => { const t = d.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0); return tg ? (t/tg)*100 : 0; }) }; }).sort((a,b) => b.taxa - a.taxa); };
+    const getTrend = (data = rawData) => { const months = getUnique('competencia', data); return MONTH_ORDER.filter(m => months.includes(m)).map(m => { const d = data.filter(r => r.competencia === m); if (!d.length) return null; const sm = d.reduce((s,r) => s + r.somatorio, 0), tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0); return { month: m, taxa: tg ? sm/tg : 0 }; }).filter(Boolean); };
+    const getEstabelecimentos = (data = filteredData) => [...new Set(data.map(r => r.estabelecimento))].filter(Boolean).map(e => { const d = data.filter(r => r.estabelecimento === e), tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0), sm = d.reduce((s,r) => s + r.somatorio, 0); return { estabelecimento: e, municipio: d[0]?.municipio, taxa: tg ? sm/tg : 0, tg }; }).sort((a,b) => b.taxa - a.taxa);
+    const getComponentTrend = (idx, regiao = null, baseData = null) => { let data = baseData || (regiao ? rawData.filter(r => r.regiao === regiao) : rawData); if (regiao && !baseData) data = data.filter(r => r.regiao === regiao); const months = getUnique('competencia', data); return MONTH_ORDER.filter(m => months.includes(m)).map(m => { const d = data.filter(r => r.competencia === m); if (!d.length) return null; const tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0), val = d.reduce((s,r) => s + (r['ind'+idx]||0), 0); return { month: m, pct: tg ? (val/tg)*100 : 0 }; }).filter(Boolean); };
 
-    const getEstabelecimentos = (data = filteredData) => {
-        const estabs = [...new Set(data.map(r => r.estabelecimento))].filter(Boolean);
-        return estabs.map(e => {
-            const d = data.filter(r => r.estabelecimento === e);
-            const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-            const sm = d.reduce((s,r) => s + r.somatorio, 0);
-            const mun = d[0]?.municipio || '';
-            return { estabelecimento: e, municipio: mun, taxa: tg ? sm/tg : 0, tg, sm };
-        }).sort((a,b) => b.taxa - a.taxa);
-    };
+    const [feedbacks, setFeedbacks] = useState(() => JSON.parse(localStorage.getItem('gdiaps_feedbacks')) || []);
+    useEffect(() => { localStorage.setItem('gdiaps_feedbacks', JSON.stringify(feedbacks)); }, [feedbacks]);
 
-    const calcMetrics = (data = filteredData) => {
-        if (!data.length) return { somatorio: 0, totalGestantes: 0, taxa: 0, equipes: 0 };
-        const somatorio = data.reduce((s, r) => s + r.somatorio, 0);
-        const totalGestantes = data.reduce((s, r) => s + r.totalGestantes, 0);
-        return { somatorio, totalGestantes, taxa: totalGestantes ? somatorio / totalGestantes : 0, equipes: new Set(data.map(r => r.ine)).size };
-    };
-
-    const calcIndicators = (data = filteredData) => {
-        if (!data.length) return [];
-        const total = data.reduce((s, r) => s + r.totalGestantes, 0);
-        return Array.from({length: 11}, (_, i) => {
-            const sum = data.reduce((s, r) => s + r[`ind${i+1}`], 0);
-            return { index: i+1, name: INDICATOR_SHORT[i], fullName: INDICATOR_FULL_NAMES[i], total: sum, pct: total ? (sum/total)*100 : 0 };
-        });
-    };
-
-    const getHeatmap = (data = filteredData) => {
-        const muns = [...new Set(data.map(r => r.municipio))].sort();
-        return muns.map(m => {
-            const d = data.filter(r => r.municipio === m);
-            const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-            const sm = d.reduce((s,r) => s + r.somatorio, 0);
-            const comps = Array.from({length:11}, (_,i) => {
-                const t = d.reduce((s,r) => s + r[`ind${i+1}`], 0);
-                return tg ? (t/tg)*100 : 0;
-            });
-            return { municipio: m, taxa: tg ? sm/tg : 0, tg, sm, comps };
-        }).sort((a,b) => b.taxa - a.taxa);
-    };
-
-    const getTrend = () => {
-        // Filtra por região e município, mas mostra todos os meses
-        let data = [...rawData];
-        if (filters.regiao !== 'Todas') data = data.filter(r => r.regiao === filters.regiao);
-        if (filters.municipio !== 'Todos') data = data.filter(r => r.municipio === filters.municipio);
-        return MONTH_ORDER.map(m => {
-            const d = data.filter(r => r.competencia === m);
-            if (!d.length) return null;
-            const sm = d.reduce((s,r) => s + r.somatorio, 0);
-            const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-            return { month: m, taxa: tg ? sm/tg : 0, sm, tg };
-        }).filter(Boolean);
-    };
-
-    const Sidebar = () => (
-        <div className="sidebar">
-            <div className="pt-6 pb-4">
-                <div className="w-12 h-12 mx-auto bg-blue-600 rounded-xl flex items-center justify-center">
-                    <i className="fas fa-heartbeat text-white text-xl"></i>
-                </div>
-            </div>
-            <div className="mt-4">
-                {[['home','fa-home','Painel'],['indicators','fa-chart-pie','Análises'],['map','fa-map-marked-alt','Mapa'],['data','fa-table','Dados'],['predictions','fa-brain','Predições'],['forum','fa-comments','Fórum'],['profile','fa-user','Perfil']].map(([v,i,t]) => (
-                    <div key={v} className={`sidebar-icon ${activeView===v?'active':''}`} onClick={() => setActiveView(v)} title={t}>
-                        <i className={`fas ${i} text-lg`}></i>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const FilterBar = () => (
-        <div className="card p-4 mb-6">
-            <div className="flex flex-wrap items-center gap-4">
-                <span className="text-sm font-semibold text-gray-700"><i className="fas fa-filter text-blue-500 mr-2"></i>Filtros:</span>
-                <select className="filter-select" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos'})}>
-                    <option value="Todas">Todas as Regiões</option>
-                    {getUnique('regiao').map(v => <option key={v}>{v}</option>)}
-                </select>
-                <select className="filter-select" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value})}>
-                    <option value="Todos">Todos os Municípios</option>
-                    {getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(v => <option key={v}>{v}</option>)}
-                </select>
-                <select className="filter-select" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}>
-                    <option value="Todas">Todas as Competências</option>
-                    {getUnique('competencia').map(v => <option key={v}>{v}</option>)}
-                </select>
-                <button onClick={() => setFilters({regiao:'Todas',municipio:'Todos',competencia:'Todas'})} className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg">Limpar</button>
-            </div>
-        </div>
-    );
-
-    const MetricCard = ({ title, value, sub, icon, color }) => (
-        <div className="card metric-card">
-            <div className="flex items-start justify-between">
-                <div>
-                    <p className="text-sm text-gray-500 mb-1">{title}</p>
-                    <p className="metric-value">{value}</p>
-                    <p className="text-xs text-gray-500 mt-1">{sub}</p>
-                </div>
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color}`}>
-                    <i className={`${icon} text-white text-xl`}></i>
-                </div>
-            </div>
-        </div>
-    );
-
-    const LineChart = ({ data }) => {
-        const ref = useRef(null), chart = useRef(null);
-        useEffect(() => {
-            if (!ref.current || !data?.length) return;
-            if (chart.current) chart.current.destroy();
-            chart.current = new Chart(ref.current, {
-                type: 'line',
-                data: { labels: data.map(d => d.month.slice(0,3)), datasets: [{ data: data.map(d => d.taxa), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', borderWidth: 3, fill: true, tension: 0.4, pointRadius: 5 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-            });
-            return () => chart.current?.destroy();
-        }, [data]);
-        return <canvas ref={ref}></canvas>;
-    };
-
-    const EstabChart = ({ data }) => {
-        const ref = useRef(null), chart = useRef(null);
-        useEffect(() => {
-            if (!ref.current || !data?.length) return;
-            if (chart.current) chart.current.destroy();
-            const labels = data.map(d => d.estabelecimento.length > 30 ? d.estabelecimento.slice(0,30) + '...' : d.estabelecimento);
-            chart.current = new Chart(ref.current, {
-                type: 'bar',
-                data: { labels, datasets: [{ data: data.map(d => d.taxa), backgroundColor: data.map(d => getTaxaColor(d.taxa)), borderRadius: 6 }] },
-                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => data[ctx[0].dataIndex].estabelecimento, afterTitle: (ctx) => data[ctx[0].dataIndex].municipio } } }, scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 10 } } } } }
-            });
-            return () => chart.current?.destroy();
-        }, [data]);
-        return <canvas ref={ref}></canvas>;
-    };
-
-    const Heatmap = ({ data }) => {
-        if (!data?.length) return null;
+    const ProfileDropdown = () => {
+        const [dropdownOpen, setDropdownOpen] = useState(false);
         return (
-            <div className="overflow-x-auto">
-                <div className="min-w-max">
-                    <div className="flex mb-2">
-                        <div style={{minWidth:'140px'}}></div>
-                        <div className="heatmap-cell font-bold text-xs" style={{minWidth:'75px'}}>Boas Práticas</div>
-                        {[1,2,3,4,5,6,7,8,9,10,11].map(i => <div key={i} className="heatmap-cell font-bold text-xs" style={{minWidth:'65px'}}>C{i}</div>)}
+            <div className="absolute top-4 right-4 z-50">
+                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border-2 border-white/20">
+                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                        <i className="fas fa-user-nurse text-white text-xl"></i>
                     </div>
-                    {data.map((r,i) => (
-                        <div key={i} className="flex mb-1">
-                            <div className="heatmap-row-label" style={{minWidth:'140px'}}>{r.municipio}</div>
-                            <div className="heatmap-cell rounded text-white" style={{backgroundColor: getTaxaColor(r.taxa), minWidth:'75px'}}>{r.taxa.toFixed(2)}</div>
-                            {r.comps.map((v,j) => <div key={j} className="heatmap-cell rounded text-white" style={{backgroundColor: getColor(v), minWidth:'65px'}}>{v.toFixed(0)}%</div>)}
-                        </div>
-                    ))}
-                </div>
-                <div className="flex justify-end mt-4 gap-4 text-xs">
-                    <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>0-24%</span>
-                    <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>25-49%</span>
-                    <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>50-74%</span>
-                    <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#22c55e'}}></span>75-100%</span>
-                </div>
+                    <div className="text-left">
+                        <p className="font-bold text-white">{user?.name || 'Visitante'}</p>
+                        <p className="text-xs text-blue-200">{user?.cargo || 'Clique para acessar'}</p>
+                    </div>
+                    <i className={`fas fa-chevron-${dropdownOpen ? 'up' : 'down'} text-white/70 ml-2`}></i>
+                </button>
+                {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden animate-fadeIn">
+                        {user ? (
+                            <>
+                                <button onClick={() => { setActiveView('profile'); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors">
+                                    <i className="fas fa-user-circle text-blue-500"></i>
+                                    <span className="font-medium">Meu Perfil</span>
+                                </button>
+                                <button onClick={() => { setUser(null); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-red-50 flex items-center gap-3 transition-colors text-red-600 border-t">
+                                    <i className="fas fa-sign-out-alt"></i>
+                                    <span className="font-medium">Sair</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button onClick={() => { setAuthMode('login'); setAuthModal(true); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors">
+                                    <i className="fas fa-sign-in-alt text-blue-500"></i>
+                                    <span className="font-medium">Entrar</span>
+                                </button>
+                                <button onClick={() => { setAuthMode('register'); setAuthModal(true); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-green-50 flex items-center gap-3 transition-colors border-t">
+                                    <i className="fas fa-user-plus text-green-500"></i>
+                                    <span className="font-medium">Cadastre-se</span>
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         );
     };
+
+    const Sidebar = () => {
+        const isManager = user?.cargo?.toLowerCase().includes('gestor') || user?.cargo?.toLowerCase().includes('coordenador') || user?.cargo?.toLowerCase().includes('admin');
+        const mainItems = [['home','fa-home'],['indicators','fa-chart-pie'],['components','fa-layer-group'],['strategic','fa-brain']];
+        const managerItems = isManager ? [['goals','fa-bullseye'],['evaluation','fa-chart-bar']] : [];
+        const otherItems = [['map','fa-map-marked-alt'],['dataCollection','fa-database'],['network','fa-share-alt'],['profile','fa-user-circle']];
+        const allItems = [...mainItems, ...managerItems, ...otherItems];
+        return (
+            <div className="sidebar flex flex-col">
+                <div className="pt-6 pb-4"><div className={'w-12 h-12 mx-auto rounded-xl flex items-center justify-center ' + (config?.bgColor || 'bg-blue-600')}><i className={'fas ' + (config?.icon || 'fa-heartbeat') + ' text-white text-xl'}></i></div></div>
+                <div className="mt-2"><div className="sidebar-icon hover:bg-red-100" onClick={handleBackToLanding}><i className="fas fa-arrow-left text-lg text-red-500"></i></div></div>
+                <div className="mt-2 flex-1">{allItems.map(([v,i]) => <div key={v} className={'sidebar-icon ' + (activeView===v?'active':'')} onClick={() => setActiveView(v)}><i className={'fas ' + i + ' text-lg'}></i></div>)}</div>
+                <div className="mt-auto pb-4 border-t border-gray-200 pt-2"><div className={'sidebar-icon ' + (activeView==='notes'?'active':'')} onClick={() => setActiveView('notes')}><i className="fas fa-sticky-note text-lg"></i></div></div>
+            </div>
+        );
+    };
+    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-4 mb-6"><div className="flex flex-wrap items-center gap-4"><select className="filter-select" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos'})}><option value="Todas">Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="filter-select" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value})}><option value="Todos">Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select><select className="filter-select" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="filter-select" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">Taxa Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
 
     const HomeView = () => {
-        const [selectedIndicator, setSelectedIndicator] = useState(null);
-        const [selectedMetric, setSelectedMetric] = useState(null);
-        const [selectedEstab, setSelectedEstab] = useState(null);
-        const m = calcMetrics(), ind = calcIndicators(), trend = getTrend(), hm = getHeatmap();
-        const estabs = getEstabelecimentos();
-
-        const MetricPopup = ({ metric, onClose }) => (
-            <div className="modal-overlay" onClick={onClose}>
-                <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold">{metric.title}</h3>
-                        <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center" onClick={onClose}>
-                            <i className="fas fa-times text-gray-500"></i>
-                        </button>
+        const m = calcMetrics(), ind = calcIndicators(), trend = getTrend(filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData), hm = getHeatmap(), estabs = getEstabelecimentos();
+        const variation = trend.length >= 2 ? { diff: trend[trend.length-1].taxa - trend[0].taxa } : null;
+        const cat = getCategoria(m.taxa);
+        const MetricCard = ({ icon, iconBg, title, value, subtitle, popupContent }) => (
+            <div className="card p-6 popup-card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <div className="flex items-center gap-4">
+                    <div className={`w-16 h-16 rounded-2xl ${iconBg} text-white flex items-center justify-center shadow-lg`}>
+                        <i className={`fas ${icon} text-2xl`}></i>
                     </div>
-                    <div className="text-center py-6">
-                        <div className={`w-20 h-20 ${metric.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                            <i className={`${metric.icon} text-white text-3xl`}></i>
-                        </div>
-                        <p className="text-5xl font-bold text-gray-900 mb-2">{metric.value}</p>
-                        <p className="text-gray-500">{metric.sub}</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-500 uppercase tracking-wide font-medium mb-1">{title}</p>
+                        <p className="text-3xl font-extrabold text-gray-800">{value}</p>
+                        <div className="mt-1">{subtitle}</div>
                     </div>
-                    {metric.details && <div className="mt-4 p-4 bg-gray-50 rounded-xl">
-                        <p className="text-sm text-gray-600">{metric.details}</p>
-                    </div>}
                 </div>
+                {popupContent && <div className="popup-content"><div className="text-sm">{popupContent}</div></div>}
             </div>
         );
-
-        const IndicatorPopup = ({ indicator, onClose }) => {
-            const muns = [...new Set(filteredData.map(r => r.municipio))];
-            const ranking = muns.map(mun => {
-                const d = filteredData.filter(r => r.municipio === mun);
-                const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-                const t = d.reduce((s,r) => s + r[`ind${indicator.index}`], 0);
-                return { mun, pct: tg ? (t/tg)*100 : 0, total: t, tg };
-            }).sort((a,b) => b.pct - a.pct);
-
-            return (
-                <div className="modal-overlay" onClick={onClose}>
-                    <div className="modal-content p-6 max-w-2xl" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <span className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">C{indicator.index}</span>
-                                <h3 className="text-xl font-bold">Componente {indicator.index}</h3>
-                            </div>
-                            <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center" onClick={onClose}>
-                                <i className="fas fa-times text-gray-500"></i>
-                            </button>
-                        </div>
-                        <p className="text-gray-600 mb-6">{indicator.fullName}</p>
-                        <div className="grid grid-cols-3 gap-4 mb-6">
-                            <div className="text-center p-4 bg-blue-50 rounded-xl">
-                                <p className="text-3xl font-bold text-blue-600">{indicator.pct.toFixed(1)}%</p>
-                                <p className="text-sm text-gray-500">Percentual</p>
-                            </div>
-                            <div className="text-center p-4 bg-green-50 rounded-xl">
-                                <p className="text-3xl font-bold text-green-600">{indicator.total.toLocaleString()}</p>
-                                <p className="text-sm text-gray-500">Total Realizados</p>
-                            </div>
-                            <div className="text-center p-4 rounded-xl" style={{backgroundColor: getColor(indicator.pct) + '20'}}>
-                                <p className="text-3xl font-bold" style={{color: getColor(indicator.pct)}}>{getStatusText(indicator.pct)}</p>
-                                <p className="text-sm text-gray-500">Status</p>
-                            </div>
-                        </div>
-                        <h4 className="font-bold text-gray-800 mb-3">Ranking por Município</h4>
-                        <div className="max-h-64 overflow-y-auto space-y-2">
-                            {ranking.slice(0, 10).map((r, i) => (
-                                <div key={r.mun} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${i < 3 ? 'bg-yellow-400 text-white' : 'bg-gray-200'}`}>{i+1}</span>
-                                    <div className="flex-1">
-                                        <p className="font-medium">{r.mun}</p>
-                                        <p className="text-xs text-gray-500">{r.tg} gestantes</p>
-                                    </div>
-                                    <span className={`status-badge ${getStatusClass(r.pct)}`}>{r.pct.toFixed(1)}%</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const EstabPopup = ({ estab, onClose }) => (
-            <div className="modal-overlay" onClick={onClose}>
-                <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-xl font-bold">Detalhes do Estabelecimento</h3>
-                        <button className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center" onClick={onClose}>
-                            <i className="fas fa-times text-gray-500"></i>
-                        </button>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-xl mb-4">
-                        <p className="font-bold text-gray-900">{estab.estabelecimento}</p>
-                        <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                            <i className="fas fa-map-marker-alt"></i> {estab.municipio}
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-4 bg-blue-50 rounded-xl">
-                            <p className="text-3xl font-bold text-blue-600">{estab.taxa.toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">Taxa de Boas Práticas</p>
-                        </div>
-                        <div className="text-center p-4 bg-green-50 rounded-xl">
-                            <p className="text-3xl font-bold text-green-600">{estab.tg}</p>
-                            <p className="text-sm text-gray-500">Total Gestantes</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-
-        return (
-            <div className="animate-fadeIn">
-                {selectedMetric && <MetricPopup metric={selectedMetric} onClose={() => setSelectedMetric(null)} />}
-                {selectedIndicator && <IndicatorPopup indicator={selectedIndicator} onClose={() => setSelectedIndicator(null)} />}
-                {selectedEstab && <EstabPopup estab={selectedEstab} onClose={() => setSelectedEstab(null)} />}
-                
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Painel de Indicadores</h1>
-                        <p className="text-gray-500">Cuidado com Gestantes e Puérperas</p>
-                    </div>
-                    <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
-                        <i className="fas fa-clock"></i>
-                        <span>Atualizado em {new Date().toLocaleDateString('pt-BR')}</span>
-                    </div>
-                </div>
-                <FilterBar />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    {[
-                        { title: "Taxa de Boas Práticas", value: m.taxa.toFixed(2), sub: "Somatório / Total Gestantes", icon: "fas fa-chart-line", color: "bg-blue-600", details: "A taxa representa a média de boas práticas realizadas por gestante." },
-                        { title: "Somatório", value: m.somatorio.toLocaleString(), sub: "Práticas realizadas", icon: "fas fa-check-circle", color: "bg-green-600", details: "Total de práticas de saúde realizadas no período selecionado." },
-                        { title: "Total Gestantes", value: m.totalGestantes.toLocaleString(), sub: "Vinculadas às equipes", icon: "fas fa-users", color: "bg-cyan-600", details: "Número total de gestantes e puérperas acompanhadas pelas equipes." },
-                        { title: "Equipes Ativas", value: m.equipes.toLocaleString(), sub: "Com registros", icon: "fas fa-user-md", color: "bg-purple-600", details: "Equipes de saúde com registros no período." }
-                    ].map((metric, i) => (
-                        <div key={i} className={`card metric-card cursor-pointer animate-fadeInUp stagger-${i+1}`} onClick={() => setSelectedMetric(metric)}>
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500 mb-1">{metric.title}</p>
-                                    <p className="metric-value">{metric.value}</p>
-                                    <p className="text-xs text-gray-500 mt-1">{metric.sub}</p>
-                                </div>
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${metric.color}`}>
-                                    <i className={`${metric.icon} text-white text-xl`}></i>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <div className="card p-6 animate-fadeInUp">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-bold">Evolução Mensal</h3>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{trend.length} meses</span>
-                        </div>
-                        <div style={{height:'280px'}}><LineChart data={trend} /></div>
-                    </div>
-                    <div className="card p-6 animate-fadeInUp">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-bold">Melhores Estabelecimentos</h3>
-                            <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Top 10</span>
-                        </div>
-                        <p className="text-sm text-gray-500 mb-4">Clique para ver detalhes</p>
-                        <div style={{height:'260px'}}><EstabChart data={estabs.slice(0,10)} /></div>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {estabs.slice(0,5).map((e, i) => (
-                                <button key={i} onClick={() => setSelectedEstab(e)} className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 rounded-full transition-all">
-                                    {i+1}. {e.estabelecimento.slice(0,20)}...
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <div className="card p-6 mb-6 animate-fadeInUp">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold">Indicadores Detalhados</h3>
-                        <span className="text-xs text-gray-500">Clique para ver ranking</span>
-                    </div>
-                    {ind.map((i, idx) => (
-                        <div key={i.index} className="py-3 border-b last:border-0 cursor-pointer hover:bg-gray-50 rounded-lg px-2 -mx-2 transition-all" onClick={() => setSelectedIndicator(i)}>
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                    <span className="w-8 h-8 rounded-lg bg-blue-600 text-white text-sm flex items-center justify-center font-bold">{i.index}</span>
-                                    <span className="text-sm font-medium">{i.fullName}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={`status-badge ${getStatusClass(i.pct)}`}>{i.pct.toFixed(1)}% - {getStatusText(i.pct)}</span>
-                                    <i className="fas fa-chevron-right text-gray-400 text-xs"></i>
-                                </div>
-                            </div>
-                            <div className="indicator-bar ml-11"><div className="indicator-fill" style={{width:`${Math.min(i.pct,100)}%`, backgroundColor: getColor(i.pct)}}></div></div>
-                        </div>
-                    ))}
-                </div>
-                <div className="card p-6 animate-fadeInUp">
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-bold">Heatmap — Gestantes</h3>
-                        <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{hm.length} municípios</span>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">Municípios × Componentes (dinâmico com filtros)</p>
-                    <Heatmap data={hm} />
-                </div>
-            </div>
-        );
+        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold text-gray-900 mb-1">Painel de Indicadores</h1><p className="text-gray-500 mb-6">{config?.title} - {STATE_CONFIG[selectedState]?.name}</p><FilterBar /><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold mb-2">Taxa de Boas Práticas</p><p className="text-gray-600">Representa a proporção de pacientes que receberam todos os cuidados recomendados.</p><div className="mt-3 p-2 bg-gray-50 rounded-lg"><p className="text-xs text-gray-500">Fórmula: Somatório / Total de Pacientes</p></div></>} />
+            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} popupContent={<><p className="font-semibold mb-2">Somatório de Componentes</p><p className="text-gray-600">Total de componentes realizados em todos os pacientes acompanhados.</p></>} />
+            <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} popupContent={<><p className="font-semibold mb-2">Total de Pacientes</p><p className="text-gray-600">Número total de pacientes cadastrados e acompanhados no período selecionado.</p></>} />
+            <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} popupContent={<><p className="font-semibold mb-2">Equipes de Saúde</p><p className="text-gray-600">Quantidade de equipes de saúde da família ativas no território.</p></>} />
+            <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} popupContent={<><p className="font-semibold mb-2">Municípios Atendidos</p><p className="text-gray-600">Total de municípios com dados registrados no período.</p></>} />
+        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-chart-area text-blue-500"></i>Evolução Mensal</h3><div style={{height:'280px'}}><LineChart data={trend} /></div>{variation && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div><div className="card p-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-layer-group text-purple-500"></i>Componentes</h3><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div><div className="card p-6"><h3 className="font-bold mb-4">Heatmap</h3><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} /></div></div>);
     };
 
     const IndicatorsView = () => {
-        const [by, setBy] = useState('regiao');
-        const ref = useRef(null), chart = useRef(null);
+        const [indFilter, setIndFilter] = useState('taxa');
         const ind = calcIndicators();
-        const critical = [...ind].sort((a,b) => a.pct - b.pct).slice(0,4);
-        const best = [...ind].sort((a,b) => b.pct - a.pct).slice(0,3);
-
-        const getData = () => {
-            const groups = [...new Set(filteredData.map(r => r[by]))].filter(Boolean).sort();
-            return groups.map(g => {
-                const d = filteredData.filter(r => r[by] === g);
-                const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
+        // Usar filteredData e indFilter para calcular heatmap
+        const hm = getHeatmap(filteredData, indFilter);
+        // Calcular valores por região baseado no filtro selecionado
+        const regioes = getRegioes().map(r => { 
+            const d = filteredData.filter(x => x.regiao === r);
+            const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0);
+            let valor = 0;
+            if (indFilter === 'taxa') {
+                const s = d.reduce((a,x) => a + x.somatorio, 0);
+                valor = t ? s/t : 0;
+            } else {
+                const idx = parseInt(indFilter.replace('ind',''));
+                const sum = d.reduce((a,x) => a + (x['ind'+idx]||0), 0);
+                valor = t ? (sum/t)*100 : 0;
+            }
+            return { regiao: r, taxa: valor, equipes: new Set(d.map(x => x.ine)).size, municipios: new Set(d.map(x => x.municipio)).size }; 
+        }).sort((a,b) => b.taxa - a.taxa);
+        // Calcular valores por estabelecimento baseado no filtro
+        const estabs = [...new Set(filteredData.map(r => r.estabelecimento))].filter(Boolean).map(e => { 
+            const d = filteredData.filter(r => r.estabelecimento === e);
+            const tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0);
+            let valor = 0;
+            if (indFilter === 'taxa') {
                 const sm = d.reduce((s,r) => s + r.somatorio, 0);
-                return { name: g, taxa: tg ? sm/tg : 0, tg, sm };
-            });
-        };
-        const data = getData();
+                valor = tg ? sm/tg : 0;
+            } else {
+                const idx = parseInt(indFilter.replace('ind',''));
+                const sum = d.reduce((s,r) => s + (r['ind'+idx]||0), 0);
+                valor = tg ? (sum/tg)*100 : 0;
+            }
+            return { estabelecimento: e, municipio: d[0]?.municipio, taxa: valor, tg }; 
+        }).sort((a,b) => b.taxa - a.taxa);
+        const getCateg = (val) => indFilter === 'taxa' ? getCategoriaTaxa(val) : getCategoriaComponente(val);
+        const formatVal = (val) => indFilter === 'taxa' ? val.toFixed(2) : val.toFixed(1) + '%';
+        const RegionChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); chart.current = new Chart(ref.current, { type: 'bar', data: { labels: regioes.map(r => r.regiao), datasets: [{ data: regioes.map(r => r.taxa), backgroundColor: regioes.map(r => getTaxaColor(r.taxa)), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => indFilter === 'taxa' ? v.toFixed(1) : v.toFixed(0) + '%' } } } } }); return () => chart.current?.destroy(); }, [regioes, indFilter]); return <canvas ref={ref}></canvas>; };
+        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise Comparativa</h1><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="card p-6 mb-6"><h3 className="font-bold mb-4"><i className="fas fa-balance-scale mr-2 text-blue-500"></i>Comparação entre Regiões {indFilter !== 'taxa' && <span className="text-sm font-normal text-gray-500">({config?.shortNames[parseInt(indFilter.replace('ind',''))-1]})</span>}</h3><div style={{height:'300px'}}><RegionChart /></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="card p-6"><h3 className="font-bold mb-4">Ranking Municípios</h3><div className="space-y-2 max-h-96 overflow-y-auto">{hm.slice(0,15).map((m,i) => { const c = getCateg(m.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1"><p className="font-medium">{m.municipio}</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div><span className="font-bold" style={{color: c.color}}>{formatVal(m.taxa)}</span></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4">Ranking Unidades</h3><div className="space-y-2 max-h-96 overflow-y-auto">{estabs.slice(0,15).map((e,i) => { const c = getCateg(e.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1 min-w-0"><p className="font-medium truncate">{e.estabelecimento}</p><p className="text-xs text-gray-500">{e.municipio}</p></div><span className="font-bold" style={{color: c.color}}>{formatVal(e.taxa)}</span></div>; })}</div></div></div></div>);
+    };
 
-        const getComparison = (idx) => {
-            const muns = [...new Set(filteredData.map(r => r.municipio))];
-            const arr = muns.map(m => {
-                const d = filteredData.filter(r => r.municipio === m);
-                const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-                const t = d.reduce((s,r) => s + r[`ind${idx}`], 0);
-                return { m, pct: tg ? (t/tg)*100 : 0 };
-            }).sort((a,b) => b.pct - a.pct);
-            return { best: arr[0], worst: arr[arr.length-1] };
-        };
+    const ComponentsView = () => {
+        const [selComp, setSelComp] = useState(1), [selRegioes, setSelRegioes] = useState([]);
+        const ind = calcIndicators(), regioes = getRegioes(), selInd = ind.find(i => i.index === selComp);
+        const toggleReg = r => selRegioes.includes(r) ? setSelRegioes(selRegioes.filter(x => x !== r)) : selRegioes.length < 5 && setSelRegioes([...selRegioes, r]);
+        // Usar filteredData para respeitar os filtros de região/município/competência
+        const compTrend = getComponentTrend(selComp, null, filteredData);
+        const lastPct = compTrend.length > 0 ? compTrend[compTrend.length - 1].pct : 0;
+        const lastMonth = compTrend.length > 0 ? compTrend[compTrend.length - 1].month : '';
+        const lastCat = getCategoria(lastPct);
+        const MultiChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); const months = getUnique('competencia'); const orderedMonths = MONTH_ORDER.filter(m => months.includes(m)); const datasets = selRegioes.length ? selRegioes.map((r,i) => { const t = getComponentTrend(selComp, r); return { label: r, data: orderedMonths.map(m => t.find(x => x.month === m)?.pct ?? null), borderColor: COLORS[i%COLORS.length], backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, spanGaps: true }; }) : [{ label: 'Geral', data: orderedMonths.map(m => compTrend.find(x => x.month === m)?.pct ?? null), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, borderWidth: 3, tension: 0.4, spanGaps: true }]; chart.current = new Chart(ref.current, { type: 'line', data: { labels: orderedMonths.map(m => m.slice(0,3)), datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v+'%' } } } } }); return () => chart.current?.destroy(); }, [selComp, selRegioes, compTrend]); return <canvas ref={ref}></canvas>; };
+        const pred = () => { const t = compTrend; if (t.length < 3) return null; const n = t.length, xM = (n-1)/2, yM = t.reduce((s,x) => s+x.pct, 0)/n; let num=0, den=0; t.forEach((p,i) => { num += (i-xM)*(p.pct-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; return { next: Math.min(100, Math.max(0, int + slope*n)), trend: slope > 0.5 ? 'crescente' : slope < -0.5 ? 'decrescente' : 'estável', slope: slope.toFixed(2) }; };
+        const prediction = pred();
+        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise por Componente</h1><FilterBar /><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Selecione o Componente</h3><div className="flex flex-wrap gap-2">{ind.map(i => <button key={i.index} onClick={() => setSelComp(i.index)} className={'px-4 py-2 rounded-lg font-semibold ' + (selComp === i.index ? 'bg-blue-600 text-white' : 'bg-gray-100')}>{i.name}</button>)}</div></div><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Filtrar por Regiões (máx 5)</h3><div className="flex flex-wrap gap-2">{regioes.map((r,i) => <button key={r} onClick={() => toggleReg(r)} className={'px-3 py-1 rounded-full text-sm font-medium border-2 ' + (selRegioes.includes(r) ? 'text-white border-transparent' : 'bg-white border-gray-300')} style={selRegioes.includes(r) ? {backgroundColor: COLORS[selRegioes.indexOf(r)%COLORS.length]} : {}}>{r}</button>)}{selRegioes.length > 0 && <button onClick={() => setSelRegioes([])} className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-600">Limpar</button>}</div></div>{selInd && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-2">Evolução - {selInd.name}</h3><p className="text-sm text-gray-500 mb-4">{selInd.fullName}</p><div style={{height:'350px'}}><MultiChart /></div></div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4">Detalhes</h3><div className="p-3 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Valor Atual ({lastMonth})</p><p className="text-2xl font-bold" style={{color: lastCat.color}}>{lastPct.toFixed(1)}%</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: lastCat.color}}>{lastCat.label}</span></div><div className="p-3 bg-gray-50 rounded-xl"><p className="text-sm text-gray-500">Total Realizados</p><p className="text-xl font-bold">{selInd.total.toLocaleString()}</p></div></div>{prediction && <div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Predição</h3><div className="p-3 bg-purple-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Próximo Mês</p><p className="text-xl font-bold text-purple-600">{prediction.next.toFixed(1)}%</p></div><p className="text-sm mb-2">Tendência: <span className="font-bold">{prediction.trend}</span></p><p className="text-xs text-gray-500">Método: Regressão linear ({compTrend.length} meses). Coef: {prediction.slope}%/mês</p></div>}</div></div>}</div>);
+    };
 
+    const StrategicView = () => {
+        const m = calcMetrics(), ind = calcIndicators(), trend = getTrend(filteredData), hm = getHeatmap();
+        const worstMun = [...hm].sort((a,b) => a.taxa - b.taxa).slice(0,5), bestMun = hm.slice(0,5);
+        const pred = () => { if (trend.length < 3) return null; const n = trend.length, xM = (n-1)/2, yM = trend.reduce((s,t) => s+t.taxa, 0)/n; let num=0, den=0; trend.forEach((p,i) => { num += (i-xM)*(p.taxa-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; return [1,2,3].map(i => ({ label: 'Mês +'+i, val: Math.max(0, int + slope*(n+i-1)) })); };
+        const prediction = pred(); const cat = getCategoria(m.taxa);
+        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-2">Análise Estratégica</h1><p className="text-gray-500 mb-6">Visão para Diretores e Gerentes de Saúde</p><FilterBar /><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-blue-600"><i className="fas fa-bullseye mr-2"></i>Resumo Executivo</h3><div className="p-4 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Taxa Atual</p><p className="text-3xl font-bold" style={{color: cat.color}}>{m.taxa.toFixed(2)}</p><span className="text-sm px-3 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span></div><div className="grid grid-cols-2 gap-3"><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Municípios</p><p className="text-lg font-bold">{m.municipios}</p></div><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Equipes</p><p className="text-lg font-bold">{m.equipes}</p></div></div></div><div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Projeção</h3>{prediction ? <div className="space-y-3">{prediction.map((p,i) => { const c = getCategoriaTaxa(p.val); return <div key={i} className="flex justify-between items-center p-3 bg-purple-50 rounded-xl"><span>{p.label}</span><div><span className="text-xl font-bold" style={{color: c.color}}>{p.val.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div> : <p className="text-gray-400">Dados insuficientes</p>}</div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-red-600"><i className="fas fa-exclamation-circle mr-2"></i>Municípios Críticos</h3><div className="space-y-2">{worstMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4 text-green-600"><i className="fas fa-star mr-2"></i>Municípios Referência</h3><div className="space-y-2">{bestMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-green-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div></div></div>);
+    };
+
+    const MiniMap = ({ monthData, indFilter }) => {
+        const mapRef = useRef(null), mapInstance = useRef(null);
+        const hm = getHeatmap(monthData, indFilter);
         useEffect(() => {
-            if (!ref.current || !data.length) return;
-            if (chart.current) chart.current.destroy();
-            chart.current = new Chart(ref.current, {
-                type: 'bar',
-                data: { labels: data.map(d => d.name), datasets: [{ data: data.map(d => d.taxa), backgroundColor: data.map(d => getTaxaColor(d.taxa)), borderRadius: 8 }] },
-                options: { responsive: true, maintainAspectRatio: false, indexAxis: by === 'municipio' ? 'y' : 'x', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true }, y: {} } }
-            });
-            return () => chart.current?.destroy();
-        }, [data, by]);
-
-        return (
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Análises Estratégicas</h1>
-                <p className="text-gray-500 mb-6">Visão gerencial para tomada de decisão</p>
-                <FilterBar />
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="card strategic-card p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center"><i className="fas fa-trophy text-yellow-300 text-xl"></i></div>
-                            <div><h3 className="font-bold">Melhor Desempenho</h3><p className="text-blue-200 text-sm">Componente destaque</p></div>
-                        </div>
-                        {best[0] && <><p className="text-3xl font-bold">{best[0].pct.toFixed(1)}%</p><p className="text-sm text-blue-100">{best[0].name}</p></>}
-                    </div>
-                    <div className="card p-6 border-l-4 border-yellow-500">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-yellow-600 text-xl"></i></div>
-                            <div><h3 className="font-bold text-gray-800">Atenção Necessária</h3><p className="text-gray-500 text-sm">Componente crítico</p></div>
-                        </div>
-                        {critical[0] && <><p className="text-3xl font-bold text-yellow-600">{critical[0].pct.toFixed(1)}%</p><p className="text-sm text-gray-600">{critical[0].name}</p></>}
-                    </div>
-                    <div className="card p-6">
-                        <h3 className="font-bold text-gray-800 mb-2">Resumo de Status</h3>
-                        <div className="space-y-2">
-                            {[['Ótimo','#22c55e',ind.filter(i=>i.pct>=75).length],['Bom','#84cc16',ind.filter(i=>i.pct>=50&&i.pct<75).length],['Suficiente','#fbbf24',ind.filter(i=>i.pct>=25&&i.pct<50).length],['Regular','#ef4444',ind.filter(i=>i.pct<25).length]].map(([l,c,n]) => (
-                                <div key={l} className="flex items-center gap-2"><span className="w-3 h-3 rounded" style={{backgroundColor:c}}></span><span className="text-sm">{l}: {n}</span></div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <div className="card p-6 mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <div><h3 className="text-xl font-bold">Comparativo de Desempenho</h3><p className="text-gray-500 text-sm">Por {by === 'regiao' ? 'região' : 'município'}</p></div>
-                        <div className="flex gap-2">
-                            {['regiao','municipio'].map(b => (
-                                <button key={b} onClick={() => setBy(b)} className={`px-4 py-2 rounded-lg text-sm font-semibold ${by===b ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-                                    {b === 'regiao' ? 'Região' : 'Município'}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <div style={{height: by === 'municipio' ? '500px' : '300px'}}><canvas ref={ref}></canvas></div>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="card p-6">
-                        <h3 className="font-bold text-gray-800 mb-4"><i className="fas fa-sort-amount-up text-blue-600 mr-2"></i>Ranking</h3>
-                        <div className="space-y-2">
-                            {data.sort((a,b) => b.taxa - a.taxa).slice(0,10).map((d,i) => (
-                                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-                                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${i<3 ? 'bg-yellow-400 text-white' : 'bg-gray-200'}`}>{i+1}</span>
-                                    <div className="flex-1"><p className="font-semibold">{d.name}</p><p className="text-xs text-gray-500">{d.tg.toLocaleString()} gestantes</p></div>
-                                    <span className="font-bold">{d.taxa.toFixed(2)}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="card p-6">
-                        <h3 className="font-bold text-gray-800 mb-4"><i className="fas fa-lightbulb text-yellow-500 mr-2"></i>Fatores Críticos e Reflexões</h3>
-                        <div className="space-y-4">
-                            {critical.map((f,i) => {
-                                const cmp = getComparison(f.index);
-                                return (
-                                    <div key={i} className={`insight-card ${f.pct < 25 ? 'border-red-500' : f.pct < 50 ? 'border-yellow-500' : 'border-green-500'}`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="font-bold">Componente {f.index}</span>
-                                            <span className={`status-badge ${getStatusClass(f.pct)}`}>{f.pct.toFixed(1)}%</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mb-2">{f.name}</p>
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            <div className="bg-green-50 p-2 rounded"><p className="text-green-700 font-semibold">Melhor: {cmp.best?.m}</p><p className="text-green-600">{cmp.best?.pct.toFixed(1)}%</p></div>
-                                            <div className="bg-red-50 p-2 rounded"><p className="text-red-700 font-semibold">Pior: {cmp.worst?.m}</p><p className="text-red-600">{cmp.worst?.pct.toFixed(1)}%</p></div>
-                                        </div>
-                                        <p className="text-xs text-gray-500 mt-2 italic"><i className="fas fa-info-circle mr-1"></i>Gap de {(cmp.best?.pct - cmp.worst?.pct).toFixed(1)} p.p. entre municípios</p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+            if (!mapRef.current || !geoJson) return;
+            if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
+            const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView(selectedState === 'acre' ? [-9, -70] : [-5.8, -36.5], selectedState === 'acre' ? 5 : 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            L.geoJSON(geoJson, { style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: 0.5, color: 'white', fillOpacity: 0.8 }; } }).addTo(map);
+            mapInstance.current = map;
+            return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
+        }, [geoJson, hm, indFilter]);
+        return <div ref={mapRef} className="mosaic-map" style={{height:'280px', width:'100%', borderRadius:'12px'}}></div>;
     };
 
     const MapView = () => {
-        const mapRef = useRef(null), mapInst = useRef(null), layerRef = useRef(null);
-        const [ind, setInd] = useState('taxa');
-        const [mf, setMf] = useState({ regiao: 'Todas', competencia: 'Todas' });
+        const [indFilter, setIndFilter] = useState('taxa');
+        const mapRef = useRef(null), mapInstance = useRef(null);
+        const hm = getHeatmap(filteredData, indFilter);
+        const regiaoStats = getRegioes().map(r => { const d = filteredData.filter(x => x.regiao === r); let valor = 0; if (indFilter === 'taxa') { const s = d.reduce((a,x) => a + x.somatorio, 0), t = d.reduce((a,x) => a + (x.totalPacientes||0), 0); valor = t ? s/t : 0; } else { const idx = parseInt(indFilter.replace('ind','')); const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0), val = d.reduce((a,x) => a + (x['ind'+idx]||0), 0); valor = t ? (val/t)*100 : 0; } return { regiao: r, taxa: valor, municipios: new Set(d.map(x => x.municipio)).size }; }).sort((a,b) => b.taxa - a.taxa);
+        const clusters = { otimo: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Ótimo').length, bom: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Bom').length, suficiente: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Suficiente').length, regular: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Regular').length };
+        useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const map = L.map(mapRef.current).setView(selectedState === 'acre' ? [-9,-70] : [-5.8,-36.5], 7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: 1, color: 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter]);
+        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise Espacial</h1><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="grid grid-cols-4 gap-4 mb-6"><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"><i className="fas fa-trophy text-white"></i></div><div><p className="text-xs text-gray-500">Ótimo</p><p className="text-2xl font-bold text-green-600">{clusters.otimo}</p></div></div><div className="popup-content"><p className="font-semibold text-green-600 mb-1">Municípios com Desempenho Ótimo</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 75% a 100%' : 'Componente de 75% a 100%'} - Excelente cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center"><i className="fas fa-thumbs-up text-white"></i></div><div><p className="text-xs text-gray-500">Bom</p><p className="text-2xl font-bold text-lime-600">{clusters.bom}</p></div></div><div className="popup-content"><p className="font-semibold text-lime-600 mb-1">Municípios com Desempenho Bom</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 50% a 74,99%' : 'Componente de 50% a 74,99%'} - Boa cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"><i className="fas fa-exclamation text-white"></i></div><div><p className="text-xs text-gray-500">Suficiente</p><p className="text-2xl font-bold text-amber-600">{clusters.suficiente}</p></div></div><div className="popup-content"><p className="font-semibold text-amber-600 mb-1">Municípios com Desempenho Suficiente</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 25% a 49,99%' : 'Componente de 25% a 49,99%'} - Necessita melhorias</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-white"></i></div><div><p className="text-xs text-gray-500">Regular</p><p className="text-2xl font-bold text-red-600">{clusters.regular}</p></div></div><div className="popup-content"><p className="font-semibold text-red-600 mb-1">Municípios com Desempenho Regular</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 0% a 24,99%' : 'Componente de 0% a 24,99%'} - Atenção prioritária</p></div></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-4">Mapa de Desempenho</h3><div ref={mapRef} style={{height:'450px',borderRadius:'16px'}}></div><div className="flex justify-center gap-4 mt-4 text-xs"><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#22c55e'}}></span>Ótimo</span></div>{indFilter !== 'taxa' && config && <div className="mt-4 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-semibold text-gray-600 mb-2">Componente selecionado:</p><div className="text-sm text-gray-700"><span className="font-medium">C{parseInt(indFilter.replace('ind',''))}:</span> {config.fullNames[parseInt(indFilter.replace('ind',''))-1]}</div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-layer-group mr-2 text-blue-500"></i>Clusters por Região</h3><div className="space-y-2">{regiaoStats.map((r,i) => { const c = getCategoriaTaxa(r.taxa); return <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{r.regiao}</p><p className="text-xs text-gray-500">{r.municipios} mun.</p></div><div className="text-right"><span className="font-bold" style={{color: c.color}}>{r.taxa.toFixed(2)}</span><span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-chart-pie mr-2 text-purple-500"></i>Distribuição</h3><div className="space-y-2">{[{l:'Ótimo',c:'#22c55e',v:clusters.otimo},{l:'Bom',c:'#84cc16',v:clusters.bom},{l:'Suficiente',c:'#fbbf24',v:clusters.suficiente},{l:'Regular',c:'#ef4444',v:clusters.regular}].map(x => { const pct = hm.length ? (x.v/hm.length*100) : 0; return <div key={x.l}><div className="flex justify-between text-sm mb-1"><span>{x.l}</span><span className="font-bold">{pct.toFixed(0)}%</span></div><div className="h-2 bg-gray-200 rounded-full"><div className="h-2 rounded-full" style={{width: pct+'%', backgroundColor: x.c}}></div></div></div>; })}</div></div></div></div><div className="card p-6 mt-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-th text-blue-500"></i>Mosaico de Mapas Mensais<span className="ml-auto text-xs font-normal text-gray-500">Evolução temporal do território</span></h3><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{getUnique('competencia').slice(0, 12).map(month => { const monthData = rawData.filter(r => r.competencia === month); const monthMetrics = monthData.length ? { total: monthData.reduce((s,r) => s + (r.totalPacientes||0), 0), taxa: monthData.reduce((s,r) => s + r.somatorio, 0) / monthData.reduce((s,r) => s + (r.totalPacientes||0), 0) || 0 } : { total: 0, taxa: 0 }; const monthCat = getCategoriaTaxa(monthMetrics.taxa); return (<div key={month} className="mosaic-card bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all"><div className="flex items-center justify-between mb-2"><span className="text-sm font-bold text-gray-700">{month}</span><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: monthCat.color}}>{monthMetrics.taxa.toFixed(2)}</span></div><div className="relative bg-white rounded-lg overflow-hidden shadow-inner" style={{height:'260px'}}><MiniMap monthData={monthData} indFilter={indFilter} /></div><div className="mt-2 text-xs text-gray-500 text-center">{monthMetrics.total.toLocaleString()} pacientes</div></div>); })}</div></div></div>);
+    };
 
-        const getMapData = () => {
-            let d = [...rawData];
-            if (mf.regiao !== 'Todas') d = d.filter(r => r.regiao === mf.regiao);
-            if (mf.competencia !== 'Todas') d = d.filter(r => r.competencia === mf.competencia);
-            const muns = [...new Set(d.map(r => r.municipio))];
-            return muns.map(m => {
-                const md = d.filter(r => r.municipio === m);
-                const tg = md.reduce((s,r) => s + r.totalGestantes, 0);
-                const sm = md.reduce((s,r) => s + r.somatorio, 0);
-                const comps = {};
-                for (let i = 1; i <= 11; i++) {
-                    const t = md.reduce((s,r) => s + r[`ind${i}`], 0);
-                    comps[`ind${i}`] = tg ? (t/tg)*100 : 0;
-                }
-                return { municipio: m, taxa: tg ? sm/tg : 0, tg, sm, ...comps };
-            });
+    // ========== METAS / PLANEJAMENTO ==========
+    const GoalsView = () => {
+        const regioes = getRegioes();
+        const [selectedRegiao, setSelectedRegiao] = useState('estadual');
+        const goalsKey = 'gdiaps_goals_' + indicatorType + '_' + selectedRegiao;
+        const [goals, setGoals] = useState(() => JSON.parse(localStorage.getItem(goalsKey) || '{}'));
+        const [targetDate, setTargetDate] = useState(goals.targetDate || '');
+        
+        // Filtrar dados baseado na regional selecionada
+        const dataForGoals = selectedRegiao === 'estadual' ? filteredData : filteredData.filter(r => r.regiao === selectedRegiao);
+        const m = calcMetrics(dataForGoals), ind = calcIndicators(dataForGoals);
+        
+        // Recarregar metas quando mudar a regional
+        useEffect(() => {
+            const savedGoals = JSON.parse(localStorage.getItem(goalsKey) || '{}');
+            setGoals(savedGoals);
+            setTargetDate(savedGoals.targetDate || '');
+        }, [selectedRegiao, goalsKey]);
+        
+        const saveGoals = (newGoals) => {
+            setGoals(newGoals);
+            localStorage.setItem(goalsKey, JSON.stringify(newGoals));
         };
-        const mapData = getMapData();
-        const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-        const findMun = n => mapData.find(m => norm(m.municipio) === norm(n));
-
-        useEffect(() => {
-            if (!mapRef.current || mapInst.current) return;
-            mapInst.current = L.map(mapRef.current).setView([-9.0, -70.0], 7);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { attribution: '© CARTO' }).addTo(mapInst.current);
-            return () => { mapInst.current?.remove(); mapInst.current = null; };
-        }, []);
-
-        useEffect(() => {
-            if (!mapInst.current || !geoJson) return;
-            if (layerRef.current) mapInst.current.removeLayer(layerRef.current);
-            layerRef.current = L.geoJSON(geoJson, {
-                style: f => {
-                    const d = findMun(f.properties.name);
-                    const v = d ? (ind === 'taxa' ? d.taxa : d[ind]) : 0;
-                    const c = ind === 'taxa' ? getTaxaColor(v) : getColor(v);
-                    return { fillColor: c, weight: 2, color: '#fff', fillOpacity: 0.85 };
-                },
-                onEachFeature: (f, l) => {
-                    const d = findMun(f.properties.name);
-                    const v = d ? (ind === 'taxa' ? d.taxa.toFixed(2) : d[ind].toFixed(1) + '%') : 'N/A';
-                    l.bindPopup(`<b>${f.properties.name}</b><br>${ind === 'taxa' ? 'Taxa' : INDICATOR_SHORT[parseInt(ind.replace('ind',''))-1]}: ${v}<br>Gestantes: ${d?.tg?.toLocaleString() || 0}`);
-                    l.on('mouseover', () => l.setStyle({ weight: 3, color: '#1e3a5f' }));
-                    l.on('mouseout', () => layerRef.current.resetStyle(l));
-                }
-            }).addTo(mapInst.current);
-        }, [geoJson, ind, mapData]);
-
+        
+        const updateGoal = (key, value) => {
+            const newGoals = { ...goals, [key]: parseFloat(value) || 0, targetDate };
+            saveGoals(newGoals);
+        };
+        
+        const getProgress = (current, goal) => {
+            if (!goal) return 0;
+            return Math.min(100, (current / goal) * 100);
+        };
+        
+        const getGap = (current, goal) => goal ? goal - current : 0;
+        
+        const isManager = user?.cargo?.toLowerCase().includes('gestor') || user?.cargo?.toLowerCase().includes('coordenador') || user?.cargo?.toLowerCase().includes('admin');
+        
         return (
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Mapa Geográfico</h1>
-                <p className="text-gray-500 mb-6">Distribuição espacial dos indicadores</p>
+            <div className="animate-fadeIn">
+                <h1 className="text-3xl font-bold mb-2">Planejamento de Metas</h1>
+                <p className="text-gray-500 mb-6">Defina metas para os indicadores e acompanhe o progresso</p>
+                
+                {/* Seleção de Regional */}
                 <div className="card p-4 mb-6">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <span className="text-sm font-semibold"><i className="fas fa-filter text-blue-500 mr-2"></i>Filtros do Mapa:</span>
-                        <select className="filter-select" value={mf.regiao} onChange={e => setMf({...mf, regiao: e.target.value})}>
-                            <option value="Todas">Todas as Regiões</option>
-                            {getUnique('regiao').map(v => <option key={v}>{v}</option>)}
-                        </select>
-                        <select className="filter-select" value={mf.competencia} onChange={e => setMf({...mf, competencia: e.target.value})}>
-                            <option value="Todas">Todas as Competências</option>
-                            {getUnique('competencia').map(v => <option key={v}>{v}</option>)}
-                        </select>
-                        <select className="filter-select" value={ind} onChange={e => setInd(e.target.value)}>
-                            <option value="taxa">Taxa de Boas Práticas</option>
-                            {INDICATOR_SHORT.map((n,i) => <option key={i} value={`ind${i+1}`}>C{i+1} - {n}</option>)}
-                        </select>
+                    <h3 className="font-bold mb-3 flex items-center gap-2">
+                        <i className="fas fa-map-marker-alt text-indigo-500"></i>
+                        Selecione a Abrangência
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                        <button 
+                            onClick={() => setSelectedRegiao('estadual')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${selectedRegiao === 'estadual' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
+                        >
+                            <i className="fas fa-globe-americas mr-2"></i>Estadual
+                        </button>
+                        {regioes.map(r => (
+                            <button 
+                                key={r}
+                                onClick={() => setSelectedRegiao(r)}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${selectedRegiao === r ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
+                            >
+                                {r}
+                            </button>
+                        ))}
                     </div>
+                    <p className="text-sm text-gray-500 mt-2">
+                        <i className="fas fa-info-circle mr-1"></i>
+                        {selectedRegiao === 'estadual' ? 'Metas para todo o estado' : `Metas específicas para a regional ${selectedRegiao}`}
+                    </p>
                 </div>
+                
+                {!isManager && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                        <p className="text-amber-700"><i className="fas fa-lock mr-2"></i>Apenas gestores e coordenadores podem editar metas. Você está visualizando em modo leitura.</p>
+                    </div>
+                )}
+                
+                {/* Configuração de Data Alvo */}
                 <div className="card p-6 mb-6">
-                    <div ref={mapRef} id="map"></div>
-                    <div className="flex justify-center mt-4 gap-4 text-xs">
-                        <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span>
-                        <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span>
-                        <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span>
-                        <span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#22c55e'}}></span>Ótimo</span>
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-calendar-alt text-blue-500"></i>
+                        Período de Avaliação
+                    </h3>
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">Data Alvo para Atingir Metas</label>
+                            <input 
+                                type="date" 
+                                className="input-field" 
+                                value={targetDate}
+                                onChange={e => { setTargetDate(e.target.value); saveGoals({ ...goals, targetDate: e.target.value }); }}
+                                disabled={!isManager}
+                            />
+                        </div>
+                        {targetDate && (
+                            <div className="bg-blue-50 px-4 py-2 rounded-lg">
+                                <p className="text-sm text-blue-600">
+                                    <i className="fas fa-clock mr-1"></i>
+                                    {Math.ceil((new Date(targetDate) - new Date()) / (1000 * 60 * 60 * 24))} dias restantes
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
+                
+                {/* Meta da Taxa de Boas Práticas */}
+                <div className="card p-6 mb-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-bullseye text-green-500"></i>
+                        Meta da Taxa de Boas Práticas
+                    </h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-2">Meta (%)</label>
+                            <input 
+                                type="number" 
+                                className="input-field text-2xl font-bold text-center"
+                                value={goals.taxa || ''}
+                                onChange={e => updateGoal('taxa', e.target.value)}
+                                placeholder="Ex: 75"
+                                min="0" max="100" step="0.1"
+                                disabled={!isManager}
+                            />
+                        </div>
+                        <div className="lg:col-span-2">
+                            <div className="flex justify-between mb-2">
+                                <span className="text-sm text-gray-600">Progresso Atual</span>
+                                <span className="font-bold">{m.taxa.toFixed(2)} / {goals.taxa || '?'}</span>
+                            </div>
+                            <div className="h-8 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 flex items-center justify-end pr-2"
+                                    style={{ width: getProgress(m.taxa, goals.taxa) + '%' }}
+                                >
+                                    <span className="text-white text-xs font-bold">{getProgress(m.taxa, goals.taxa).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                            <div className="flex justify-between mt-2 text-sm">
+                                <span className={getGap(m.taxa, goals.taxa) > 0 ? 'text-red-600' : 'text-green-600'}>
+                                    {getGap(m.taxa, goals.taxa) > 0 ? (
+                                        <><i className="fas fa-arrow-up mr-1"></i>Faltam {getGap(m.taxa, goals.taxa).toFixed(2)} pontos</>
+                                    ) : (
+                                        <><i className="fas fa-check mr-1"></i>Meta atingida!</>
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Metas por Componente */}
                 <div className="card p-6">
-                    <h3 className="font-bold text-gray-800 mb-4">Ranking de Municípios</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {mapData.sort((a,b) => (ind === 'taxa' ? b.taxa - a.taxa : b[ind] - a[ind])).map((m,i) => {
-                            const v = ind === 'taxa' ? m.taxa : m[ind];
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-layer-group text-purple-500"></i>
+                        Metas por Componente
+                    </h3>
+                    <div className="space-y-4">
+                        {ind.map((i, idx) => {
+                            const goalKey = 'comp' + i.index;
+                            const goalValue = goals[goalKey] || 0;
+                            const progress = getProgress(i.pct, goalValue);
+                            const gap = getGap(i.pct, goalValue);
                             return (
-                                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
-                                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${i<3 ? 'bg-yellow-400 text-white' : 'bg-gray-100'}`}>{i+1}</span>
-                                    <div className="flex-1"><p className="font-medium">{m.municipio}</p><p className="text-xs text-gray-500">{m.tg.toLocaleString()} gestantes</p></div>
-                                    <span className={`status-badge ${ind === 'taxa' ? getStatusClass(Math.min(v*2,100)) : getStatusClass(v)}`}>{ind === 'taxa' ? v.toFixed(2) : v.toFixed(1)+'%'}</span>
+                                <div key={i.index} className="p-4 bg-gray-50 rounded-xl">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <span className="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center font-bold">C{i.index}</span>
+                                            <div>
+                                                <p className="font-medium">{i.name}</p>
+                                                <p className="text-xs text-gray-500">{i.fullName}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-right">
+                                                <p className="text-sm text-gray-500">Atual</p>
+                                                <p className="text-xl font-bold text-purple-600">{i.pct.toFixed(1)}%</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500">Meta (%)</label>
+                                                <input 
+                                                    type="number" 
+                                                    className="input-field w-20 text-center"
+                                                    value={goalValue || ''}
+                                                    onChange={e => updateGoal(goalKey, e.target.value)}
+                                                    placeholder="Meta"
+                                                    min="0" max="100"
+                                                    disabled={!isManager}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {goalValue > 0 && (
+                                        <div>
+                                            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                                <div 
+                                                    className={`h-full transition-all duration-500 ${gap > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
+                                                    style={{ width: Math.min(progress, 100) + '%' }}
+                                                ></div>
+                                            </div>
+                                            <p className={`text-xs mt-1 ${gap > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                                {gap > 0 ? `Faltam ${gap.toFixed(1)}%` : 'Meta atingida!'}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -677,415 +847,733 @@ const Dashboard = () => {
         );
     };
 
-    const DataTableView = () => {
-        const [page, setPage] = useState(0);
-        const [search, setSearch] = useState('');
-        const [sortField, setSortField] = useState('municipio');
-        const [sortDir, setSortDir] = useState('asc');
-        const pageSize = 20;
-
-        const columns = [
-            { key: 'estabelecimento', label: 'Estabelecimento' },
-            { key: 'municipio', label: 'Município' },
-            { key: 'regiao', label: 'Região' },
-            { key: 'competencia', label: 'Competência' },
-            { key: 'totalGestantes', label: 'Total Gestantes' },
-            { key: 'somatorio', label: 'Somatório' },
-            { key: 'ind1', label: 'C1' },
-            { key: 'ind2', label: 'C2' },
-            { key: 'ind3', label: 'C3' },
-            { key: 'ind4', label: 'C4' },
-            { key: 'ind5', label: 'C5' },
-            { key: 'ind6', label: 'C6' },
-            { key: 'ind7', label: 'C7' },
-            { key: 'ind8', label: 'C8' },
-            { key: 'ind9', label: 'C9' },
-            { key: 'ind10', label: 'C10' },
-            { key: 'ind11', label: 'C11' }
-        ];
-
-        const searchedData = search 
-            ? filteredData.filter(r => 
-                r.estabelecimento?.toLowerCase().includes(search.toLowerCase()) ||
-                r.municipio?.toLowerCase().includes(search.toLowerCase()) ||
-                r.regiao?.toLowerCase().includes(search.toLowerCase())
-            )
-            : filteredData;
-
-        const sortedData = [...searchedData].sort((a, b) => {
-            const aVal = a[sortField] || '';
-            const bVal = b[sortField] || '';
-            if (typeof aVal === 'number') return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-            return sortDir === 'asc' ? String(aVal).localeCompare(String(bVal)) : String(bVal).localeCompare(String(aVal));
-        });
-
-        const totalPages = Math.ceil(sortedData.length / pageSize);
-        const pagedData = sortedData.slice(page * pageSize, (page + 1) * pageSize);
-
-        const handleSort = (field) => {
-            if (sortField === field) {
-                setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
-            } else {
-                setSortField(field);
-                setSortDir('asc');
-            }
+    // ========== AVALIAÇÃO ==========
+    const EvaluationView = () => {
+        const regioes = getRegioes();
+        const [selectedRegiao, setSelectedRegiao] = useState('estadual');
+        const [viewMode, setViewMode] = useState('resumo'); // resumo, taxa, componentes, evolucao
+        
+        const goalsKey = 'gdiaps_goals_' + indicatorType + '_' + selectedRegiao;
+        const goals = JSON.parse(localStorage.getItem(goalsKey) || '{}');
+        
+        // Filtrar dados baseado na regional selecionada
+        const dataForEval = selectedRegiao === 'estadual' ? filteredData : filteredData.filter(r => r.regiao === selectedRegiao);
+        const m = calcMetrics(dataForEval), ind = calcIndicators(dataForEval), trend = getTrend(dataForEval);
+        
+        const getProgress = (current, goal) => goal ? Math.min(100, (current / goal) * 100) : 0;
+        const getGap = (current, goal) => goal ? goal - current : 0;
+        const getStatus = (current, goal) => {
+            if (!goal) return { label: 'Sem meta', color: 'gray', icon: 'fa-minus' };
+            const pct = (current / goal) * 100;
+            if (pct >= 100) return { label: 'Atingida', color: 'green', icon: 'fa-check-circle' };
+            if (pct >= 80) return { label: 'Próximo', color: 'lime', icon: 'fa-arrow-up' };
+            if (pct >= 50) return { label: 'Em progresso', color: 'amber', icon: 'fa-clock' };
+            return { label: 'Crítico', color: 'red', icon: 'fa-exclamation-circle' };
         };
-
-        const exportCSV = () => {
-            const headers = columns.map(c => c.label).join(';');
-            const rows = sortedData.map(r => columns.map(c => r[c.key] || '').join(';'));
-            const csv = [headers, ...rows].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `dados_gestantes_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
+        
+        // Projeção linear
+        const projectValue = (currentTrend, targetDate) => {
+            if (!targetDate || currentTrend.length < 2) return null;
+            const n = currentTrend.length;
+            const xM = (n - 1) / 2;
+            const yM = currentTrend.reduce((s, t) => s + t.taxa, 0) / n;
+            let num = 0, den = 0;
+            currentTrend.forEach((p, i) => { num += (i - xM) * (p.taxa - yM); den += (i - xM) * (i - xM); });
+            const slope = den ? num / den : 0;
+            const monthsToTarget = Math.ceil((new Date(targetDate) - new Date()) / (1000 * 60 * 60 * 24 * 30));
+            return Math.max(0, Math.min(100, currentTrend[n - 1].taxa + slope * monthsToTarget));
         };
-
+        
+        const projection = projectValue(trend, goals.targetDate);
+        const taxaStatus = getStatus(m.taxa, goals.taxa);
+        
+        // Gráfico de metas vs atual
+        const GoalChart = () => {
+            const ref = useRef(null), chart = useRef(null);
+            useEffect(() => {
+                if (!ref.current) return;
+                chart.current?.destroy();
+                const labels = ind.map(i => i.name);
+                const atual = ind.map(i => i.pct);
+                const metas = ind.map(i => goals['comp' + i.index] || 0);
+                chart.current = new Chart(ref.current, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Atual', data: atual, backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 4 },
+                            { label: 'Meta', data: metas, backgroundColor: 'rgba(234, 179, 8, 0.8)', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+                    }
+                });
+                return () => chart.current?.destroy();
+            }, [ind, goals]);
+            return <canvas ref={ref}></canvas>;
+        };
+        
+        // Gráfico de evolução com meta
+        const TrendWithGoalChart = () => {
+            const ref = useRef(null), chart = useRef(null);
+            useEffect(() => {
+                if (!ref.current) return;
+                chart.current?.destroy();
+                const labels = trend.map(t => t.month.slice(0, 3));
+                chart.current = new Chart(ref.current, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Taxa Atual', data: trend.map(t => t.taxa), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4 },
+                            { label: 'Meta', data: trend.map(() => goals.taxa || 0), borderColor: '#eab308', borderDash: [5, 5], pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+                return () => chart.current?.destroy();
+            }, [trend, goals]);
+            return <canvas ref={ref}></canvas>;
+        };
+        
         return (
             <div className="animate-fadeIn">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Tabela de Dados</h1>
-                        <p className="text-gray-500">Visualização dos dados brutos para análise técnica</p>
+                <h1 className="text-3xl font-bold mb-2">Avaliação de Metas</h1>
+                <p className="text-gray-500 mb-6">Acompanhe o progresso em relação às metas definidas</p>
+                
+                {/* Filtros */}
+                <div className="card p-4 mb-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Seleção de Regional */}
+                        <div>
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <i className="fas fa-map-marker-alt text-indigo-500"></i>
+                                Abrangência
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                <button 
+                                    onClick={() => setSelectedRegiao('estadual')}
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${selectedRegiao === 'estadual' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                >
+                                    <i className="fas fa-globe-americas mr-1"></i>Estadual
+                                </button>
+                                {regioes.map(r => (
+                                    <button 
+                                        key={r}
+                                        onClick={() => setSelectedRegiao(r)}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${selectedRegiao === r ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                    >
+                                        {r}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {/* Modo de Visualização */}
+                        <div>
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <i className="fas fa-eye text-purple-500"></i>
+                                Visualização
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={() => setViewMode('resumo')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'resumo' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                    <i className="fas fa-th-large mr-1"></i>Resumo
+                                </button>
+                                <button onClick={() => setViewMode('taxa')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'taxa' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                    <i className="fas fa-bullseye mr-1"></i>Taxa
+                                </button>
+                                <button onClick={() => setViewMode('componentes')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'componentes' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                    <i className="fas fa-layer-group mr-1"></i>Componentes
+                                </button>
+                                <button onClick={() => setViewMode('evolucao')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'evolucao' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                    <i className="fas fa-chart-line mr-1"></i>Evolução
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <button onClick={exportCSV} className="btn-primary flex items-center gap-2">
-                        <i className="fas fa-download"></i> Exportar CSV
-                    </button>
                 </div>
-                <FilterBar />
-                <div className="card p-6 mb-6">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-                        <div className="relative flex-1 max-w-md">
-                            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                            <input type="text" className="w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Buscar por estabelecimento, município ou região..." value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} />
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <span><i className="fas fa-database mr-2"></i>{sortedData.length.toLocaleString()} registros</span>
-                            <span><i className="fas fa-file-alt mr-2"></i>Página {page + 1} de {totalPages || 1}</span>
+                
+                {/* Cards de Resumo */}
+                {(viewMode === 'resumo' || viewMode === 'taxa') && <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="card p-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-xl bg-${taxaStatus.color}-100 flex items-center justify-center`}>
+                                <i className={`fas ${taxaStatus.icon} text-${taxaStatus.color}-600 text-xl`}></i>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500">Status da Meta Principal</p>
+                                <p className={`font-bold text-${taxaStatus.color}-600`}>{taxaStatus.label}</p>
+                            </div>
                         </div>
                     </div>
+                    <div className="card p-4">
+                        <p className="text-xs text-gray-500">Taxa Atual</p>
+                        <p className="text-2xl font-bold text-indigo-600">{m.taxa.toFixed(2)}</p>
+                        <p className="text-xs text-gray-400">Meta: {goals.taxa || 'Não definida'}</p>
+                    </div>
+                    <div className="card p-4">
+                        <p className="text-xs text-gray-500">Gap para Meta</p>
+                        <p className={`text-2xl font-bold ${getGap(m.taxa, goals.taxa) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {getGap(m.taxa, goals.taxa) > 0 ? '+' : ''}{getGap(m.taxa, goals.taxa).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-400">pontos necessários</p>
+                    </div>
+                    <div className="card p-4">
+                        <p className="text-xs text-gray-500">Projeção</p>
+                        <p className="text-2xl font-bold text-purple-600">{projection ? projection.toFixed(2) : 'N/A'}</p>
+                        <p className="text-xs text-gray-400">até {goals.targetDate || 'data não definida'}</p>
+                    </div>
+                </div>}
+                
+                {/* Gráficos */}
+                {(viewMode === 'resumo' || viewMode === 'componentes') && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div className="card p-6">
+                        <h3 className="font-bold mb-4 flex items-center gap-2">
+                            <i className="fas fa-chart-bar text-indigo-500"></i>
+                            Componentes: Atual vs Meta
+                        </h3>
+                        <div style={{ height: '300px' }}><GoalChart /></div>
+                    </div>
+                    <div className="card p-6">
+                        <h3 className="font-bold mb-4 flex items-center gap-2">
+                            <i className="fas fa-chart-line text-purple-500"></i>
+                            Evolução com Linha de Meta
+                        </h3>
+                        <div style={{ height: '300px' }}><TrendWithGoalChart /></div>
+                    </div>
+                </div>}
+                
+                {/* Gráfico de Evolução (modo evolução) */}
+                {viewMode === 'evolucao' && <div className="card p-6 mb-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-chart-line text-purple-500"></i>
+                        Evolução Temporal com Linha de Meta
+                    </h3>
+                    <div style={{ height: '400px' }}><TrendWithGoalChart /></div>
+                </div>}
+                
+                {/* Detalhamento por Componente */}
+                {(viewMode === 'resumo' || viewMode === 'componentes') && <div className="card p-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-list-check text-green-500"></i>
+                        Status por Componente
+                    </h3>
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50">
-                                    {columns.map(col => (
-                                        <th key={col.key} className="px-3 py-3 text-left font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors whitespace-nowrap" onClick={() => handleSort(col.key)}>
-                                            {col.label}
-                                            {sortField === col.key && <i className={`fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'} ml-1 text-blue-500`}></i>}
-                                        </th>
-                                    ))}
+                                    <th className="px-4 py-3 text-left">Componente</th>
+                                    <th className="px-4 py-3 text-center">Atual</th>
+                                    <th className="px-4 py-3 text-center">Meta</th>
+                                    <th className="px-4 py-3 text-center">Gap</th>
+                                    <th className="px-4 py-3 text-center">Progresso</th>
+                                    <th className="px-4 py-3 text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {pagedData.map((row, i) => (
-                                    <tr key={i} className="border-b hover:bg-blue-50 transition-colors">
-                                        {columns.map(col => (
-                                            <td key={col.key} className="px-3 py-2 whitespace-nowrap">
-                                                {typeof row[col.key] === 'number' ? row[col.key] : row[col.key] || '-'}
+                                {ind.map(i => {
+                                    const goal = goals['comp' + i.index] || 0;
+                                    const status = getStatus(i.pct, goal);
+                                    const gap = getGap(i.pct, goal);
+                                    return (
+                                        <tr key={i.index} className="border-t hover:bg-gray-50">
+                                            <td className="px-4 py-3">
+                                                <span className="font-medium">C{i.index}</span> - {i.name}
                                             </td>
-                                        ))}
-                                    </tr>
-                                ))}
+                                            <td className="px-4 py-3 text-center font-bold">{i.pct.toFixed(1)}%</td>
+                                            <td className="px-4 py-3 text-center">{goal || '-'}%</td>
+                                            <td className={`px-4 py-3 text-center font-medium ${gap > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                                {goal ? (gap > 0 ? '+' + gap.toFixed(1) : gap.toFixed(1)) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="w-full h-2 bg-gray-200 rounded-full">
+                                                    <div className={`h-full rounded-full bg-${status.color}-500`} style={{ width: getProgress(i.pct, goal) + '%' }}></div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className={`px-2 py-1 rounded-full text-xs bg-${status.color}-100 text-${status.color}-700`}>
+                                                    <i className={`fas ${status.icon} mr-1`}></i>{status.label}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
-                    {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 mt-6">
-                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page === 0} onClick={() => setPage(0)}>
-                                <i className="fas fa-angle-double-left"></i>
-                            </button>
-                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                                <i className="fas fa-angle-left"></i>
-                            </button>
-                            <span className="px-4 py-2 font-medium">{page + 1} / {totalPages}</span>
-                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                                <i className="fas fa-angle-right"></i>
-                            </button>
-                            <button className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50" disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>
-                                <i className="fas fa-angle-double-right"></i>
-                            </button>
+                </div>}
+            </div>
+        );
+    };
+
+    // ========== ANOTAÇÕES ==========
+    const NotesView = () => {
+        const [notes, setNotes] = useState(() => JSON.parse(localStorage.getItem('gdiaps_notes_' + indicatorType) || '[]'));
+        const [newNote, setNewNote] = useState({ title: '', content: '', type: 'observation', priority: 'normal' });
+        const [editingId, setEditingId] = useState(null);
+        
+        const saveNotes = (newNotes) => {
+            setNotes(newNotes);
+            localStorage.setItem('gdiaps_notes_' + indicatorType, JSON.stringify(newNotes));
+        };
+        
+        const addNote = () => {
+            if (!newNote.title.trim() || !newNote.content.trim()) return;
+            const note = {
+                id: Date.now(),
+                ...newNote,
+                author: user?.name || 'Anônimo',
+                date: new Date().toISOString(),
+                indicator: config?.title || indicatorType
+            };
+            saveNotes([note, ...notes]);
+            setNewNote({ title: '', content: '', type: 'observation', priority: 'normal' });
+        };
+        
+        const deleteNote = (id) => {
+            if (confirm('Deseja excluir esta anotação?')) {
+                saveNotes(notes.filter(n => n.id !== id));
+            }
+        };
+        
+        const updateNote = (id, updates) => {
+            saveNotes(notes.map(n => n.id === id ? { ...n, ...updates, updatedAt: new Date().toISOString() } : n));
+            setEditingId(null);
+        };
+        
+        const typeConfig = {
+            observation: { label: 'Observação', icon: 'fa-eye', color: 'blue' },
+            problem: { label: 'Problema', icon: 'fa-exclamation-triangle', color: 'red' },
+            action: { label: 'Ação', icon: 'fa-tasks', color: 'green' },
+            idea: { label: 'Ideia', icon: 'fa-lightbulb', color: 'amber' }
+        };
+        
+        const priorityConfig = {
+            low: { label: 'Baixa', color: 'gray' },
+            normal: { label: 'Normal', color: 'blue' },
+            high: { label: 'Alta', color: 'amber' },
+            urgent: { label: 'Urgente', color: 'red' }
+        };
+        
+        return (
+            <div className="animate-fadeIn">
+                <h1 className="text-3xl font-bold mb-2">Anotações</h1>
+                <p className="text-gray-500 mb-6">Registre problemas, ações e observações importantes</p>
+                
+                {/* Formulário de Nova Anotação */}
+                <div className="card p-6 mb-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-plus-circle text-blue-500"></i>
+                        Nova Anotação
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">Título</label>
+                            <input 
+                                type="text" 
+                                className="input-field"
+                                value={newNote.title}
+                                onChange={e => setNewNote({ ...newNote, title: e.target.value })}
+                                placeholder="Título da anotação..."
+                            />
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Tipo</label>
+                                <select 
+                                    className="input-field"
+                                    value={newNote.type}
+                                    onChange={e => setNewNote({ ...newNote, type: e.target.value })}
+                                >
+                                    {Object.entries(typeConfig).map(([k, v]) => (
+                                        <option key={k} value={k}>{v.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Prioridade</label>
+                                <select 
+                                    className="input-field"
+                                    value={newNote.priority}
+                                    onChange={e => setNewNote({ ...newNote, priority: e.target.value })}
+                                >
+                                    {Object.entries(priorityConfig).map(([k, v]) => (
+                                        <option key={k} value={k}>{v.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm text-gray-600 mb-1">Conteúdo</label>
+                        <textarea 
+                            className="input-field min-h-[100px]"
+                            value={newNote.content}
+                            onChange={e => setNewNote({ ...newNote, content: e.target.value })}
+                            placeholder="Descreva o problema, ação ou observação..."
+                        ></textarea>
+                    </div>
+                    <button 
+                        onClick={addNote}
+                        className="btn-primary"
+                        disabled={!newNote.title.trim() || !newNote.content.trim()}
+                    >
+                        <i className="fas fa-save mr-2"></i>Salvar Anotação
+                    </button>
+                </div>
+                
+                {/* Lista de Anotações */}
+                <div className="space-y-4">
+                    {notes.length === 0 ? (
+                        <div className="card p-8 text-center text-gray-400">
+                            <i className="fas fa-sticky-note text-4xl mb-3"></i>
+                            <p>Nenhuma anotação registrada ainda.</p>
+                        </div>
+                    ) : (
+                        notes.map(note => {
+                            const type = typeConfig[note.type] || typeConfig.observation;
+                            const priority = priorityConfig[note.priority] || priorityConfig.normal;
+                            return (
+                                <div key={note.id} className={`card p-4 border-l-4 border-${type.color}-500`}>
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-lg bg-${type.color}-100 flex items-center justify-center`}>
+                                                <i className={`fas ${type.icon} text-${type.color}-600`}></i>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold">{note.title}</h4>
+                                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                    <span className={`px-2 py-0.5 rounded bg-${type.color}-100 text-${type.color}-700`}>{type.label}</span>
+                                                    <span className={`px-2 py-0.5 rounded bg-${priority.color}-100 text-${priority.color}-700`}>{priority.label}</span>
+                                                    <span><i className="fas fa-user mr-1"></i>{note.author}</span>
+                                                    <span><i className="fas fa-calendar mr-1"></i>{new Date(note.date).toLocaleDateString('pt-BR')}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => deleteNote(note.id)} className="text-red-500 hover:text-red-700">
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-600 whitespace-pre-wrap">{note.content}</p>
+                                    {note.updatedAt && (
+                                        <p className="text-xs text-gray-400 mt-2">
+                                            <i className="fas fa-edit mr-1"></i>Editado em {new Date(note.updatedAt).toLocaleDateString('pt-BR')}
+                                        </p>
+                                    )}
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             </div>
         );
     };
 
-    const PredictionsView = () => {
-        const ind = calcIndicators();
-        const trend = getTrend();
+    // ========== REDE GDI-APS (Social Network) ==========
+    const NetworkView = () => {
+        const [posts, setPosts] = useState(() => JSON.parse(localStorage.getItem('gdiaps_posts') || '[]'));
+        const [newPost, setNewPost] = useState({ content: '', image: null });
+        const [showNewPostModal, setShowNewPostModal] = useState(false);
+        const [activeTab, setActiveTab] = useState('feed');
+        const [following, setFollowing] = useState(() => JSON.parse(localStorage.getItem('gdiaps_following_' + user?.id) || '[]'));
+        const [allUsers] = useState(() => JSON.parse(localStorage.getItem('gdiaps_all_users') || '[]'));
+        const selectedAvatar = user?.avatar || 'fa-user-nurse';
         
-        // Análise de tendência para cada indicador
-        const analyzeIndicator = (indicator) => {
-            const monthlyData = MONTH_ORDER.map(month => {
-                let data = [...rawData];
-                if (filters.regiao !== 'Todas') data = data.filter(r => r.regiao === filters.regiao);
-                if (filters.municipio !== 'Todos') data = data.filter(r => r.municipio === filters.municipio);
-                const d = data.filter(r => r.competencia === month);
-                if (!d.length) return null;
-                const tg = d.reduce((s,r) => s + r.totalGestantes, 0);
-                const t = d.reduce((s,r) => s + r[`ind${indicator.index}`], 0);
-                return { month, pct: tg ? (t/tg)*100 : 0 };
-            }).filter(Boolean);
-
-            if (monthlyData.length < 2) return { trend: 'stable', change: 0, prediction: indicator.pct };
-
-            const first = monthlyData.slice(0, Math.ceil(monthlyData.length/2));
-            const last = monthlyData.slice(Math.ceil(monthlyData.length/2));
-            const avgFirst = first.reduce((s,d) => s + d.pct, 0) / first.length;
-            const avgLast = last.reduce((s,d) => s + d.pct, 0) / last.length;
-            const change = avgLast - avgFirst;
-            const prediction = Math.max(0, Math.min(100, indicator.pct + change));
-
-            return {
-                trend: change > 2 ? 'up' : change < -2 ? 'down' : 'stable',
-                change: change,
-                prediction: prediction,
-                monthlyData
+        const savePosts = (newPosts) => {
+            setPosts(newPosts);
+            localStorage.setItem('gdiaps_posts', JSON.stringify(newPosts));
+        };
+        
+        const saveFollowing = (newFollowing) => {
+            setFollowing(newFollowing);
+            localStorage.setItem('gdiaps_following_' + user?.id, JSON.stringify(newFollowing));
+        };
+        
+        const handleFollow = (userId) => {
+            if (following.includes(userId)) {
+                saveFollowing(following.filter(id => id !== userId));
+            } else {
+                saveFollowing([...following, userId]);
+            }
+        };
+        
+        const handleCreatePost = () => {
+            if (!newPost.content.trim()) return;
+            const post = {
+                id: Date.now(),
+                userId: user?.id || Date.now(),
+                userName: user?.name || 'Usuário',
+                userCargo: user?.cargo || '',
+                userMunicipio: user?.municipio || '',
+                userAvatar: selectedAvatar,
+                content: newPost.content,
+                image: newPost.image,
+                date: new Date().toISOString(),
+                likes: [],
+                comments: [],
+                shares: 0
             };
+            savePosts([post, ...posts]);
+            setNewPost({ content: '', image: null });
+            setShowNewPostModal(false);
         };
-
-        const indicatorAnalysis = ind.map(i => ({
-            ...i,
-            analysis: analyzeIndicator(i)
-        }));
-
-        const criticalIndicators = indicatorAnalysis.filter(i => i.pct < 50).sort((a,b) => a.pct - b.pct);
-        const decliningIndicators = indicatorAnalysis.filter(i => i.analysis.trend === 'down').sort((a,b) => a.analysis.change - b.analysis.change);
-        const improvingIndicators = indicatorAnalysis.filter(i => i.analysis.trend === 'up').sort((a,b) => b.analysis.change - a.analysis.change);
-
-        const getRiskLevel = (pct, trend) => {
-            if (pct < 25) return { level: 'Crítico', color: 'red', icon: 'fa-exclamation-triangle' };
-            if (pct < 50 || trend === 'down') return { level: 'Atenção', color: 'yellow', icon: 'fa-exclamation-circle' };
-            if (pct >= 75 && trend !== 'down') return { level: 'Bom', color: 'green', icon: 'fa-check-circle' };
-            return { level: 'Regular', color: 'blue', icon: 'fa-info-circle' };
+        
+        const handleLike = (postId) => {
+            const updated = posts.map(p => {
+                if (p.id === postId) {
+                    const userId = user?.id || 'anon';
+                    const liked = p.likes?.includes(userId);
+                    return { ...p, likes: liked ? p.likes.filter(id => id !== userId) : [...(p.likes || []), userId] };
+                }
+                return p;
+            });
+            savePosts(updated);
         };
-
-        const getBarriers = (indicator) => {
-            const barriers = [];
-            if (indicator.pct < 30) barriers.push('Baixa adesão das equipes ao protocolo');
-            if (indicator.pct < 50) barriers.push('Possível falta de insumos ou recursos');
-            if (indicator.analysis.trend === 'down') barriers.push('Tendência de queda requer ação imediata');
-            if (indicator.index <= 3) barriers.push('Captação precoce de gestantes pode estar comprometida');
-            if (indicator.index >= 9) barriers.push('Acompanhamento puerperal precisa de reforço');
-            return barriers.length ? barriers : ['Manter monitoramento contínuo'];
+        
+        const handleShare = (postId) => {
+            const updated = posts.map(p => p.id === postId ? { ...p, shares: (p.shares || 0) + 1 } : p);
+            savePosts(updated);
         };
-
-        const getRecommendations = (indicator) => {
-            const recs = [];
-            if (indicator.pct < 50) {
-                recs.push('Realizar capacitação das equipes');
-                recs.push('Revisar fluxo de atendimento');
-            }
-            if (indicator.analysis.trend === 'down') {
-                recs.push('Investigar causas da queda');
-                recs.push('Implementar busca ativa');
-            }
-            if (indicator.pct >= 75) {
-                recs.push('Manter boas práticas');
-                recs.push('Compartilhar experiências com outras equipes');
-            }
-            return recs.length ? recs : ['Continuar monitoramento regular'];
+        
+        const formatDate = (dateStr) => {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return 'Agora';
+            if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+            return date.toLocaleDateString('pt-BR');
         };
+        
+        // Posts do feed (próprios + de quem segue)
+        const feedPosts = posts.filter(p => p.userId === user?.id || following.includes(p.userId));
+        const discoverPosts = posts.filter(p => p.userId !== user?.id && !following.includes(p.userId));
+        
+        if (!user) return (
+            <div className="animate-fadeIn flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-6">
+                    <i className="fas fa-user-lock text-white text-4xl"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h2>
+                <p className="text-gray-500 mb-6">Faça login para acessar a Rede GDI-APS</p>
+                <button onClick={() => { setAuthMode('login'); setAuthModal(true); }} className="btn-primary">
+                    <i className="fas fa-sign-in-alt mr-2"></i>Entrar
+                </button>
+            </div>
+        );
 
         return (
             <div className="animate-fadeIn">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Predições e Tendências</h1>
-                        <p className="text-gray-500">Análise preditiva para ação estratégica do gestor</p>
-                    </div>
-                </div>
-                <FilterBar />
-
-                {/* Resumo Executivo */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="card p-5 border-l-4 border-red-500">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                                <i className="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                {/* Modal de Nova Postagem */}
+                {showNewPostModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowNewPostModal(false)}>
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold">Criar Publicação</h3>
+                                <button onClick={() => setShowNewPostModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                             </div>
-                            <div>
-                                <p className="text-3xl font-bold text-gray-900">{criticalIndicators.length}</p>
-                                <p className="text-sm text-gray-500">Indicadores Críticos</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card p-5 border-l-4 border-yellow-500">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
-                                <i className="fas fa-arrow-down text-yellow-600 text-xl"></i>
-                            </div>
-                            <div>
-                                <p className="text-3xl font-bold text-gray-900">{decliningIndicators.length}</p>
-                                <p className="text-sm text-gray-500">Em Declínio</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card p-5 border-l-4 border-green-500">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                                <i className="fas fa-arrow-up text-green-500 text-xl"></i>
-                            </div>
-                            <div>
-                                <p className="text-3xl font-bold text-gray-900">{improvingIndicators.length}</p>
-                                <p className="text-sm text-gray-500">Em Melhoria</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card p-5 border-l-4 border-blue-500">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                <i className="fas fa-chart-line text-blue-500 text-xl"></i>
-                            </div>
-                            <div>
-                                <p className="text-3xl font-bold text-gray-900">{(ind.reduce((s,i) => s + i.pct, 0) / ind.length).toFixed(1)}%</p>
-                                <p className="text-sm text-gray-500">Média Geral</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Alertas Prioritários */}
-                {criticalIndicators.length > 0 && (
-                    <div className="card p-6 mb-6 border-l-4 border-red-500">
-                        <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center gap-2">
-                            <i className="fas fa-exclamation-triangle"></i> Alertas Prioritários
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {criticalIndicators.slice(0, 4).map(i => (
-                                <div key={i.index} className="p-4 bg-red-50 rounded-xl">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="font-bold text-red-800">Componente {i.index}</span>
-                                        <span className="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm font-bold">{i.pct.toFixed(1)}%</span>
-                                    </div>
-                                    <p className="text-sm text-red-700 mb-2">{i.fullName}</p>
-                                    <p className="text-xs text-red-600">
-                                        <i className="fas fa-arrow-right mr-1"></i>
-                                        Previsão: {i.analysis.prediction.toFixed(1)}% 
-                                        ({i.analysis.trend === 'up' ? '↑' : i.analysis.trend === 'down' ? '↓' : '→'})
-                                    </p>
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                    <i className={`fas ${selectedAvatar} text-white text-lg`}></i>
                                 </div>
-                            ))}
+                                <div className="flex-1">
+                                    <p className="font-bold">{user.name}</p>
+                                    <p className="text-xs text-gray-500">{user.cargo}</p>
+                                </div>
+                            </div>
+                            <textarea className="input-field min-h-[150px] text-lg border-0 focus:ring-0 resize-none" placeholder="O que você gostaria de compartilhar com a rede?" value={newPost.content} onChange={e => setNewPost({...newPost, content: e.target.value})} autoFocus></textarea>
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                                <div className="flex gap-2">
+                                    <button className="p-2 rounded-lg hover:bg-blue-50 text-blue-500"><i className="fas fa-image text-lg"></i></button>
+                                    <button className="p-2 rounded-lg hover:bg-green-50 text-green-500"><i className="fas fa-chart-bar text-lg"></i></button>
+                                    <button className="p-2 rounded-lg hover:bg-amber-50 text-amber-500"><i className="fas fa-smile text-lg"></i></button>
+                                </div>
+                                <button onClick={handleCreatePost} disabled={!newPost.content.trim()} className="px-6 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Publicar</button>
+                            </div>
                         </div>
                     </div>
                 )}
-
-                {/* Análise Detalhada por Indicador */}
-                <div className="card p-6 mb-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <i className="fas fa-microscope text-blue-500"></i> Análise Detalhada por Indicador
-                    </h3>
-                    <div className="space-y-4">
-                        {indicatorAnalysis.map(i => {
-                            const risk = getRiskLevel(i.pct, i.analysis.trend);
-                            const barriers = getBarriers(i);
-                            const recs = getRecommendations(i);
-                            return (
-                                <div key={i.index} className="p-4 border rounded-xl hover:shadow-md transition-all">
-                                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                                        <div className="flex items-center gap-3 lg:w-1/3">
-                                            <span className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold">C{i.index}</span>
-                                            <div>
-                                                <p className="font-semibold text-gray-800">{i.fullName.slice(0, 50)}...</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold bg-${risk.color}-100 text-${risk.color}-700`}>
-                                                        <i className={`fas ${risk.icon} mr-1`}></i>{risk.level}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500">
-                                                        {i.analysis.trend === 'up' && <span className="text-green-600"><i className="fas fa-arrow-up mr-1"></i>Subindo</span>}
-                                                        {i.analysis.trend === 'down' && <span className="text-red-600"><i className="fas fa-arrow-down mr-1"></i>Caindo</span>}
-                                                        {i.analysis.trend === 'stable' && <span className="text-gray-600"><i className="fas fa-minus mr-1"></i>Estável</span>}
-                                                    </span>
-                                                </div>
+                
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Rede GDI-APS</h1>
+                        <p className="text-gray-500">Conecte-se com profissionais de saúde</p>
+                    </div>
+                    <button onClick={() => setShowNewPostModal(true)} className="btn-primary"><i className="fas fa-plus mr-2"></i>Nova Publicação</button>
+                </div>
+                
+                {/* Tabs */}
+                <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl">
+                    {[['feed', 'fa-home', 'Meu Feed'], ['discover', 'fa-compass', 'Descobrir'], ['following', 'fa-user-friends', 'Seguindo']].map(([key, icon, label]) => (
+                        <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === key ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                            <i className={`fas ${icon}`}></i>{label}
+                        </button>
+                    ))}
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Coluna Principal - Posts */}
+                    <div className="lg:col-span-2 space-y-4">
+                        {/* Criar Post Rápido */}
+                        <div className="card p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                    <i className={`fas ${selectedAvatar} text-white`}></i>
+                                </div>
+                                <button onClick={() => setShowNewPostModal(true)} className="flex-1 text-left px-4 py-3 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors">
+                                    Compartilhe uma atualização...
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Posts do Feed */}
+                        {activeTab === 'feed' && (
+                            feedPosts.length === 0 ? (
+                                <div className="card p-8 text-center">
+                                    <i className="fas fa-newspaper text-gray-300 text-5xl mb-4"></i>
+                                    <p className="text-gray-500 mb-2">Seu feed está vazio</p>
+                                    <p className="text-sm text-gray-400">Siga outros profissionais para ver suas publicações aqui</p>
+                                </div>
+                            ) : feedPosts.map(post => (
+                                <div key={post.id} className="card overflow-hidden">
+                                    <div className="p-4">
+                                        <div className="flex items-start gap-3 mb-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                                <i className={`fas ${post.userAvatar || 'fa-user'} text-white`}></i>
                                             </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-900">{post.userName}</p>
+                                                <p className="text-xs text-gray-500">{post.userCargo} {post.userMunicipio && `• ${post.userMunicipio}`}</p>
+                                                <p className="text-xs text-gray-400">{formatDate(post.date)}</p>
+                                            </div>
+                                            <button className="text-gray-400 hover:text-gray-600"><i className="fas fa-ellipsis-h"></i></button>
                                         </div>
-                                        <div className="lg:w-1/6 text-center">
-                                            <p className="text-2xl font-bold" style={{color: getColor(i.pct)}}>{i.pct.toFixed(1)}%</p>
-                                            <p className="text-xs text-gray-500">Atual</p>
-                                        </div>
-                                        <div className="lg:w-1/6 text-center">
-                                            <p className="text-2xl font-bold text-blue-600">{i.analysis.prediction.toFixed(1)}%</p>
-                                            <p className="text-xs text-gray-500">Previsão</p>
-                                        </div>
-                                        <div className="lg:w-1/3">
-                                            <div className="indicator-bar"><div className="indicator-fill" style={{width:`${Math.min(i.pct,100)}%`, backgroundColor: getColor(i.pct)}}></div></div>
-                                        </div>
+                                        <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t">
-                                        <div>
-                                            <p className="text-sm font-semibold text-red-700 mb-2"><i className="fas fa-exclamation-circle mr-1"></i>Barreiras Identificadas</p>
-                                            <ul className="text-xs text-gray-600 space-y-1">
-                                                {barriers.map((b, idx) => <li key={idx} className="flex items-start gap-2"><i className="fas fa-times text-red-400 mt-0.5"></i>{b}</li>)}
-                                            </ul>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-semibold text-green-700 mb-2"><i className="fas fa-lightbulb mr-1"></i>Recomendações</p>
-                                            <ul className="text-xs text-gray-600 space-y-1">
-                                                {recs.map((r, idx) => <li key={idx} className="flex items-start gap-2"><i className="fas fa-check text-green-400 mt-0.5"></i>{r}</li>)}
-                                            </ul>
-                                        </div>
+                                    {post.image && <img src={post.image} alt="" className="w-full" />}
+                                    <div className="px-4 py-2 border-t flex items-center justify-between text-sm text-gray-500">
+                                        <span>{post.likes?.length || 0} curtidas</span>
+                                        <span>{post.comments?.length || 0} comentários • {post.shares || 0} compartilhamentos</span>
+                                    </div>
+                                    <div className="flex border-t">
+                                        <button onClick={() => handleLike(post.id)} className={`flex-1 py-3 flex items-center justify-center gap-2 transition-colors ${post.likes?.includes(user?.id) ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                            <i className={`${post.likes?.includes(user?.id) ? 'fas' : 'far'} fa-thumbs-up`}></i>Curtir
+                                        </button>
+                                        <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50">
+                                            <i className="far fa-comment"></i>Comentar
+                                        </button>
+                                        <button onClick={() => handleShare(post.id)} className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50">
+                                            <i className="fas fa-share"></i>Compartilhar
+                                        </button>
                                     </div>
                                 </div>
-                            );
-                        })}
+                            ))
+                        )}
+                        
+                        {/* Posts para Descobrir */}
+                        {activeTab === 'discover' && (
+                            discoverPosts.length === 0 ? (
+                                <div className="card p-8 text-center">
+                                    <i className="fas fa-compass text-gray-300 text-5xl mb-4"></i>
+                                    <p className="text-gray-500">Nenhuma publicação nova para descobrir</p>
+                                </div>
+                            ) : discoverPosts.map(post => (
+                                <div key={post.id} className="card overflow-hidden">
+                                    <div className="p-4">
+                                        <div className="flex items-start gap-3 mb-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center flex-shrink-0">
+                                                <i className={`fas ${post.userAvatar || 'fa-user'} text-white`}></i>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-gray-900">{post.userName}</p>
+                                                <p className="text-xs text-gray-500">{post.userCargo}</p>
+                                            </div>
+                                            <button onClick={() => handleFollow(post.userId)} className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${following.includes(post.userId) ? 'bg-gray-200 text-gray-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                                                {following.includes(post.userId) ? 'Seguindo' : 'Seguir'}
+                                            </button>
+                                        </div>
+                                        <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+                                    </div>
+                                    <div className="flex border-t">
+                                        <button onClick={() => handleLike(post.id)} className={`flex-1 py-3 flex items-center justify-center gap-2 ${post.likes?.includes(user?.id) ? 'text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                            <i className={`${post.likes?.includes(user?.id) ? 'fas' : 'far'} fa-thumbs-up`}></i>{post.likes?.length || 0}
+                                        </button>
+                                        <button className="flex-1 py-3 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50">
+                                            <i className="far fa-comment"></i>{post.comments?.length || 0}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                        
+                        {/* Lista de Seguindo */}
+                        {activeTab === 'following' && (
+                            <div className="card p-6">
+                                <h3 className="font-bold text-lg mb-4">Pessoas que você segue ({following.length})</h3>
+                                {following.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-4">Você ainda não segue ninguém. Explore a aba "Descobrir"!</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {allUsers.filter(u => following.includes(u.id)).map(u => (
+                                            <div key={u.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                                    <i className={`fas ${u.avatar || 'fa-user'} text-white`}></i>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold">{u.name}</p>
+                                                    <p className="text-sm text-gray-500">{u.cargo}</p>
+                                                </div>
+                                                <button onClick={() => handleFollow(u.id)} className="px-4 py-1.5 rounded-full text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300">
+                                                    Deixar de seguir
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                </div>
-
-                {/* Matriz de Risco */}
-                <div className="card p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <i className="fas fa-th text-purple-500"></i> Matriz de Risco e Priorização
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-4 bg-red-50 rounded-xl border-2 border-red-200">
-                            <h4 className="font-bold text-red-700 mb-3"><i className="fas fa-fire mr-2"></i>Alta Prioridade</h4>
-                            <p className="text-xs text-red-600 mb-2">Baixo desempenho + Tendência de queda</p>
-                            <div className="space-y-2">
-                                {indicatorAnalysis.filter(i => i.pct < 50 && i.analysis.trend === 'down').map(i => (
-                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
-                                        <span className="text-sm font-medium">C{i.index}</span>
-                                        <span className="text-sm text-red-600 font-bold">{i.pct.toFixed(1)}%</span>
-                                    </div>
-                                ))}
-                                {indicatorAnalysis.filter(i => i.pct < 50 && i.analysis.trend === 'down').length === 0 && 
-                                    <p className="text-sm text-gray-500 italic">Nenhum indicador nesta categoria</p>
-                                }
+                    
+                    {/* Coluna Lateral */}
+                    <div className="space-y-4">
+                        {/* Meu Perfil Resumido */}
+                        <div className="card p-4 text-center">
+                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-3">
+                                <i className={`fas ${selectedAvatar} text-white text-2xl`}></i>
+                            </div>
+                            <p className="font-bold">{user.name}</p>
+                            <p className="text-sm text-gray-500">{user.cargo}</p>
+                            <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t">
+                                <div><p className="text-xl font-bold">{posts.filter(p => p.userId === user?.id).length}</p><p className="text-xs text-gray-500">Posts</p></div>
+                                <div><p className="text-xl font-bold">{following.length}</p><p className="text-xs text-gray-500">Seguindo</p></div>
                             </div>
                         </div>
-                        <div className="p-4 bg-yellow-50 rounded-xl border-2 border-yellow-200">
-                            <h4 className="font-bold text-yellow-700 mb-3"><i className="fas fa-exclamation mr-2"></i>Média Prioridade</h4>
-                            <p className="text-xs text-yellow-600 mb-2">Desempenho moderado ou em declínio</p>
-                            <div className="space-y-2">
-                                {indicatorAnalysis.filter(i => (i.pct >= 50 && i.pct < 75) || (i.pct >= 50 && i.analysis.trend === 'down')).slice(0, 4).map(i => (
-                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
-                                        <span className="text-sm font-medium">C{i.index}</span>
-                                        <span className="text-sm text-yellow-600 font-bold">{i.pct.toFixed(1)}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                            <h4 className="font-bold text-blue-700 mb-3"><i className="fas fa-eye mr-2"></i>Monitorar</h4>
-                            <p className="text-xs text-blue-600 mb-2">Desempenho estável</p>
-                            <div className="space-y-2">
-                                {indicatorAnalysis.filter(i => i.pct >= 50 && i.pct < 75 && i.analysis.trend === 'stable').slice(0, 4).map(i => (
-                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
-                                        <span className="text-sm font-medium">C{i.index}</span>
-                                        <span className="text-sm text-blue-600 font-bold">{i.pct.toFixed(1)}%</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="p-4 bg-green-50 rounded-xl border-2 border-green-200">
-                            <h4 className="font-bold text-green-700 mb-3"><i className="fas fa-star mr-2"></i>Boas Práticas</h4>
-                            <p className="text-xs text-green-600 mb-2">Alto desempenho + Tendência positiva</p>
-                            <div className="space-y-2">
-                                {indicatorAnalysis.filter(i => i.pct >= 75 && i.analysis.trend !== 'down').slice(0, 4).map(i => (
-                                    <div key={i.index} className="flex items-center justify-between p-2 bg-white rounded-lg">
-                                        <span className="text-sm font-medium">C{i.index}</span>
-                                        <span className="text-sm text-green-600 font-bold">{i.pct.toFixed(1)}%</span>
+                        
+                        {/* Sugestões para Seguir */}
+                        <div className="card p-4">
+                            <h4 className="font-bold mb-3">Sugestões para você</h4>
+                            <div className="space-y-3">
+                                {allUsers.filter(u => u.id !== user?.id && !following.includes(u.id)).slice(0, 3).map(u => (
+                                    <div key={u.id} className="flex items-center gap-2">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                            <i className={`fas ${u.avatar || 'fa-user'} text-white text-sm`}></i>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium text-sm truncate">{u.name}</p>
+                                            <p className="text-xs text-gray-500 truncate">{u.cargo}</p>
+                                        </div>
+                                        <button onClick={() => handleFollow(u.id)} className="text-blue-600 text-sm font-semibold hover:underline">Seguir</button>
                                     </div>
                                 ))}
                             </div>
@@ -1096,43 +1584,1281 @@ const Dashboard = () => {
         );
     };
 
-    const handleLogin = (userData) => {
-        setUser(userData);
-        const saved = localStorage.getItem('gdiaps_users');
-        const users = saved ? JSON.parse(saved) : [];
-        if (!users.find(u => u.id === userData.id)) {
-            users.push(userData);
-            localStorage.setItem('gdiaps_users', JSON.stringify(users));
-        }
-        setActiveView('home');
-    };
+    // ========== PERFIL DO USUÁRIO ==========
+    const ProfileView = () => {
+        const [showAvatarModal, setShowAvatarModal] = useState(false);
+        const [showEditModal, setShowEditModal] = useState(false);
+        const [editField, setEditField] = useState(null);
+        const [profileData, setProfileData] = useState({ name: user?.name || '', cargo: user?.cargo || '', municipio: user?.municipio || '' });
+        const avatarIcons = ['fa-user-nurse', 'fa-user-md', 'fa-stethoscope', 'fa-heartbeat', 'fa-hospital-user', 'fa-hand-holding-medical', 'fa-user-tie', 'fa-user-graduate', 'fa-user-astronaut', 'fa-user-ninja', 'fa-user-secret', 'fa-user-shield'];
+        const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || 'fa-user-nurse');
+        const cargoOptions = ['Profissional de Saúde', 'Enfermeiro(a)', 'Médico(a)', 'Técnico(a) de Enfermagem', 'Agente Comunitário de Saúde', 'Coordenador(a) de UBS', 'Gestor(a) Municipal', 'Gestor(a) Regional', 'Coordenador(a) Estadual', 'Administrador(a)'];
+        const [activeTab, setActiveTab] = useState('perfil');
+        
+        // Sistema de seguidores
+        const [following] = useState(() => JSON.parse(localStorage.getItem('gdiaps_following_' + user?.id) || '[]'));
+        const [posts] = useState(() => JSON.parse(localStorage.getItem('gdiaps_posts') || '[]'));
+        const allUsers = JSON.parse(localStorage.getItem('gdiaps_all_users') || '[]');
+        const followers = allUsers.filter(u => {
+            const theirFollowing = JSON.parse(localStorage.getItem('gdiaps_following_' + u.id) || '[]');
+            return theirFollowing.includes(user?.id);
+        });
+        
+        // Sistema de conquistas/prêmios - CORRIGIDO: só conta metas realmente atingidas
+        const goals = JSON.parse(localStorage.getItem('gdiaps_goals_' + indicatorType + '_estadual') || '{}');
+        const m = calcMetrics();
+        const ind = calcIndicators();
+        
+        // Verificar metas de componentes atingidas
+        const metasComponentesAtingidas = ind.filter(i => {
+            const meta = goals['comp' + i.index];
+            return meta && meta > 0 && i.pct >= meta;
+        }).length;
+        
+        // Verificar se meta da taxa foi atingida
+        const metaTaxaAtingida = goals.taxa && goals.taxa > 0 && m.taxa >= goals.taxa;
+        
+        const achievements = [
+            { id: 1, name: 'Meta de Taxa', icon: 'fa-trophy', desc: 'Atingiu a meta da taxa de boas práticas', unlocked: metaTaxaAtingida },
+            { id: 2, name: 'Componente Atingido', icon: 'fa-check-circle', desc: 'Atingiu meta de pelo menos 1 componente', unlocked: metasComponentesAtingidas >= 1 },
+            { id: 3, name: 'Meio Caminho', icon: 'fa-star-half-alt', desc: 'Atingiu meta de 50% dos componentes', unlocked: metasComponentesAtingidas >= Math.ceil(ind.length / 2) },
+            { id: 4, name: 'Excelência Total', icon: 'fa-award', desc: 'Atingiu meta de todos os componentes', unlocked: metasComponentesAtingidas === ind.length && ind.length > 0 },
+            { id: 5, name: 'Campeão', icon: 'fa-crown', desc: 'Atingiu todas as metas (taxa + componentes)', unlocked: metaTaxaAtingida && metasComponentesAtingidas === ind.length && ind.length > 0 },
+        ];
+        const userStars = achievements.filter(a => a.unlocked).length;
+        
+        const handleSaveField = () => {
+            setUser({ ...user, ...profileData, avatar: selectedAvatar });
+            setShowEditModal(false);
+            setEditField(null);
+        };
+        
+        const openEditModal = (field) => {
+            setEditField(field);
+            setProfileData({ name: user?.name || '', cargo: user?.cargo || '', municipio: user?.municipio || '' });
+            setShowEditModal(true);
+        };
 
-    const handleLogout = () => {
-        setUser(null);
-        setActiveView('home');
-    };
-
-    if (loading) return <div className="min-h-screen flex items-center justify-center"><i className="fas fa-spinner fa-spin text-4xl text-blue-600"></i></div>;
-    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
-
-    if (activeView === 'profile' && !user) {
-        return <LoginView onLogin={handleLogin} onBack={() => setActiveView('home')} />;
-    }
-
-    return (
-        <div className="min-h-screen">
-            <Sidebar />
-            <div className="main-content">
-                {activeView === 'home' && <HomeView />}
-                {activeView === 'indicators' && <IndicatorsView />}
-                {activeView === 'map' && <MapView />}
-                {activeView === 'data' && <DataTableView />}
-                {activeView === 'predictions' && <PredictionsView />}
-                {activeView === 'forum' && <ForumView user={user} topics={topics} setTopics={setTopics} onLoginRequired={() => setActiveView('profile')} />}
-                {activeView === 'profile' && user && <ProfileView user={user} setUser={setUser} onLogout={handleLogout} topics={topics} />}
+        if (!user) return (
+            <div className="animate-fadeIn flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-6">
+                    <i className="fas fa-user-lock text-white text-4xl"></i>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h2>
+                <p className="text-gray-500 mb-6">Faça login para acessar seu perfil</p>
+                <button onClick={() => { setAuthMode('login'); setAuthModal(true); }} className="btn-primary">
+                    <i className="fas fa-sign-in-alt mr-2"></i>Entrar
+                </button>
             </div>
-        </div>
-    );
+        );
+
+        return (
+            <div className="animate-fadeIn">
+                {/* Modal de Avatar */}
+                {showAvatarModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAvatarModal(false)}>
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold">Escolha seu Avatar</h3>
+                                <button onClick={() => setShowAvatarModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-3">
+                                {avatarIcons.map(icon => (
+                                    <button key={icon} onClick={() => { setSelectedAvatar(icon); setUser({...user, avatar: icon}); setShowAvatarModal(false); }} className={`w-16 h-16 rounded-xl flex items-center justify-center transition-all ${selectedAvatar === icon ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white scale-110 shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'}`}>
+                                        <i className={`fas ${icon} text-2xl`}></i>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Modal de Edição */}
+                {showEditModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowEditModal(false)}>
+                        <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xl font-bold">Editar {editField === 'name' ? 'Nome' : editField === 'cargo' ? 'Cargo' : 'Município'}</h3>
+                                <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                            </div>
+                            {editField === 'name' && (
+                                <input type="text" className="input-field text-lg" placeholder="Seu nome" value={profileData.name} onChange={e => setProfileData({...profileData, name: e.target.value})} autoFocus />
+                            )}
+                            {editField === 'cargo' && (
+                                <select className="input-field text-lg" value={profileData.cargo} onChange={e => setProfileData({...profileData, cargo: e.target.value})}>
+                                    <option value="">Selecione seu cargo</option>
+                                    {cargoOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            )}
+                            {editField === 'municipio' && (
+                                <select className="input-field text-lg" value={profileData.municipio} onChange={e => setProfileData({...profileData, municipio: e.target.value})}>
+                                    <option value="">Selecione seu município</option>
+                                    {getUnique('municipio').map(m => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            )}
+                            <button onClick={handleSaveField} className="btn-primary w-full mt-4"><i className="fas fa-check mr-2"></i>Salvar</button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Header do Perfil */}
+                <div className="card overflow-hidden mb-6">
+                    <div className="h-36 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
+                    <div className="px-6 pb-6 pt-2">
+                        <div className="flex flex-col lg:flex-row lg:items-end gap-4 -mt-20">
+                            <div className="relative cursor-pointer group" onClick={() => setShowAvatarModal(true)}>
+                                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center border-4 border-white shadow-xl">
+                                    <i className={`fas ${selectedAvatar} text-white text-5xl`}></i>
+                                </div>
+                                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                    <i className="fas fa-camera text-white text-2xl"></i>
+                                </div>
+                                {userStars > 0 && (
+                                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center border-2 border-white">
+                                        <i className="fas fa-star text-white text-xs"></i>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex-1 lg:pb-2">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                                    {userStars >= 3 && <i className="fas fa-certificate text-blue-500" title="Verificado"></i>}
+                                </div>
+                                <p className="text-gray-600">{user.cargo}</p>
+                                <p className="text-gray-500 text-sm"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio || 'Localização não informada'}</p>
+                            </div>
+                            <button onClick={() => setActiveView('network')} className="btn-primary"><i className="fas fa-share-alt mr-2"></i>Ir para Rede</button>
+                        </div>
+                        
+                        {/* Estatísticas */}
+                        <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t">
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-gray-900">{posts.filter(p => p.userId === user?.id).length}</p>
+                                <p className="text-sm text-gray-500">Publicações</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-gray-900">{followers.length}</p>
+                                <p className="text-sm text-gray-500">Seguidores</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-gray-900">{following.length}</p>
+                                <p className="text-sm text-gray-500">Seguindo</p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-2xl font-bold text-amber-500">{userStars}</p>
+                                <p className="text-sm text-gray-500">Estrelas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Tabs */}
+                <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl">
+                    {[['perfil', 'fa-user', 'Meu Perfil'], ['conquistas', 'fa-trophy', 'Conquistas'], ['metas', 'fa-bullseye', 'Progresso']].map(([key, icon, label]) => (
+                        <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === key ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
+                            <i className={`fas ${icon}`}></i><span className="hidden sm:inline">{label}</span>
+                        </button>
+                    ))}
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Coluna Principal */}
+                    <div className="lg:col-span-2 space-y-4">
+                        {activeTab === 'perfil' && (
+                            <div className="card p-6">
+                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-user-edit text-blue-500"></i>Informações Pessoais</h3>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('name')}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><i className="fas fa-user text-blue-500"></i></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Nome</p>
+                                                <p className="font-medium">{user.name}</p>
+                                            </div>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('cargo')}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center"><i className="fas fa-briefcase text-purple-500"></i></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Cargo</p>
+                                                <p className="font-medium">{user.cargo}</p>
+                                            </div>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('municipio')}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center"><i className="fas fa-map-marker-alt text-green-500"></i></div>
+                                            <div>
+                                                <p className="text-xs text-gray-500">Município</p>
+                                                <p className="font-medium">{user.municipio || 'Não informado'}</p>
+                                            </div>
+                                        </div>
+                                        <i className="fas fa-chevron-right text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {activeTab === 'conquistas' && (
+                            <div className="card p-6">
+                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-trophy text-amber-500"></i>Suas Conquistas</h3>
+                                <p className="text-gray-500 mb-4">Atinja as metas definidas para desbloquear estrelas!</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {achievements.map(a => (
+                                        <div key={a.id} className={`p-4 rounded-xl border-2 transition-all ${a.unlocked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${a.unlocked ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                                    <i className={`fas ${a.icon} text-xl`}></i>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className={`font-bold ${a.unlocked ? 'text-amber-700' : 'text-gray-500'}`}>{a.name}</p>
+                                                    <p className="text-sm text-gray-500">{a.desc}</p>
+                                                </div>
+                                                {a.unlocked && <i className="fas fa-star text-amber-500 text-xl"></i>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {activeTab === 'metas' && (
+                            <div className="card p-6">
+                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-bullseye text-blue-500"></i>Progresso das Metas</h3>
+                                {!goals.taxa && Object.keys(goals).filter(k => k.startsWith('comp')).length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <i className="fas fa-bullseye text-gray-300 text-5xl mb-4"></i>
+                                        <p className="text-gray-500 mb-2">Nenhuma meta definida ainda</p>
+                                        <p className="text-sm text-gray-400">Vá para "Planejamento de Metas" para definir suas metas</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {goals.taxa && (
+                                            <div className="p-4 bg-gray-50 rounded-xl">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="font-medium">Taxa de Boas Práticas</span>
+                                                    <span className={`font-bold ${m.taxa >= goals.taxa ? 'text-green-600' : 'text-amber-600'}`}>{m.taxa.toFixed(1)}% / {goals.taxa}%</span>
+                                                </div>
+                                                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div className={`h-full transition-all ${m.taxa >= goals.taxa ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: Math.min(100, (m.taxa / goals.taxa) * 100) + '%'}}></div>
+                                                </div>
+                                                {m.taxa >= goals.taxa && <p className="text-green-600 text-sm mt-2"><i className="fas fa-check-circle mr-1"></i>Meta atingida!</p>}
+                                            </div>
+                                        )}
+                                        {ind.map(i => {
+                                            const meta = goals['comp' + i.index];
+                                            if (!meta) return null;
+                                            const atingida = i.pct >= meta;
+                                            return (
+                                                <div key={i.index} className="p-4 bg-gray-50 rounded-xl">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <span className="font-medium">C{i.index} - {i.name}</span>
+                                                        <span className={`font-bold ${atingida ? 'text-green-600' : 'text-amber-600'}`}>{i.pct.toFixed(1)}% / {meta}%</span>
+                                                    </div>
+                                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div className={`h-full transition-all ${atingida ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: Math.min(100, (i.pct / meta) * 100) + '%'}}></div>
+                                                    </div>
+                                                    {atingida && <p className="text-green-600 text-sm mt-2"><i className="fas fa-check-circle mr-1"></i>Meta atingida!</p>}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Coluna Lateral */}
+                    <div className="space-y-4">
+                        {/* Estrelas */}
+                        <div className="card p-4 text-center">
+                            <h4 className="font-bold mb-3">Suas Estrelas</h4>
+                            <div className="flex items-center justify-center gap-1 mb-3">
+                                {[1,2,3,4,5].map(i => (
+                                    <i key={i} className={`fas fa-star text-3xl ${i <= userStars ? 'text-amber-400' : 'text-gray-200'}`}></i>
+                                ))}
+                            </div>
+                            <p className="text-sm text-gray-500">{userStars} de 5 conquistas</p>
+                            {userStars === 0 && <p className="text-xs text-gray-400 mt-2">Atinja metas para ganhar estrelas!</p>}
+                        </div>
+                        
+                        {/* Seguidores */}
+                        <div className="card p-4">
+                            <h4 className="font-bold mb-3 flex items-center gap-2"><i className="fas fa-users text-blue-500"></i>Seguidores</h4>
+                            {followers.length === 0 ? (
+                                <p className="text-sm text-gray-500 text-center py-2">Nenhum seguidor ainda</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {followers.slice(0, 5).map(f => (
+                                        <div key={f.id} className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                                <i className={`fas ${f.avatar || 'fa-user'} text-white text-xs`}></i>
+                                            </div>
+                                            <span className="text-sm truncate">{f.name}</span>
+                                        </div>
+                                    ))}
+                                    {followers.length > 5 && <p className="text-xs text-gray-500 text-center">+{followers.length - 5} mais</p>}
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Próxima Conquista */}
+                        {achievements.find(a => !a.unlocked) && (
+                            <div className="card p-4">
+                                <h4 className="font-bold mb-3">Próxima Conquista</h4>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <i className={`fas ${achievements.find(a => !a.unlocked).icon} text-gray-400 text-xl`}></i>
+                                    </div>
+                                    <div>
+                                        <p className="font-medium">{achievements.find(a => !a.unlocked).name}</p>
+                                        <p className="text-xs text-gray-500">{achievements.find(a => !a.unlocked).desc}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const DataCollectionView = () => {
+        const [uploadedFiles, setUploadedFiles] = useState([]);
+        const [selectedUF, setSelectedUF] = useState('');
+        const [selectedRegiao, setSelectedRegiao] = useState('');
+        const [processing, setProcessing] = useState(false);
+        const [processedData, setProcessedData] = useState([]);
+        const [errors, setErrors] = useState([]);
+        const [successMessage, setSuccessMessage] = useState('');
+        const [showPreview, setShowPreview] = useState(false);
+        const [existingData, setExistingData] = useState([]);
+        const [availableRegioes, setAvailableRegioes] = useState([]);
+        const [duplicateRecords, setDuplicateRecords] = useState([]);
+        const [selectedDuplicates, setSelectedDuplicates] = useState({});
+        const fileInputRef = useRef(null);
+
+        const UF_OPTIONS = [
+            { value: 'AC', label: 'Acre' },
+            { value: 'AL', label: 'Alagoas' },
+            { value: 'AP', label: 'Amapá' },
+            { value: 'AM', label: 'Amazonas' },
+            { value: 'BA', label: 'Bahia' },
+            { value: 'CE', label: 'Ceará' },
+            { value: 'DF', label: 'Distrito Federal' },
+            { value: 'ES', label: 'Espírito Santo' },
+            { value: 'GO', label: 'Goiás' },
+            { value: 'MA', label: 'Maranhão' },
+            { value: 'MT', label: 'Mato Grosso' },
+            { value: 'MS', label: 'Mato Grosso do Sul' },
+            { value: 'MG', label: 'Minas Gerais' },
+            { value: 'PA', label: 'Pará' },
+            { value: 'PB', label: 'Paraíba' },
+            { value: 'PR', label: 'Paraná' },
+            { value: 'PE', label: 'Pernambuco' },
+            { value: 'PI', label: 'Piauí' },
+            { value: 'RJ', label: 'Rio de Janeiro' },
+            { value: 'RN', label: 'Rio Grande do Norte' },
+            { value: 'RS', label: 'Rio Grande do Sul' },
+            { value: 'RO', label: 'Rondônia' },
+            { value: 'RR', label: 'Roraima' },
+            { value: 'SC', label: 'Santa Catarina' },
+            { value: 'SP', label: 'São Paulo' },
+            { value: 'SE', label: 'Sergipe' },
+            { value: 'TO', label: 'Tocantins' }
+        ];
+
+        // Extrair UFs e regiões de saúde dos dados carregados
+        // Confirmação: Temos 3 bancos - Gestantes, Diabetes e Hipertensão
+        // Cada banco tem suas próprias regiões disponíveis
+        const availableUFs = rawData && rawData.length > 0 
+            ? [...new Set(rawData.map(r => {
+                // Extrair UF do estado selecionado no dashboard
+                if (selectedState === 'rn') return 'RN';
+                if (selectedState === 'acre') return 'AC';
+                return '';
+            }).filter(Boolean))]
+            : [];
+
+        useEffect(() => {
+            if (rawData && rawData.length > 0) {
+                const regioes = [...new Set(rawData.map(r => r.regiao).filter(r => r && r.trim()))].sort();
+                setAvailableRegioes(regioes);
+            }
+        }, [rawData]);
+
+        const isAdmin = user?.cargo?.toLowerCase().includes('admin') || user?.cargo?.toLowerCase().includes('gestor') || user?.cargo?.toLowerCase().includes('coordenador');
+
+        const handleFileSelect = (e) => {
+            const files = Array.from(e.target.files);
+            const validFiles = files.filter(f => f.name.endsWith('.xlsx') || f.name.endsWith('.xls'));
+            if (validFiles.length !== files.length) {
+                setErrors(prev => [...prev, 'Alguns arquivos foram ignorados. Apenas arquivos .xlsx e .xls são aceitos.']);
+            }
+            setUploadedFiles(prev => [...prev, ...validFiles.map(f => ({ file: f, status: 'pending', name: f.name }))]);
+            setShowPreview(false);
+            setProcessedData([]);
+        };
+
+        const removeFile = (index) => {
+            setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+            setShowPreview(false);
+            setProcessedData([]);
+        };
+
+        const detectIndicatorFromContent = (grupoText) => {
+            const text = (grupoText || '').toLowerCase();
+            // Gestantes: detectar "gestante", "puérpera", "pré-natal", "gestação", "puerpério"
+            if (text.includes('gestante') || text.includes('puérpera') || text.includes('pré-natal') || 
+                text.includes('gestação') || text.includes('puerpério') || text.includes('puerperio')) {
+                return { key: 'gestantes', name: 'Gestantes e Puérperas' };
+            }
+            if (text.includes('diabetes') || text.includes('diabético') || text.includes('diabetico')) {
+                return { key: 'dm', name: 'Diabetes' };
+            }
+            if (text.includes('hipertens') || text.includes('pressão arterial') || text.includes('pressao arterial')) {
+                return { key: 'has', name: 'Hipertensão' };
+            }
+            return null;
+        };
+
+        // Converter competência do formato "JUN/25" para "Junho"
+        const parseCompetencia = (text) => {
+            const mesesAbrev = {
+                'JAN': 'Janeiro', 'FEV': 'Fevereiro', 'MAR': 'Março', 'ABR': 'Abril',
+                'MAI': 'Maio', 'JUN': 'Junho', 'JUL': 'Julho', 'AGO': 'Agosto',
+                'SET': 'Setembro', 'OUT': 'Outubro', 'NOV': 'Novembro', 'DEZ': 'Dezembro'
+            };
+            // Padrão JUN/25, JAN/25, etc
+            const matchAbrev = text.match(/\b(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\/?\d{0,2}\b/i);
+            if (matchAbrev) {
+                const mes = matchAbrev[1].toUpperCase();
+                return mesesAbrev[mes] || text;
+            }
+            // Padrão completo: Janeiro, Fevereiro, etc
+            const mesesCompletos = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 
+                                    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+            for (const mes of mesesCompletos) {
+                if (text.toLowerCase().includes(mes)) {
+                    return mes.charAt(0).toUpperCase() + mes.slice(1);
+                }
+            }
+            return text;
+        };
+
+        const parseExcelFile = async (fileObj) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                        
+                        if (jsonData.length < 17) {
+                            reject({ file: fileObj.name, error: 'Arquivo não possui linhas suficientes. Esperado pelo menos 17 linhas.' });
+                            return;
+                        }
+
+                        // Linha 9 (índice 8) = UF, Linha 10 (índice 9) = Município
+                        // Linha 13 (índice 12) = Grupo do Indicador, Linha 14 (índice 13) = Competência
+                        const ufRow = jsonData[8] || [];
+                        const municipioRow = jsonData[9] || [];
+                        const grupoRow = jsonData[12] || [];
+                        const competenciaRow = jsonData[13] || [];
+                        const headersRow = jsonData[15] || [];
+
+                        // Extrair UF da linha 9 (formato: "UF: RN" ou "UF: AC")
+                        let ufArquivo = '';
+                        for (const cell of ufRow) {
+                            const cellStr = String(cell).trim().toUpperCase();
+                            // Procurar por siglas de UF conhecidas
+                            if (cellStr.includes('RN') || cellStr.includes('NORTE')) {
+                                ufArquivo = 'RN';
+                                break;
+                            } else if (cellStr.includes('AC') || cellStr.includes('ACRE')) {
+                                ufArquivo = 'AC';
+                                break;
+                            } else if (cellStr.match(/\b[A-Z]{2}\b/)) {
+                                // Capturar qualquer sigla de 2 letras
+                                const match = cellStr.match(/\b([A-Z]{2})\b/);
+                                if (match) {
+                                    ufArquivo = match[1];
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Extrair município da linha 10 (formato: "Município: 240570 / JARDIM DO SERIDÓ")
+                        let municipio = '';
+                        for (const cell of municipioRow) {
+                            const cellStr = String(cell).trim();
+                            if (cellStr.includes('/')) {
+                                // Pegar apenas a parte após a barra
+                                const parts = cellStr.split('/');
+                                if (parts.length >= 2) {
+                                    municipio = parts[parts.length - 1].trim();
+                                    break;
+                                }
+                            } else if (cellStr.toLowerCase().includes('município') || cellStr.length > 5) {
+                                municipio = cellStr.replace(/município:?\s*/i, '').trim();
+                                break;
+                            }
+                        }
+
+                        // Extrair grupo/indicador da linha 13
+                        let grupoText = '';
+                        for (const cell of grupoRow) {
+                            if (typeof cell === 'string' && cell.length > 3) {
+                                grupoText = cell.trim();
+                                break;
+                            }
+                        }
+
+                        // Detectar tipo de indicador pelo conteúdo da linha 13
+                        const indicatorInfo = detectIndicatorFromContent(grupoText);
+                        if (!indicatorInfo) {
+                            reject({ file: fileObj.name, error: `Não foi possível identificar o tipo de indicador na linha 13. Conteúdo encontrado: "${grupoText}"` });
+                            return;
+                        }
+
+                        // Extrair competência da linha 14
+                        let competenciaRaw = '';
+                        for (const cell of competenciaRow) {
+                            const cellStr = String(cell).trim();
+                            // Procurar por padrões de data/mês: JUN/25, JAN/25, 2024-01, Janeiro, etc
+                            if (cellStr.match(/\b(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\/?\d{0,2}\b/i) ||
+                                cellStr.match(/\d{4}-\d{2}/) || cellStr.match(/\d{2}\/\d{4}/) || 
+                                cellStr.match(/janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro/i)) {
+                                competenciaRaw = cellStr;
+                                break;
+                            }
+                        }
+                        // Se não encontrou, tentar pegar qualquer texto significativo
+                        if (!competenciaRaw) {
+                            for (const cell of competenciaRow) {
+                                const cellStr = String(cell).trim();
+                                if (cellStr.length >= 3 && cellStr.length <= 50 && !cellStr.match(/^[\d\s]+$/)) {
+                                    // Extrair apenas a parte do mês se houver "Competência selecionada: JUN/25"
+                                    const matchComp = cellStr.match(/\b(JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)\/?\d{0,2}\b/i);
+                                    if (matchComp) {
+                                        competenciaRaw = matchComp[0];
+                                    } else {
+                                        competenciaRaw = cellStr;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        // Converter para formato legível (JUN/25 -> Junho)
+                        const competencia = parseCompetencia(competenciaRaw);
+
+                        // Extrair dados da tabela (a partir da linha 17, índice 16)
+                        // Linha 16 (índice 15) é o cabeçalho - manter como referência
+                        // Linha 17+ (índice 16+) são os dados
+                        const allRows = jsonData.slice(16);
+                        
+                        // Filtrar: linhas em branco e linha com "Fonte:" no início
+                        const tableData = allRows.filter(row => {
+                            // Verificar se a linha tem conteúdo significativo
+                            const hasContent = row.some(cell => cell !== '' && cell !== null && cell !== undefined);
+                            if (!hasContent) return false;
+                            
+                            // Verificar se é linha de fonte de dados (ignorar)
+                            const firstCell = String(row[0] || '').toLowerCase().trim();
+                            if (firstCell.startsWith('fonte:') || firstCell.startsWith('fonte ')) return false;
+                            
+                            // Verificar se a primeira célula é vazia
+                            const firstCellValue = String(row[0] || '').trim();
+                            if (firstCellValue === '') return false;
+                            
+                            // Verificar se é um código numérico (CNES válido) - deve ser número
+                            if (!/^\d+$/.test(firstCellValue)) return false;
+                            
+                            return true;
+                        });
+                        
+                        if (tableData.length === 0) {
+                            reject({ file: fileObj.name, error: 'Nenhum dado encontrado na tabela (a partir da linha 17).' });
+                            return;
+                        }
+
+                        resolve({
+                            file: fileObj.name,
+                            indicatorKey: indicatorInfo.key,
+                            indicatorName: indicatorInfo.name,
+                            ufArquivo: ufArquivo,
+                            municipio: municipio,
+                            competencia: competencia || 'Não identificada',
+                            grupo: grupoText,
+                            rowCount: tableData.length,
+                            tableData,
+                            headers: headersRow,
+                            status: 'success',
+                            sampleRows: tableData.slice(0, 5) // Primeiras 5 linhas para preview
+                        });
+                    } catch (err) {
+                        reject({ file: fileObj.name, error: 'Erro ao processar arquivo: ' + err.message });
+                    }
+                };
+                reader.onerror = () => reject({ file: fileObj.name, error: 'Erro ao ler arquivo.' });
+                reader.readAsArrayBuffer(fileObj.file);
+            });
+        };
+
+        // Verificar se há dados existentes na região selecionada
+        const checkRegionHasData = (regiao) => {
+            return rawData.some(r => r.regiao === regiao);
+        };
+
+        // Verificar duplicados entre novos dados e base existente
+        const checkDuplicates = (fileData) => {
+            const duplicates = [];
+            const validRows = [];
+            
+            for (let i = 0; i < fileData.tableData.length; i++) {
+                const row = fileData.tableData[i];
+                const cnes = String(row[0] || '').trim();
+                const estabelecimento = String(row[1] || '').trim();
+                const equipe = String(row[4] || '').trim();
+                const somatorio = row[row.length - 3] || '';
+                const total = row[row.length - 2] || '';
+                let taxa = row[row.length - 1] || '';
+                if (typeof taxa === 'string') taxa = taxa.replace(',', '.');
+                
+                // Verificar se já existe na base com mesmo CNES, competência e região
+                const existingRecord = rawData.find(existing => 
+                    existing.cnes === cnes && 
+                    existing.competencia === fileData.competencia &&
+                    existing.regiao === fileData.regiao
+                );
+                
+                if (existingRecord) {
+                    duplicates.push({ 
+                        id: `${fileData.file}-${i}`,
+                        cnes, 
+                        estabelecimento,
+                        equipe,
+                        somatorio,
+                        total,
+                        taxa,
+                        competencia: fileData.competencia,
+                        regiao: fileData.regiao,
+                        municipio: fileData.municipio,
+                        existingRecord,
+                        row,
+                        action: 'skip' // default: pular
+                    });
+                } else {
+                    validRows.push(row);
+                }
+            }
+            
+            return { duplicates, validRows };
+        };
+
+        const processFiles = async () => {
+            if (!selectedRegiao) {
+                setErrors(['Por favor, selecione a Região de Saúde antes de processar os arquivos.']);
+                return;
+            }
+            
+            // Verificar se a região selecionada tem dados na base atual
+            if (!checkRegionHasData(selectedRegiao)) {
+                setErrors([`A região "${selectedRegiao}" não possui dados na base atual do indicador ${config?.title || 'selecionado'}. Selecione uma região que já tenha dados cadastrados.`]);
+                return;
+            }
+            
+            if (uploadedFiles.length === 0) {
+                setErrors(['Nenhum arquivo selecionado para processamento.']);
+                return;
+            }
+
+            setProcessing(true);
+            setErrors([]);
+            setProcessedData([]);
+            setSuccessMessage('');
+            setShowPreview(false);
+            setDuplicateRecords([]);
+            setSelectedDuplicates({});
+
+            const results = [];
+            const newErrors = [];
+            const duplicateWarnings = [];
+            const allDuplicates = [];
+
+            for (const fileObj of uploadedFiles) {
+                try {
+                    const result = await parseExcelFile(fileObj);
+                    result.regiao = selectedRegiao;
+                    
+                    // Verificar se o indicador do arquivo corresponde ao indicador atual do dashboard
+                    if (result.indicatorKey !== indicatorType) {
+                        const indicadorArquivo = result.indicatorName || result.indicatorKey;
+                        const indicadorAtual = config?.title || indicatorType;
+                        newErrors.push(`${result.file}: O arquivo contém dados de "${indicadorArquivo}", mas a base atual é de "${indicadorAtual}". Não é possível inserir dados de indicadores diferentes.`);
+                        setUploadedFiles(prev => prev.map(f => f.name === fileObj.name ? { ...f, status: 'error', error: `Indicador incompatível: ${indicadorArquivo}` } : f));
+                        continue;
+                    }
+                    
+                    // Verificar se a UF do ARQUIVO corresponde à UF da base atual do dashboard
+                    const ufBase = selectedState === 'rn' ? 'RN' : selectedState === 'acre' ? 'AC' : '';
+                    const ufArquivo = result.ufArquivo || '';
+                    
+                    if (!ufArquivo) {
+                        newErrors.push(`${result.file}: Não foi possível identificar a UF na linha 9 do arquivo.`);
+                        setUploadedFiles(prev => prev.map(f => f.name === fileObj.name ? { ...f, status: 'error', error: 'UF não identificada no arquivo' } : f));
+                        continue;
+                    }
+                    
+                    if (ufArquivo !== ufBase) {
+                        newErrors.push(`${result.file}: O arquivo contém dados de "${ufArquivo}", mas a base atual é de "${ufBase}". Não é possível inserir dados de UFs diferentes.`);
+                        setUploadedFiles(prev => prev.map(f => f.name === fileObj.name ? { ...f, status: 'error', error: `UF incompatível: arquivo ${ufArquivo} ≠ base ${ufBase}` } : f));
+                        continue;
+                    }
+                    
+                    // Usar a UF extraída do arquivo
+                    result.uf = ufArquivo;
+                    
+                    // Verificar duplicados
+                    const { duplicates, validRows } = checkDuplicates(result);
+                    
+                    // Armazenar duplicados para permitir seleção do usuário
+                    if (duplicates.length > 0) {
+                        allDuplicates.push(...duplicates);
+                        duplicateWarnings.push(`${result.file}: ${duplicates.length} registro(s) duplicado(s) encontrado(s).`);
+                    }
+                    
+                    // Atualizar resultado com registros válidos
+                    result.tableData = validRows;
+                    result.rowCount = validRows.length;
+                    result.sampleRows = validRows.slice(0, 5);
+                    result.duplicatesFound = duplicates.length;
+                    result.allTableData = [...validRows]; // Guardar para possível adição de subscritos
+                    results.push(result);
+                    setUploadedFiles(prev => prev.map(f => f.name === fileObj.name ? { ...f, status: duplicates.length > 0 ? 'warning' : 'success' } : f));
+                } catch (err) {
+                    newErrors.push(`${err.file}: ${err.error}`);
+                    setUploadedFiles(prev => prev.map(f => f.name === fileObj.name ? { ...f, status: 'error', error: err.error } : f));
+                }
+            }
+
+            setProcessedData(results);
+            setDuplicateRecords(allDuplicates);
+            
+            // Inicializar ações dos duplicados como 'skip' por padrão
+            const initialActions = {};
+            allDuplicates.forEach(d => { initialActions[d.id] = 'skip'; });
+            setSelectedDuplicates(initialActions);
+            
+            setErrors([...newErrors, ...duplicateWarnings]);
+            setProcessing(false);
+
+            if (results.length > 0 || allDuplicates.length > 0) {
+                setShowPreview(true);
+                const totalNew = results.reduce((s, r) => s + r.rowCount, 0);
+                const totalDuplicates = allDuplicates.length;
+                let msg = `${results.length} arquivo(s) processado(s)! ${totalNew} registro(s) novo(s) encontrado(s).`;
+                if (totalDuplicates > 0) {
+                    msg += ` ${totalDuplicates} duplicado(s) encontrado(s) - escolha a ação para cada um.`;
+                }
+                msg += ' Verifique a prévia abaixo antes de confirmar.';
+                setSuccessMessage(msg);
+            }
+        };
+
+        const confirmAndSave = () => {
+            const existingImports = JSON.parse(localStorage.getItem('gdiaps_imported_data') || '[]');
+            const newImports = processedData.map(d => ({
+                ...d,
+                importedAt: new Date().toISOString(),
+                importedBy: user?.name || 'Anônimo'
+            }));
+            localStorage.setItem('gdiaps_imported_data', JSON.stringify([...existingImports, ...newImports]));
+            setSuccessMessage('Dados inseridos com sucesso na base!');
+            setUploadedFiles([]);
+            setProcessedData([]);
+            setShowPreview(false);
+        };
+
+        if (!user) {
+            return (
+                <div className="animate-fadeIn flex flex-col items-center justify-center min-h-[60vh]">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-6">
+                        <i className="fas fa-lock text-white text-4xl"></i>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h2>
+                    <p className="text-gray-500 mb-6">Faça login para acessar a coleta de dados</p>
+                    <button onClick={() => { setAuthMode('login'); setAuthModal(true); }} className="btn-primary">
+                        <i className="fas fa-sign-in-alt mr-2"></i>Entrar
+                    </button>
+                </div>
+            );
+        }
+
+        if (!isAdmin) {
+            return (
+                <div className="animate-fadeIn flex flex-col items-center justify-center min-h-[60vh]">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mb-6">
+                        <i className="fas fa-user-shield text-white text-4xl"></i>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Permissão Negada</h2>
+                    <p className="text-gray-500 mb-2">Apenas administradores podem acessar esta área.</p>
+                    <p className="text-sm text-gray-400">Seu cargo atual: <span className="font-medium">{user?.cargo || 'Não definido'}</span></p>
+                    <p className="text-xs text-gray-400 mt-4">Cargos permitidos: Administrador, Gestor, Coordenador</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Coleta de Dados</h1>
+                        <p className="text-gray-500">Importe relatórios do SIAPS para o sistema</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-xl">
+                        <i className="fas fa-shield-alt"></i>
+                        <span className="font-medium">Administrador</span>
+                    </div>
+                </div>
+
+                {/* Info do indicador atual */}
+                <div className="card p-4 mb-6 bg-blue-50 border border-blue-200">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                            <i className="fas fa-database text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <p className="text-sm text-blue-600">Base de dados atual</p>
+                            <p className="font-bold text-blue-800">{config?.title || 'Nenhum indicador selecionado'}</p>
+                            <p className="text-xs text-blue-500">
+                                {selectedState === 'rn' ? 'Rio Grande do Norte (RN)' : selectedState === 'acre' ? 'Acre (AC)' : 'Estado não selecionado'}
+                                {' • '}{rawData.length} registros na base
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Configuração de Região */}
+                <div className="card p-6 mb-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-cog text-blue-500"></i>
+                        Configuração da Importação
+                    </h3>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                        <p className="text-sm text-amber-700">
+                            <i className="fas fa-info-circle mr-2"></i>
+                            <strong>Validação automática:</strong> A UF e o tipo de indicador serão extraídos automaticamente do arquivo Excel e validados contra a base atual.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <i className="fas fa-map-marked-alt mr-1"></i> Região de Saúde (destino dos dados)
+                        </label>
+                        <select 
+                            className="input-field" 
+                            value={selectedRegiao} 
+                            onChange={e => setSelectedRegiao(e.target.value)}
+                        >
+                            <option value="">Selecione a Região...</option>
+                            {availableRegioes.map(r => (
+                                <option key={r} value={r}>{r}</option>
+                            ))}
+                        </select>
+                        {availableRegioes.length > 0 && (
+                            <p className="text-xs text-green-600 mt-1">
+                                <i className="fas fa-check-circle mr-1"></i>
+                                {availableRegioes.length} região(ões) disponível(is) na base atual
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Área de Upload */}
+                <div className="card p-6 mb-6">
+                    <h3 className="font-bold mb-4 flex items-center gap-2">
+                        <i className="fas fa-cloud-upload-alt text-purple-500"></i>
+                        Upload de Arquivos
+                    </h3>
+                    <div 
+                        className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-blue-500', 'bg-blue-50'); }}
+                        onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50'); }}
+                        onDrop={e => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50'); handleFileSelect({ target: { files: e.dataTransfer.files } }); }}
+                    >
+                        <input 
+                            ref={fileInputRef}
+                            type="file" 
+                            multiple 
+                            accept=".xlsx,.xls" 
+                            className="hidden" 
+                            onChange={handleFileSelect}
+                        />
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4">
+                            <i className="fas fa-file-excel text-white text-2xl"></i>
+                        </div>
+                        <p className="text-lg font-medium text-gray-700">Arraste arquivos aqui ou clique para selecionar</p>
+                        <p className="text-sm text-gray-500 mt-2">Aceita múltiplos arquivos .xlsx ou .xls do SIAPS</p>
+                        <p className="text-xs text-gray-400 mt-1">Formatos: Relatório Visão Competência (Gestantes, Diabetes, Hipertensão)</p>
+                    </div>
+
+                    {uploadedFiles.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                            <p className="text-sm font-medium text-gray-700">{uploadedFiles.length} arquivo(s) selecionado(s):</p>
+                            {uploadedFiles.map((f, i) => (
+                                <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${f.status === 'success' ? 'bg-green-50 border border-green-200' : f.status === 'error' ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <i className={`fas ${f.status === 'success' ? 'fa-check-circle text-green-500' : f.status === 'error' ? 'fa-times-circle text-red-500' : 'fa-file-excel text-green-600'}`}></i>
+                                        <div>
+                                            <p className="font-medium text-sm">{f.name}</p>
+                                            {f.error && <p className="text-xs text-red-500">{f.error}</p>}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {errors.length > 0 && (
+                    <div className="card p-4 mb-6 bg-red-50 border border-red-200">
+                        <h4 className="font-bold text-red-700 mb-2 flex items-center gap-2">
+                            <i className="fas fa-exclamation-triangle"></i>
+                            Erros encontrados
+                        </h4>
+                        <ul className="space-y-1">
+                            {errors.map((err, i) => (
+                                <li key={i} className="text-sm text-red-600"><i className="fas fa-times mr-1"></i>{err}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {successMessage && (
+                    <div className="card p-4 mb-6 bg-green-50 border border-green-200">
+                        <p className="text-green-700 font-medium flex items-center gap-2">
+                            <i className="fas fa-check-circle"></i>
+                            {successMessage}
+                        </p>
+                    </div>
+                )}
+
+                {/* Prévia dos dados */}
+                {showPreview && processedData.length > 0 && (
+                    <div className="card p-6 mb-6 border-2 border-blue-300">
+                        <h3 className="font-bold mb-4 flex items-center gap-2 text-blue-800">
+                            <i className="fas fa-eye"></i>
+                            Prévia da Inserção de Dados
+                        </h3>
+                        
+                        {/* Resumo dos arquivos processados */}
+                        <div className="bg-blue-50 rounded-xl p-4 mb-6">
+                            <h4 className="font-semibold text-blue-800 mb-3">Arquivos a serem inseridos:</h4>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="bg-blue-100">
+                                            <th className="px-4 py-2 text-left">Arquivo</th>
+                                            <th className="px-4 py-2 text-left">Indicador</th>
+                                            <th className="px-4 py-2 text-left">Competência</th>
+                                            <th className="px-4 py-2 text-left">UF</th>
+                                            <th className="px-4 py-2 text-left">Região</th>
+                                            <th className="px-4 py-2 text-center">Registros</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {processedData.map((d, i) => (
+                                            <tr key={i} className="border-t border-blue-200 bg-green-50">
+                                                <td className="px-4 py-3 font-medium">{d.file}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
+                                                        {d.indicatorName}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 font-medium text-green-700">{d.competencia}</td>
+                                                <td className="px-4 py-3">{d.uf}</td>
+                                                <td className="px-4 py-3">{d.regiao}</td>
+                                                <td className="px-4 py-3 text-center font-bold text-green-600">{d.rowCount}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Visualização combinada: Base atual + Novos dados */}
+                        <div className="mb-6">
+                            <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <i className="fas fa-database text-blue-500"></i>
+                                Visualização da Base de Dados Após Inserção
+                            </h4>
+                            <p className="text-sm text-gray-500 mb-3">
+                                <i className="fas fa-info-circle mr-1"></i>
+                                Linhas em <span className="bg-green-100 text-green-700 px-1 rounded">verde</span> são os novos dados que serão inseridos. 
+                                Linhas em branco são dados já existentes na base.
+                            </p>
+                            <div className="overflow-x-auto border-2 border-blue-300 rounded-lg">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="bg-blue-100">
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Status</th>
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Município</th>
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Região</th>
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Competência</th>
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Equipe</th>
+                                            <th className="px-3 py-2 text-left font-bold text-blue-800">Estabelecimento</th>
+                                            <th className="px-3 py-2 text-center font-bold text-blue-800">Somatório</th>
+                                            <th className="px-3 py-2 text-center font-bold text-blue-800">Total</th>
+                                            <th className="px-3 py-2 text-center font-bold text-blue-800">Taxa</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {/* Dados existentes - filtrados pela região selecionada */}
+                                        {rawData.filter(r => r.regiao === selectedRegiao).slice(0, 3).map((row, i) => (
+                                            <tr key={`existing-${i}`} className="border-t border-gray-200 bg-white hover:bg-gray-50">
+                                                <td className="px-3 py-2"><span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Existente</span></td>
+                                                <td className="px-3 py-2 font-medium">{row.municipio || '-'}</td>
+                                                <td className="px-3 py-2">{row.regiao || '-'}</td>
+                                                <td className="px-3 py-2">{row.competencia || '-'}</td>
+                                                <td className="px-3 py-2 truncate max-w-[120px]">{row.estabelecimento || '-'}</td>
+                                                <td className="px-3 py-2 truncate max-w-[150px]">{row.estabelecimento || '-'}</td>
+                                                <td className="px-3 py-2 text-center">{row.somatorio?.toLocaleString() || '-'}</td>
+                                                <td className="px-3 py-2 text-center">{row.totalPacientes?.toLocaleString() || '-'}</td>
+                                                <td className="px-3 py-2 text-center font-medium">{row.somatorio && row.totalPacientes ? (row.somatorio / row.totalPacientes).toFixed(2) : '-'}</td>
+                                            </tr>
+                                        ))}
+                                        {/* Separador visual */}
+                                        <tr className="bg-gradient-to-r from-green-200 to-green-100">
+                                            <td colSpan="9" className="px-3 py-2 text-center text-green-800 font-bold text-sm">
+                                                <i className="fas fa-arrow-down mr-2"></i>
+                                                NOVOS DADOS A SEREM INSERIDOS ({processedData.reduce((s, d) => s + d.rowCount, 0)} registros)
+                                                <i className="fas fa-arrow-down ml-2"></i>
+                                            </td>
+                                        </tr>
+                                        {/* Novos dados de cada arquivo */}
+                                        {processedData.map((fileData, fileIdx) => (
+                                            fileData.sampleRows.map((row, rowIdx) => {
+                                                // Mapear colunas do Excel para formato da base
+                                                const estabelecimento = row[1] || '';
+                                                const equipe = row[4] || '';
+                                                const somatorio = row[row.length - 3] || '';
+                                                const total = row[row.length - 2] || '';
+                                                // Padronizar taxa: converter vírgula para ponto
+                                                let taxa = row[row.length - 1] || '';
+                                                if (typeof taxa === 'string') {
+                                                    taxa = taxa.replace(',', '.');
+                                                }
+                                                const taxaFormatada = typeof taxa === 'number' ? taxa.toFixed(2) : (parseFloat(String(taxa).replace(',', '.')) || 0).toFixed(2);
+                                                return (
+                                                    <tr key={`new-${fileIdx}-${rowIdx}`} className="border-t border-green-300 bg-green-50 hover:bg-green-100">
+                                                        <td className="px-3 py-2"><span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded font-medium">NOVO</span></td>
+                                                        <td className="px-3 py-2 font-medium text-green-800">{fileData.municipio || '-'}</td>
+                                                        <td className="px-3 py-2 text-green-700">{fileData.regiao}</td>
+                                                        <td className="px-3 py-2 text-green-700 font-medium">{fileData.competencia}</td>
+                                                        <td className="px-3 py-2 truncate max-w-[120px] text-green-700">{equipe}</td>
+                                                        <td className="px-3 py-2 truncate max-w-[150px] text-green-700">{estabelecimento}</td>
+                                                        <td className="px-3 py-2 text-center text-green-700">{somatorio}</td>
+                                                        <td className="px-3 py-2 text-center text-green-700">{total}</td>
+                                                        <td className="px-3 py-2 text-center font-medium text-green-800">{taxaFormatada}</td>
+                                                    </tr>
+                                                );
+                                            })
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="flex justify-between items-center mt-2">
+                                <p className="text-xs text-gray-500">
+                                    <i className="fas fa-chart-bar mr-1"></i>
+                                    Base atual: {rawData.length} registros → Após inserção: {rawData.length + processedData.reduce((s, d) => s + d.rowCount, 0) + Object.values(selectedDuplicates).filter(a => a === 'overwrite').length} registros
+                                </p>
+                                <p className="text-xs text-green-600 font-medium">
+                                    <i className="fas fa-plus-circle mr-1"></i>
+                                    +{processedData.reduce((s, d) => s + d.rowCount, 0)} novos registros
+                                    {Object.values(selectedDuplicates).filter(a => a === 'overwrite').length > 0 && (
+                                        <span className="text-amber-600 ml-2">
+                                            <i className="fas fa-sync-alt mr-1"></i>
+                                            {Object.values(selectedDuplicates).filter(a => a === 'overwrite').length} a subscrever
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Gerenciamento de Duplicados */}
+                        {duplicateRecords.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                    <i className="fas fa-copy text-amber-500"></i>
+                                    Registros Duplicados Encontrados ({duplicateRecords.length})
+                                </h4>
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                    <p className="text-sm text-amber-700">
+                                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                                        Os registros abaixo já existem na base. Escolha a ação para cada um:
+                                        <strong> Pular</strong> (manter o existente) ou <strong>Subscrever</strong> (atualizar com o novo).
+                                    </p>
+                                    <div className="flex gap-2 mt-2">
+                                        <button 
+                                            onClick={() => {
+                                                const newActions = {};
+                                                duplicateRecords.forEach(d => { newActions[d.id] = 'skip'; });
+                                                setSelectedDuplicates(newActions);
+                                            }}
+                                            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded"
+                                        >
+                                            <i className="fas fa-ban mr-1"></i> Pular Todos
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                const newActions = {};
+                                                duplicateRecords.forEach(d => { newActions[d.id] = 'overwrite'; });
+                                                setSelectedDuplicates(newActions);
+                                            }}
+                                            className="text-xs bg-amber-200 hover:bg-amber-300 text-amber-700 px-3 py-1 rounded"
+                                        >
+                                            <i className="fas fa-sync-alt mr-1"></i> Subscrever Todos
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto border-2 border-amber-300 rounded-lg max-h-64 overflow-y-auto">
+                                    <table className="w-full text-xs">
+                                        <thead className="sticky top-0">
+                                            <tr className="bg-amber-100">
+                                                <th className="px-3 py-2 text-left font-bold text-amber-800">Ação</th>
+                                                <th className="px-3 py-2 text-left font-bold text-amber-800">CNES</th>
+                                                <th className="px-3 py-2 text-left font-bold text-amber-800">Estabelecimento</th>
+                                                <th className="px-3 py-2 text-left font-bold text-amber-800">Competência</th>
+                                                <th className="px-3 py-2 text-center font-bold text-amber-800">Somatório (Atual → Novo)</th>
+                                                <th className="px-3 py-2 text-center font-bold text-amber-800">Taxa (Atual → Novo)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {duplicateRecords.map((dup, i) => (
+                                                <tr key={dup.id} className={`border-t border-amber-200 ${selectedDuplicates[dup.id] === 'overwrite' ? 'bg-amber-100' : 'bg-white'} hover:bg-amber-50`}>
+                                                    <td className="px-3 py-2">
+                                                        <select 
+                                                            value={selectedDuplicates[dup.id] || 'skip'}
+                                                            onChange={e => setSelectedDuplicates(prev => ({ ...prev, [dup.id]: e.target.value }))}
+                                                            className={`text-xs px-2 py-1 rounded border ${selectedDuplicates[dup.id] === 'overwrite' ? 'bg-amber-200 border-amber-400 text-amber-800' : 'bg-gray-100 border-gray-300'}`}
+                                                        >
+                                                            <option value="skip">Pular</option>
+                                                            <option value="overwrite">Subscrever</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-2 font-mono">{dup.cnes}</td>
+                                                    <td className="px-3 py-2 truncate max-w-[150px]">{dup.estabelecimento}</td>
+                                                    <td className="px-3 py-2">{dup.competencia}</td>
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className="text-gray-500">{dup.existingRecord?.somatorio?.toLocaleString() || '-'}</span>
+                                                        <i className="fas fa-arrow-right mx-1 text-amber-500"></i>
+                                                        <span className="font-medium text-amber-700">{dup.somatorio}</span>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className="text-gray-500">{dup.existingRecord?.somatorio && dup.existingRecord?.totalPacientes ? (dup.existingRecord.somatorio / dup.existingRecord.totalPacientes).toFixed(2) : '-'}</span>
+                                                        <i className="fas fa-arrow-right mx-1 text-amber-500"></i>
+                                                        <span className="font-medium text-amber-700">{typeof dup.taxa === 'number' ? dup.taxa.toFixed(2) : parseFloat(String(dup.taxa).replace(',', '.')).toFixed(2)}</span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Detalhes dos arquivos processados */}
+                        {processedData.map((fileData, fileIdx) => (
+                            <div key={fileIdx} className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                                <h5 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                                    <i className="fas fa-file-excel text-green-600"></i>
+                                    {fileData.file}
+                                </h5>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                    <div><span className="text-gray-500">Indicador:</span> <span className="font-medium">{fileData.indicatorName}</span></div>
+                                    <div><span className="text-gray-500">Competência:</span> <span className="font-medium text-green-700">{fileData.competencia}</span></div>
+                                    <div><span className="text-gray-500">Região:</span> <span className="font-medium">{fileData.regiao}</span></div>
+                                    <div><span className="text-gray-500">Registros:</span> <span className="font-bold text-green-600">{fileData.rowCount}</span></div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Botões de confirmação */}
+                        <div className="flex gap-4 mt-6 pt-4 border-t">
+                            <button onClick={confirmAndSave} className="btn-primary flex-1">
+                                <i className="fas fa-check mr-2"></i>Confirmar e Inserir na Base
+                            </button>
+                            <button onClick={() => { setShowPreview(false); setProcessedData([]); }} className="btn-secondary flex-1">
+                                <i className="fas fa-times mr-2"></i>Cancelar
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Botão de processar */}
+                {!showPreview && (
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={processFiles}
+                            disabled={processing || uploadedFiles.length === 0}
+                            className={`btn-primary flex-1 ${(processing || uploadedFiles.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            {processing ? (
+                                <><i className="fas fa-spinner fa-spin mr-2"></i>Processando...</>
+                            ) : (
+                                <><i className="fas fa-cogs mr-2"></i>Processar Arquivos</>
+                            )}
+                        </button>
+                    </div>
+                )}
+
+                {/* Instruções */}
+                <div className="card p-6 mt-6 bg-blue-50 border border-blue-200">
+                    <h3 className="font-bold mb-3 flex items-center gap-2 text-blue-800">
+                        <i className="fas fa-info-circle"></i>
+                        Instruções de Uso
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+                        <div>
+                            <p className="font-medium mb-2">Formato esperado dos arquivos:</p>
+                            <ul className="space-y-1 text-blue-600">
+                                <li><i className="fas fa-check mr-1"></i>Relatório Visão Competência do SIAPS</li>
+                                <li><i className="fas fa-check mr-1"></i>Gestantes e Puérperas</li>
+                                <li><i className="fas fa-check mr-1"></i>Diabetes</li>
+                                <li><i className="fas fa-check mr-1"></i>Hipertensão</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <p className="font-medium mb-2">Estrutura do arquivo:</p>
+                            <ul className="space-y-1 text-blue-600">
+                                <li><i className="fas fa-table mr-1"></i>Linha 9: UF</li>
+                                <li><i className="fas fa-table mr-1"></i>Linha 10: Município</li>
+                                <li><i className="fas fa-table mr-1"></i>Linha 13: Tipo de Indicador (auto-detectado)</li>
+                                <li><i className="fas fa-table mr-1"></i>Linha 14: Competência</li>
+                                <li><i className="fas fa-table mr-1"></i>Linha 17+: Dados da tabela</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (!indicatorType) return (<><AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} mode={authMode} setMode={setAuthMode} onLogin={setUser} /><LandingPage onSelectIndicator={handleSelectIndicator} user={user} onOpenAuth={() => setAuthModal(true)} /></>);
+    if (loading) return <div className="min-h-screen flex items-center justify-center landing-bg"><div className="text-center"><i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i><p className="text-white text-lg">Carregando dados...</p></div></div>;
+    if (error) return <div className="min-h-screen flex items-center justify-center text-red-500"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</div>;
+
+    return (<div className="min-h-screen"><Sidebar /><ProfileDropdown /><BabyAPSTip view={activeView} /><div className="main-content">{activeView === 'home' && <HomeView />}{activeView === 'indicators' && <IndicatorsView />}{activeView === 'components' && <ComponentsView />}{activeView === 'strategic' && <StrategicView />}{activeView === 'goals' && <GoalsView />}{activeView === 'evaluation' && <EvaluationView />}{activeView === 'notes' && <NotesView />}{activeView === 'map' && <MapView />}{activeView === 'dataCollection' && <DataCollectionView />}{activeView === 'network' && <NetworkView />}{activeView === 'profile' && <ProfileView />}</div></div>);
 };
 
 ReactDOM.render(<Dashboard />, document.getElementById('root'));
