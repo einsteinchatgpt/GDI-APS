@@ -188,26 +188,52 @@ const BarChartHorizontal = ({ data, labelKey, valueKey, height }) => {
     return React.createElement('canvas', { ref });
 };
 
-const Heatmap = ({ data, indicatorCount = 11 }) => {
+const Heatmap = ({ data, indicatorCount = 11, shortNames = [] }) => {
     if (!data?.length) return null;
     const indicators = Array.from({length: indicatorCount}, (_, i) => i + 1);
-    return React.createElement('div', { className: 'overflow-x-auto' },
-        React.createElement('div', { className: 'min-w-max' },
-            React.createElement('div', { className: 'flex mb-2' },
-                React.createElement('div', { style: { minWidth: '140px' } }),
-                React.createElement('div', { className: 'heatmap-cell font-bold text-xs', style: { minWidth: '75px' } }, 'Boas Práticas'),
-                indicators.map(i => React.createElement('div', { key: i, className: 'heatmap-cell font-bold text-xs', style: { minWidth: '65px' } }, 'C' + i))
+    
+    return React.createElement('div', null,
+        // Contador de municípios
+        React.createElement('div', { className: 'flex items-center justify-between mb-3' },
+            React.createElement('p', { className: 'text-sm text-gray-600' }, 
+                React.createElement('i', { className: 'fas fa-list-ol mr-2 text-blue-500' }),
+                React.createElement('strong', null, data.length),
+                ' municípios encontrados'
             ),
-            data.map((r, i) => React.createElement('div', { key: i, className: 'flex mb-1' },
-                React.createElement('div', { className: 'heatmap-row-label', style: { minWidth: '140px' } }, r.municipio),
-                React.createElement('div', { className: 'heatmap-cell rounded text-white', style: { backgroundColor: getTaxaColor(r.taxa), minWidth: '75px' } }, r.taxa.toFixed(2)),
-                r.comps.slice(0, indicatorCount).map((v, j) => React.createElement('div', { key: j, className: 'heatmap-cell rounded text-white', style: { backgroundColor: getColor(v), minWidth: '65px' } }, v.toFixed(0) + '%'))
-            ))
+            React.createElement('p', { className: 'text-xs text-gray-400' }, 
+                'Role para ver todos'
+            )
         ),
-        React.createElement('div', { className: 'flex justify-end mt-4 gap-4 text-xs' },
+        // Container com scroll
+        React.createElement('div', { className: 'heatmap-scroll-container' },
+            React.createElement('table', { className: 'corp-heatmap' },
+                React.createElement('thead', null,
+                    React.createElement('tr', null,
+                        React.createElement('th', { style: { minWidth: '160px', textAlign: 'left', position: 'sticky', left: 0, background: '#f8fafc', zIndex: 2 } }, 'Município'),
+                        React.createElement('th', { style: { minWidth: '80px' } }, 'Taxa'),
+                        indicators.map(i => React.createElement('th', { key: i, style: { minWidth: '60px' }, title: shortNames[i-1] || '' }, 'C' + i))
+                    )
+                ),
+                React.createElement('tbody', null,
+                    data.map((r, i) => React.createElement('tr', { key: i },
+                        React.createElement('td', { style: { position: 'sticky', left: 0, background: 'white', zIndex: 1 } },
+                            React.createElement('div', { className: 'corp-heatmap-mun', title: r.municipio }, r.municipio)
+                        ),
+                        React.createElement('td', null,
+                            React.createElement('div', { className: 'corp-heatmap-cell', style: { backgroundColor: getTaxaColor(r.taxa) } }, r.taxa.toFixed(2))
+                        ),
+                        r.comps.slice(0, indicatorCount).map((v, j) => React.createElement('td', { key: j },
+                            React.createElement('div', { className: 'corp-heatmap-cell', style: { backgroundColor: getColor(v) }, title: (shortNames[j] || 'C'+(j+1)) + ': ' + v.toFixed(1) + '%' }, v.toFixed(0) + '%')
+                        ))
+                    ))
+                )
+            )
+        ),
+        // Legenda
+        React.createElement('div', { className: 'flex justify-center mt-4 gap-6 text-xs flex-wrap' },
             [['#ef4444','Regular (0-24%)'],['#fbbf24','Suficiente (25-49%)'],['#84cc16','Bom (50-74%)'],['#22c55e','Ótimo (75-100%)']].map(function(arr) {
-                return React.createElement('span', { key: arr[1], className: 'flex items-center gap-1' },
-                    React.createElement('span', { className: 'w-4 h-4 rounded', style: { backgroundColor: arr[0] } }),
+                return React.createElement('span', { key: arr[1], className: 'flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full' },
+                    React.createElement('span', { className: 'w-3 h-3 rounded-full', style: { backgroundColor: arr[0] } }),
                     arr[1]
                 );
             })

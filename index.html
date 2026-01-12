@@ -49,6 +49,30 @@
         .sidebar-icon::after { content: attr(title); position: absolute; left: 65px; background: #1e3a5f; color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: all 0.3s; transform: translateX(-10px); }
         .sidebar-icon:hover::after { opacity: 1; transform: translateX(0); }
         
+        /* Corporate Header com Abas */
+        .corp-header { background: linear-gradient(135deg, #003366 0%, #004d99 100%); padding: 0; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .corp-header-inner { max-width: 1600px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 70px; }
+        .corp-logo { display: flex; align-items: center; gap: 12px; }
+        .corp-logo-icon { width: 44px; height: 44px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .corp-logo-text h1 { font-size: 18px; font-weight: 800; color: white; margin: 0; }
+        .corp-logo-text p { font-size: 11px; color: rgba(255,255,255,0.7); margin: 0; }
+        .corp-nav { display: flex; gap: 4px; }
+        .corp-nav-item { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7); background: transparent; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        .corp-nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        .corp-nav-item.active { background: rgba(255,255,255,0.2); color: white; }
+        .corp-user { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 8px 12px; border-radius: 12px; transition: all 0.2s; }
+        .corp-user:hover { background: rgba(255,255,255,0.1); }
+        .corp-user-avatar { width: 36px; height: 36px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .corp-user-info { text-align: left; }
+        .corp-user-name { font-size: 13px; font-weight: 600; color: white; }
+        .corp-user-role { font-size: 11px; color: rgba(255,255,255,0.6); }
+        .corp-subheader { background: white; border-bottom: 1px solid #e2e8f0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .corp-breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748b; }
+        .corp-breadcrumb a { color: #3b82f6; text-decoration: none; }
+        .corp-breadcrumb a:hover { text-decoration: underline; }
+        .corp-main { max-width: 1600px; margin: 0 auto; padding: 24px; }
+        .corp-main-with-sidebar { margin-left: 76px; }
+        
         /* Main content */
         .main-content { margin-left: 76px; padding: 28px; }
         
@@ -56,6 +80,20 @@
         .card { background: white; border-radius: 20px; box-shadow: 0 4px 25px rgba(0,0,0,0.08); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(255,255,255,0.8); }
         .card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
         .card-static:hover { transform: none; }
+        
+        /* Corporate Cards com faixa colorida */
+        .corp-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; transition: all 0.3s; }
+        .corp-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.12); transform: translateY(-2px); }
+        .corp-card-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+        .corp-card-title { font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .corp-card-title i { color: #3b82f6; }
+        .corp-card-body { padding: 20px; }
+        .corp-card-accent { border-top: 4px solid; }
+        .corp-card-accent.blue { border-color: #3b82f6; }
+        .corp-card-accent.green { border-color: #22c55e; }
+        .corp-card-accent.purple { border-color: #8b5cf6; }
+        .corp-card-accent.amber { border-color: #f59e0b; }
+        .corp-card-accent.rose { border-color: #f43f5e; }
         
         /* Metric cards */
         .metric-card { padding: 26px; position: relative; overflow: hidden; }
@@ -83,6 +121,14 @@
         .heatmap-cell { display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; min-width: 65px; height: 42px; transition: all 0.2s; cursor: pointer; }
         .heatmap-cell:hover { transform: scale(1.1); z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .heatmap-row-label { font-size: 12px; color: #374151; padding-right: 12px; min-width: 140px; text-align: right; font-weight: 500; }
+        
+        /* Corporate Heatmap */
+        .corp-heatmap { border-collapse: separate; border-spacing: 3px; width: 100%; }
+        .corp-heatmap th { padding: 10px 8px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; background: #f8fafc; border-radius: 8px; }
+        .corp-heatmap td { padding: 0; }
+        .corp-heatmap-cell { padding: 10px 8px; font-size: 12px; font-weight: 600; text-align: center; border-radius: 8px; transition: all 0.2s; cursor: pointer; color: white; min-width: 60px; }
+        .corp-heatmap-cell:hover { transform: scale(1.08); box-shadow: 0 4px 12px rgba(0,0,0,0.25); z-index: 10; position: relative; }
+        .corp-heatmap-mun { padding: 10px 12px; font-weight: 600; color: #1e293b; text-align: left; background: #f8fafc; border-radius: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
         
         /* Map */
         #map { height: 550px; width: 100%; border-radius: 20px; }
@@ -146,7 +192,8 @@
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes ripple { 0% { transform: scale(1); opacity: 0.4; } 100% { transform: scale(2.5); opacity: 0; } }
         
-        .landing-bg { background: linear-gradient(-45deg, #0f172a, #1e3a8a, #1e40af, #3b82f6, #0f172a); background-size: 400% 400%; animation: gradientShift 15s ease infinite; }
+        .landing-bg { background: linear-gradient(135deg, #002244 0%, #003366 50%, #004d99 100%); min-height: 100vh; position: relative; overflow: hidden; }
+        .landing-pattern { position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); }
         .particle { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.3); border-radius: 50%; animation: particleFloat 4s ease-in-out infinite; }
         .text-glow { animation: textGlow 3s ease-in-out infinite; }
         .border-glow { animation: borderGlow 2s ease-in-out infinite; }
@@ -188,6 +235,55 @@
         /* Floating Elements */
         .floating-shapes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
         .floating-shape { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.05); }
+        
+        /* Heatmap Scroll Container */
+        .heatmap-scroll-container { max-height: 500px; overflow-y: auto; overflow-x: auto; }
+        .heatmap-scroll-container::-webkit-scrollbar { width: 8px; height: 8px; }
+        .heatmap-scroll-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .heatmap-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .heatmap-scroll-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Media Queries para Responsividade */
+        @media (max-width: 1280px) {
+            .main-content { padding: 20px; }
+            .metric-value { font-size: 28px; }
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar { width: 60px; }
+            .sidebar-icon { width: 40px; height: 40px; }
+            .main-content { margin-left: 60px; padding: 16px; }
+            .corp-card-body { padding: 16px; }
+            .corp-heatmap th, .corp-heatmap-cell { font-size: 10px; min-width: 50px; padding: 6px 4px; }
+            .corp-heatmap-mun { max-width: 120px; font-size: 11px; }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 50px; }
+            .sidebar-icon { width: 36px; height: 36px; font-size: 14px; }
+            .main-content { margin-left: 50px; padding: 12px; }
+            .filter-select { min-width: 140px; padding: 8px 12px; font-size: 12px; }
+            .corp-card-header { padding: 12px 16px; }
+            .corp-card-title { font-size: 14px; }
+            .corp-heatmap th, .corp-heatmap-cell { font-size: 9px; min-width: 40px; padding: 4px 2px; }
+            .corp-heatmap-mun { max-width: 100px; font-size: 10px; padding: 6px 8px; }
+            .heatmap-scroll-container { max-height: 400px; }
+        }
+        
+        @media (max-width: 640px) {
+            .sidebar { position: fixed; bottom: 0; left: 0; right: 0; top: auto; width: 100%; height: 60px; min-height: auto; flex-direction: row; justify-content: space-around; padding: 0 8px; z-index: 100; }
+            .sidebar-icon { margin: 0; }
+            .sidebar-icon::after { display: none; }
+            .main-content { margin-left: 0; margin-bottom: 60px; padding: 10px; }
+            .filter-select { min-width: 100%; }
+            .corp-heatmap-mun { max-width: 80px; font-size: 9px; }
+            .heatmap-scroll-container { max-height: 350px; }
+        }
+        
+        @media (max-width: 480px) {
+            .landing-bg h2 { font-size: 2rem !important; }
+            .landing-bg p { font-size: 1rem !important; }
+        }
     </style>
 </head>
 <body>

@@ -113,138 +113,122 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
 
 const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
     const indicators = [
-        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: 'from-pink-500 to-rose-600', desc: 'Acompanhamento de pré-natal e puerpério', states: ['acre', 'rn'], stats: '11 componentes' },
-        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: 'from-red-500 to-red-700', desc: 'Monitoramento de pacientes hipertensos', states: ['rn'], stats: '4 componentes' },
-        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: 'from-blue-500 to-indigo-600', desc: 'Controle de pacientes diabéticos', states: ['rn'], stats: '6 componentes' }
+        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn'], stats: '11 componentes' },
+        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['rn'], stats: '4 componentes' },
+        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['rn'], stats: '6 componentes' }
     ];
     const [sel, setSel] = useState(null);
-    const [hoveredCard, setHoveredCard] = useState(null);
-    const [showGuide, setShowGuide] = useState(true);
-    const [guideStep, setGuideStep] = useState(0);
-    
-    const guideMessages = [
-        { text: "Oi! Eu sou o Bebê APS! Vou te mostrar como usar esse painel super legal!", icon: "fa-hand-sparkles" },
-        { text: "Aqui a gente acompanha a saúde das pessoas do seu território. É muito importante!", icon: "fa-heart" },
-        { text: "Escolhe um dos cartões coloridos ali embaixo pra começar a explorar!", icon: "fa-arrow-down" },
-        { text: "Se você cuida de uma equipe, faz login pra ver coisas especiais de planejamento!", icon: "fa-star" }
-    ];
-    
-    const skipGuide = () => {
-        setShowGuide(false);
-    };
-    
-    const nextStep = () => {
-        if (guideStep < guideMessages.length - 1) {
-            setGuideStep(guideStep + 1);
-        } else {
-            skipGuide();
-        }
-    };
 
     return (
         <div className="min-h-screen landing-bg relative overflow-hidden">
+            <div className="landing-pattern"></div>
             <FloatingParticles />
             
-            {/* Avatar Guia Interativo - Bebê APS */}
-            {showGuide && (
-                <div className="fixed bottom-6 left-6 z-50 animate-slideUp">
-                    <div className="flex items-end gap-3">
-                        {/* Avatar Bebê */}
-                        <div className="relative">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-2xl border-4 border-white/50 animate-float overflow-hidden">
-                                {/* Rosto do bebê */}
-                                <div className="relative">
-                                    {/* Cabelo */}
-                                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                                        <div className="w-2 h-4 bg-amber-600 rounded-full transform -rotate-12"></div>
-                                        <div className="w-2 h-5 bg-amber-700 rounded-full"></div>
-                                        <div className="w-2 h-4 bg-amber-600 rounded-full transform rotate-12"></div>
-                                    </div>
-                                    {/* Carinha */}
-                                    <div className="w-14 h-14 bg-gradient-to-b from-amber-100 to-amber-200 rounded-full flex flex-col items-center justify-center">
-                                        {/* Olhos */}
-                                        <div className="flex gap-3 mb-1">
-                                            <div className="w-2.5 h-2.5 bg-gray-800 rounded-full relative">
-                                                <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-white rounded-full"></div>
-                                            </div>
-                                            <div className="w-2.5 h-2.5 bg-gray-800 rounded-full relative">
-                                                <div className="absolute top-0.5 left-0.5 w-1 h-1 bg-white rounded-full"></div>
-                                            </div>
-                                        </div>
-                                        {/* Bochechas */}
-                                        <div className="flex gap-6 absolute">
-                                            <div className="w-2 h-1.5 bg-pink-300 rounded-full opacity-70"></div>
-                                            <div className="w-2 h-1.5 bg-pink-300 rounded-full opacity-70"></div>
-                                        </div>
-                                        {/* Boca sorrindo */}
-                                        <div className="w-4 h-2 border-b-2 border-pink-400 rounded-b-full mt-0.5"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            {/* Chupeta */}
-                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
-                                <div className="w-4 h-3 bg-blue-400 rounded-full border border-blue-500"></div>
-                            </div>
-                            {/* Indicador online */}
-                            <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-2 border-white animate-pulse flex items-center justify-center">
-                                <i className="fas fa-heart text-white text-xs"></i>
-                            </div>
+            {/* Header Corporativo */}
+            <header className="relative z-10 px-8 py-6">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center">
+                            <i className="fas fa-heartbeat text-white text-xl"></i>
                         </div>
-                        {/* Balão de Fala */}
-                        <div className="bg-white rounded-2xl rounded-bl-none p-4 shadow-2xl max-w-sm relative animate-scaleIn">
-                            <div className="absolute -left-2 bottom-4 w-4 h-4 bg-white transform rotate-45"></div>
-                            <div className="flex items-start gap-3 mb-3">
-                                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                    <i className={`fas ${guideMessages[guideStep].icon} text-blue-600`}></i>
-                                </div>
-                                <p className="text-gray-700 text-sm leading-relaxed">{guideMessages[guideStep].text}</p>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex gap-1">
-                                    {guideMessages.map((_, i) => (
-                                        <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === guideStep ? 'bg-blue-500 w-4' : 'bg-gray-300'}`}></div>
-                                    ))}
-                                </div>
-                                <div className="flex gap-2">
-                                    <button onClick={skipGuide} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1">
-                                        Pular
-                                    </button>
-                                    <button onClick={nextStep} className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full hover:bg-blue-600 transition-colors">
-                                        {guideStep < guideMessages.length - 1 ? 'Próximo' : 'Entendi!'}
-                                    </button>
-                                </div>
-                            </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-white">GDI-APS Brasil</h1>
+                            <p className="text-xs text-white/60 uppercase tracking-wider">Gestão de Desempenho</p>
                         </div>
+                    </div>
+                    <button onClick={onOpenAuth} className="flex items-center gap-3 bg-white/10 backdrop-blur px-5 py-3 rounded-xl hover:bg-white/20 transition-all">
+                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                            <i className="fas fa-user text-white"></i>
+                        </div>
+                        <div className="text-left">
+                            <p className="text-sm font-semibold text-white">{user?.name || 'Acessar'}</p>
+                            <p className="text-xs text-white/60">{user?.cargo || 'Entre ou cadastre-se'}</p>
+                        </div>
+                    </button>
+                </div>
+            </header>
+            
+            {/* Hero Section */}
+            <section className="relative z-10 px-8 py-16">
+                <div className="max-w-7xl mx-auto text-center">
+                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-8">
+                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        <span className="text-sm text-white/80">Plataforma Nacional de Indicadores da APS</span>
+                    </div>
+                    <h2 className="text-5xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
+                        Transformando dados em<br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">decisões estratégicas</span>
+                    </h2>
+                    <p className="text-xl text-white/70 max-w-3xl mx-auto mb-12">
+                        Monitore, analise e otimize os indicadores de saúde da Atenção Primária com visualizações avançadas.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+                        {[
+                            { icon: 'fa-chart-line', title: 'Análise Real-Time', desc: 'Dados atualizados' },
+                            { icon: 'fa-map-marked-alt', title: 'Mapas Interativos', desc: 'Visualização espacial' },
+                            { icon: 'fa-brain', title: 'Insights IA', desc: 'Análises preditivas' },
+                            { icon: 'fa-file-export', title: 'Relatórios', desc: 'Exportação executiva' }
+                        ].map((f, i) => (
+                            <div key={i} className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-5 text-left animate-slideUp" style={{ animationDelay: `${i * 0.1}s` }}>
+                                <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
+                                    <i className={`fas ${f.icon} text-white`}></i>
+                                </div>
+                                <h4 className="text-white font-semibold mb-1">{f.title}</h4>
+                                <p className="text-white/50 text-sm">{f.desc}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
-            )}
+            </section>
             
-            {/* Header com Login */}
-            <div className="absolute top-6 right-6 z-50">
-                <button onClick={onOpenAuth} className="login-btn flex items-center gap-3 text-white">
-                    <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                        <i className="fas fa-user text-xl"></i>
+            {/* Cards de Indicadores */}
+            <section className="relative z-10 px-8 pb-20">
+                <div className="max-w-7xl mx-auto">
+                    <h3 className="text-2xl font-bold text-white text-center mb-8">Selecione o Indicador</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {indicators.map((ind, idx) => (
+                            <div 
+                                key={ind.key} 
+                                onClick={() => ind.states.length === 1 ? onSelectIndicator(ind.key, ind.states[0]) : setSel(ind)}
+                                className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-8 cursor-pointer group hover:bg-white/20 transition-all duration-300 animate-slideUp"
+                                style={{ animationDelay: `${idx * 0.15}s` }}
+                            >
+                                <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform group-hover:scale-110" style={{ backgroundColor: ind.color }}>
+                                    <i className={`fas ${ind.icon} text-white text-3xl`}></i>
+                                </div>
+                                <h4 className="text-xl font-bold text-white text-center mb-2">{ind.title}</h4>
+                                <p className="text-white/60 text-center mb-4">{ind.desc}</p>
+                                <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
+                                    <i className="fas fa-layer-group"></i>
+                                    <span>{ind.stats}</span>
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                                    <span className="text-white/60 text-sm group-hover:text-white transition-colors flex items-center justify-center gap-2">
+                                        Acessar <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                    <div className="text-left pr-2">
-                        <p className="font-semibold">{user ? user.name : 'Acessar'}</p>
-                        <p className="text-xs text-blue-200">{user ? user.cargo : 'Entre ou cadastre-se'}</p>
-                    </div>
-                    <i className="fas fa-chevron-down text-sm"></i>
-                </button>
-            </div>
-
+                </div>
+            </section>
+            
             {/* Modal de seleção de estado */}
             {sel && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center" onClick={() => setSel(null)}>
-                    <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 animate-scaleIn" onClick={e => e.stopPropagation()}>
-                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${sel.color} flex items-center justify-center mx-auto mb-4`}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSel(null)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: sel.color }}>
                             <i className={`fas ${sel.icon} text-white text-2xl`}></i>
                         </div>
-                        <h3 className="text-2xl font-bold mb-2 text-center text-gray-800">{sel.title}</h3>
-                        <p className="text-gray-500 text-center mb-6">Selecione o estado para visualizar</p>
+                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{sel.title}</h3>
+                        <p className="text-gray-500 text-center mb-6">Selecione o estado</p>
                         <div className="space-y-3">
                             {sel.states.map(s => (
-                                <button key={s} onClick={() => onSelectIndicator(sel.key, s)} className="w-full p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all flex items-center justify-between group">
+                                <button 
+                                    key={s} 
+                                    onClick={() => onSelectIndicator(sel.key, s)} 
+                                    className="w-full p-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl font-semibold hover:from-gray-900 hover:to-black transition-all flex items-center justify-between group"
+                                >
                                     <span className="flex items-center gap-3">
                                         <i className="fas fa-map-marker-alt"></i>
                                         {STATE_CONFIG[s].name}
@@ -256,61 +240,13 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                     </div>
                 </div>
             )}
-
-            {/* Conteúdo Principal */}
-            <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-10">
-                {/* Logo e Título */}
-                <div className="text-center mb-12 animate-slideUp">
-                    <div className="w-24 h-24 mx-auto mb-6 bg-white/10 rounded-3xl flex items-center justify-center border border-white/20 animate-float">
-                        <i className="fas fa-heartbeat text-white text-4xl"></i>
-                    </div>
-                    <h1 className="text-6xl font-extrabold text-white mb-4 text-glow">GDI-APS</h1>
-                    <p className="text-2xl text-blue-200 mb-4">Gestão de Desempenho de Indicadores</p>
-                    <p className="text-lg text-blue-300/80 max-w-2xl mx-auto italic">
-                        "O painel que te auxilia a entender melhor as boas práticas na APS do seu território"
-                    </p>
+            
+            {/* Footer */}
+            <footer className="relative z-10 px-8 py-8 border-t border-white/10">
+                <div className="max-w-7xl mx-auto text-center">
+                    <p className="text-white/40 text-sm">© 2025 GDI-APS Brasil - Gestão de Desempenho de Indicadores da APS</p>
                 </div>
-
-                {/* Cards de Indicadores */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl w-full">
-                    {indicators.map((ind, idx) => (
-                        <button
-                            key={ind.key}
-                            onClick={() => ind.states.length === 1 ? onSelectIndicator(ind.key, ind.states[0]) : setSel(ind)}
-                            onMouseEnter={() => setHoveredCard(ind.key)}
-                            onMouseLeave={() => setHoveredCard(null)}
-                            className={`bg-white/10 rounded-3xl p-8 border-2 border-white/20 hover:bg-white/20 transition-all duration-500 animate-slideUp border-glow group ${hoveredCard === ind.key ? 'scale-105 shadow-2xl' : ''}`}
-                            style={{ animationDelay: `${idx * 0.15}s` }}
-                        >
-                            <div className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${ind.color} flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
-                                <i className={`fas ${ind.icon} text-white text-4xl`}></i>
-                            </div>
-                            <h3 className="text-2xl font-bold text-white mb-3">{ind.title}</h3>
-                            <p className="text-blue-200 mb-4">{ind.desc}</p>
-                            <div className="flex items-center justify-center gap-2 text-blue-300 text-sm">
-                                <i className="fas fa-layer-group"></i>
-                                <span>{ind.stats}</span>
-                            </div>
-                            <div className="mt-4 pt-4 border-t border-white/10">
-                                <span className="text-white/70 text-sm flex items-center justify-center gap-2 group-hover:text-white transition-colors">
-                                    <span>Acessar painel</span>
-                                    <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
-                                </span>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Footer */}
-                <div className="mt-16 text-center text-blue-300/60 text-sm animate-fadeIn" style={{ animationDelay: '0.8s' }}>
-                    <p>Desenvolvido para apoiar a gestão da Atenção Primária à Saúde</p>
-                    <div className="flex items-center justify-center gap-6 mt-4">
-                        <span className="flex items-center gap-2"><i className="fas fa-chart-line"></i> Análises em tempo real</span>
-                        <span className="flex items-center gap-2"><i className="fas fa-map"></i> Visualização espacial</span>
-                        <span className="flex items-center gap-2"><i className="fas fa-brain"></i> Insights estratégicos</span>
-                    </div>
-                </div>
-            </div>
+            </footer>
         </div>
     );
 };
@@ -500,17 +436,15 @@ const Dashboard = () => {
     };
 
     const Sidebar = () => {
-        const isManager = user?.cargo?.toLowerCase().includes('gestor') || user?.cargo?.toLowerCase().includes('coordenador') || user?.cargo?.toLowerCase().includes('admin');
         const mainItems = [['home','fa-home'],['indicators','fa-chart-pie'],['components','fa-layer-group'],['strategic','fa-brain']];
-        const managerItems = isManager ? [['goals','fa-bullseye'],['evaluation','fa-chart-bar']] : [];
-        const otherItems = [['map','fa-map-marked-alt'],['dataCollection','fa-database'],['network','fa-share-alt'],['profile','fa-user-circle']];
-        const allItems = [...mainItems, ...managerItems, ...otherItems];
+        const planItems = [['goals','fa-bullseye'],['evaluation','fa-chart-bar']];
+        const otherItems = [['map','fa-map-marked-alt'],['dataCollection','fa-database'],['aiInsights','fa-lightbulb'],['profile','fa-user-circle']];
+        const allItems = [...mainItems, ...planItems, ...otherItems];
         return (
             <div className="sidebar flex flex-col">
                 <div className="pt-6 pb-4"><div className={'w-12 h-12 mx-auto rounded-xl flex items-center justify-center ' + (config?.bgColor || 'bg-blue-600')}><i className={'fas ' + (config?.icon || 'fa-heartbeat') + ' text-white text-xl'}></i></div></div>
                 <div className="mt-2"><div className="sidebar-icon hover:bg-red-100" onClick={handleBackToLanding}><i className="fas fa-arrow-left text-lg text-red-500"></i></div></div>
                 <div className="mt-2 flex-1">{allItems.map(([v,i]) => <div key={v} className={'sidebar-icon ' + (activeView===v?'active':'')} onClick={() => setActiveView(v)}><i className={'fas ' + i + ' text-lg'}></i></div>)}</div>
-                <div className="mt-auto pb-4 border-t border-gray-200 pt-2"><div className={'sidebar-icon ' + (activeView==='notes'?'active':'')} onClick={() => setActiveView('notes')}><i className="fas fa-sticky-note text-lg"></i></div></div>
             </div>
         );
     };
@@ -520,28 +454,31 @@ const Dashboard = () => {
         const m = calcMetrics(), ind = calcIndicators(), trend = getTrend(filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData), hm = getHeatmap(), estabs = getEstabelecimentos();
         const variation = trend.length >= 2 ? { diff: trend[trend.length-1].taxa - trend[0].taxa } : null;
         const cat = getCategoria(m.taxa);
-        const MetricCard = ({ icon, iconBg, title, value, subtitle, popupContent }) => (
-            <div className="card p-6 popup-card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div className="flex items-center gap-4">
-                    <div className={`w-16 h-16 rounded-2xl ${iconBg} text-white flex items-center justify-center shadow-lg`}>
-                        <i className={`fas ${icon} text-2xl`}></i>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-500 uppercase tracking-wide font-medium mb-1">{title}</p>
-                        <p className="text-3xl font-extrabold text-gray-800">{value}</p>
-                        <div className="mt-1">{subtitle}</div>
+        const accentColors = ['blue', 'green', 'purple', 'amber', 'rose'];
+        const MetricCard = ({ icon, iconBg, title, value, subtitle, popupContent, accent }) => (
+            <div className={`corp-card corp-card-accent ${accent || 'blue'} popup-card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}>
+                <div className="corp-card-body">
+                    <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-xl ${iconBg} text-white flex items-center justify-center shadow-lg`}>
+                            <i className={`fas ${icon} text-xl`}></i>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">{title}</p>
+                            <p className="text-2xl font-extrabold text-gray-800">{value}</p>
+                            <div className="mt-1">{subtitle}</div>
+                        </div>
                     </div>
                 </div>
                 {popupContent && <div className="popup-content"><div className="text-sm">{popupContent}</div></div>}
             </div>
         );
         return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold text-gray-900 mb-1">Painel de Indicadores</h1><p className="text-gray-500 mb-6">{config?.title} - {STATE_CONFIG[selectedState]?.name}</p><FilterBar /><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold mb-2">Taxa de Boas Práticas</p><p className="text-gray-600">Representa a proporção de pacientes que receberam todos os cuidados recomendados.</p><div className="mt-3 p-2 bg-gray-50 rounded-lg"><p className="text-xs text-gray-500">Fórmula: Somatório / Total de Pacientes</p></div></>} />
-            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} popupContent={<><p className="font-semibold mb-2">Somatório de Componentes</p><p className="text-gray-600">Total de componentes realizados em todos os pacientes acompanhados.</p></>} />
-            <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} popupContent={<><p className="font-semibold mb-2">Total de Pacientes</p><p className="text-gray-600">Número total de pacientes cadastrados e acompanhados no período selecionado.</p></>} />
-            <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} popupContent={<><p className="font-semibold mb-2">Equipes de Saúde</p><p className="text-gray-600">Quantidade de equipes de saúde da família ativas no território.</p></>} />
-            <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} popupContent={<><p className="font-semibold mb-2">Municípios Atendidos</p><p className="text-gray-600">Total de municípios com dados registrados no período.</p></>} />
-        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-chart-area text-blue-500"></i>Evolução Mensal</h3><div style={{height:'280px'}}><LineChart data={trend} /></div>{variation && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div><div className="card p-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-layer-group text-purple-500"></i>Componentes</h3><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div><div className="card p-6"><h3 className="font-bold mb-4">Heatmap</h3><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} /></div></div>);
+            <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} accent="blue" subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold mb-2">Taxa de Boas Práticas</p><p className="text-gray-600">Representa a proporção de pacientes que receberam todos os cuidados recomendados.</p><div className="mt-3 p-2 bg-gray-50 rounded-lg"><p className="text-xs text-gray-500">Fórmula: Somatório / Total de Pacientes</p></div></>} />
+            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} accent="green" popupContent={<><p className="font-semibold mb-2">Somatório de Componentes</p><p className="text-gray-600">Total de componentes realizados em todos os pacientes acompanhados.</p></>} />
+            <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} accent="purple" popupContent={<><p className="font-semibold mb-2">Total de Pacientes</p><p className="text-gray-600">Número total de pacientes cadastrados e acompanhados no período selecionado.</p></>} />
+            <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} accent="amber" popupContent={<><p className="font-semibold mb-2">Equipes de Saúde</p><p className="text-gray-600">Quantidade de equipes de saúde da família ativas no território.</p></>} />
+            <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} accent="rose" popupContent={<><p className="font-semibold mb-2">Municípios Atendidos</p><p className="text-gray-600">Total de municípios com dados registrados no período.</p></>} />
+        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-chart-area"></i>Evolução Mensal</h3></div><div className="corp-card-body"><div style={{height:'280px'}}><LineChart data={trend} /></div>{variation && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-layer-group"></i>Componentes</h3></div><div className="corp-card-body"><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-th"></i>Matriz de Desempenho</h3></div><div className="corp-card-body"><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} shortNames={config?.shortNames || []} /></div></div></div>);
     };
 
     const IndicatorsView = () => {
@@ -1584,48 +1521,15 @@ const Dashboard = () => {
         );
     };
 
-    // ========== PERFIL DO USUÁRIO ==========
+    // ========== PERFIL DO USUÁRIO (SIMPLIFICADO) ==========
     const ProfileView = () => {
         const [showAvatarModal, setShowAvatarModal] = useState(false);
         const [showEditModal, setShowEditModal] = useState(false);
         const [editField, setEditField] = useState(null);
         const [profileData, setProfileData] = useState({ name: user?.name || '', cargo: user?.cargo || '', municipio: user?.municipio || '' });
-        const avatarIcons = ['fa-user-nurse', 'fa-user-md', 'fa-stethoscope', 'fa-heartbeat', 'fa-hospital-user', 'fa-hand-holding-medical', 'fa-user-tie', 'fa-user-graduate', 'fa-user-astronaut', 'fa-user-ninja', 'fa-user-secret', 'fa-user-shield'];
+        const avatarIcons = ['fa-user-nurse', 'fa-user-md', 'fa-stethoscope', 'fa-heartbeat', 'fa-hospital-user', 'fa-hand-holding-medical', 'fa-user-tie', 'fa-user-graduate'];
         const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || 'fa-user-nurse');
-        const cargoOptions = ['Profissional de Saúde', 'Enfermeiro(a)', 'Médico(a)', 'Técnico(a) de Enfermagem', 'Agente Comunitário de Saúde', 'Coordenador(a) de UBS', 'Gestor(a) Municipal', 'Gestor(a) Regional', 'Coordenador(a) Estadual', 'Administrador(a)'];
-        const [activeTab, setActiveTab] = useState('perfil');
-        
-        // Sistema de seguidores
-        const [following] = useState(() => JSON.parse(localStorage.getItem('gdiaps_following_' + user?.id) || '[]'));
-        const [posts] = useState(() => JSON.parse(localStorage.getItem('gdiaps_posts') || '[]'));
-        const allUsers = JSON.parse(localStorage.getItem('gdiaps_all_users') || '[]');
-        const followers = allUsers.filter(u => {
-            const theirFollowing = JSON.parse(localStorage.getItem('gdiaps_following_' + u.id) || '[]');
-            return theirFollowing.includes(user?.id);
-        });
-        
-        // Sistema de conquistas/prêmios - CORRIGIDO: só conta metas realmente atingidas
-        const goals = JSON.parse(localStorage.getItem('gdiaps_goals_' + indicatorType + '_estadual') || '{}');
-        const m = calcMetrics();
-        const ind = calcIndicators();
-        
-        // Verificar metas de componentes atingidas
-        const metasComponentesAtingidas = ind.filter(i => {
-            const meta = goals['comp' + i.index];
-            return meta && meta > 0 && i.pct >= meta;
-        }).length;
-        
-        // Verificar se meta da taxa foi atingida
-        const metaTaxaAtingida = goals.taxa && goals.taxa > 0 && m.taxa >= goals.taxa;
-        
-        const achievements = [
-            { id: 1, name: 'Meta de Taxa', icon: 'fa-trophy', desc: 'Atingiu a meta da taxa de boas práticas', unlocked: metaTaxaAtingida },
-            { id: 2, name: 'Componente Atingido', icon: 'fa-check-circle', desc: 'Atingiu meta de pelo menos 1 componente', unlocked: metasComponentesAtingidas >= 1 },
-            { id: 3, name: 'Meio Caminho', icon: 'fa-star-half-alt', desc: 'Atingiu meta de 50% dos componentes', unlocked: metasComponentesAtingidas >= Math.ceil(ind.length / 2) },
-            { id: 4, name: 'Excelência Total', icon: 'fa-award', desc: 'Atingiu meta de todos os componentes', unlocked: metasComponentesAtingidas === ind.length && ind.length > 0 },
-            { id: 5, name: 'Campeão', icon: 'fa-crown', desc: 'Atingiu todas as metas (taxa + componentes)', unlocked: metaTaxaAtingida && metasComponentesAtingidas === ind.length && ind.length > 0 },
-        ];
-        const userStars = achievements.filter(a => a.unlocked).length;
+        const cargoOptions = ['Profissional de Saúde', 'Enfermeiro(a)', 'Médico(a)', 'Técnico(a) de Enfermagem', 'Agente Comunitário de Saúde', 'Coordenador(a) de UBS', 'Gestor(a) Municipal', 'Gestor(a) Regional', 'Coordenador(a) Estadual'];
         
         const handleSaveField = () => {
             setUser({ ...user, ...profileData, avatar: selectedAvatar });
@@ -1653,7 +1557,7 @@ const Dashboard = () => {
         );
 
         return (
-            <div className="animate-fadeIn">
+            <div className="animate-fadeIn max-w-2xl mx-auto">
                 {/* Modal de Avatar */}
                 {showAvatarModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowAvatarModal(false)}>
@@ -1702,224 +1606,279 @@ const Dashboard = () => {
                 )}
                 
                 {/* Header do Perfil */}
-                <div className="card overflow-hidden mb-6">
-                    <div className="h-36 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
+                <div className="corp-card overflow-hidden mb-6">
+                    <div className="h-32 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
                     <div className="px-6 pb-6 pt-2">
-                        <div className="flex flex-col lg:flex-row lg:items-end gap-4 -mt-20">
+                        <div className="flex flex-col items-center -mt-16">
                             <div className="relative cursor-pointer group" onClick={() => setShowAvatarModal(true)}>
-                                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center border-4 border-white shadow-xl">
-                                    <i className={`fas ${selectedAvatar} text-white text-5xl`}></i>
+                                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center border-4 border-white shadow-xl">
+                                    <i className={`fas ${selectedAvatar} text-white text-4xl`}></i>
                                 </div>
                                 <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    <i className="fas fa-camera text-white text-2xl"></i>
+                                    <i className="fas fa-camera text-white text-xl"></i>
                                 </div>
-                                {userStars > 0 && (
-                                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center border-2 border-white">
-                                        <i className="fas fa-star text-white text-xs"></i>
-                                    </div>
-                                )}
                             </div>
-                            <div className="flex-1 lg:pb-2">
-                                <div className="flex items-center gap-2">
-                                    <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                                    {userStars >= 3 && <i className="fas fa-certificate text-blue-500" title="Verificado"></i>}
-                                </div>
-                                <p className="text-gray-600">{user.cargo}</p>
-                                <p className="text-gray-500 text-sm"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio || 'Localização não informada'}</p>
-                            </div>
-                            <button onClick={() => setActiveView('network')} className="btn-primary"><i className="fas fa-share-alt mr-2"></i>Ir para Rede</button>
+                            <h1 className="text-2xl font-bold text-gray-900 mt-4">{user.name}</h1>
+                            <p className="text-gray-600">{user.cargo}</p>
+                            <p className="text-gray-500 text-sm"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio || 'Localização não informada'}</p>
                         </div>
-                        
-                        {/* Estatísticas */}
-                        <div className="grid grid-cols-4 gap-4 mt-6 pt-6 border-t">
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-gray-900">{posts.filter(p => p.userId === user?.id).length}</p>
-                                <p className="text-sm text-gray-500">Publicações</p>
+                    </div>
+                </div>
+                
+                {/* Informações Editáveis */}
+                <div className="corp-card">
+                    <div className="corp-card-header">
+                        <h3 className="corp-card-title"><i className="fas fa-user-edit"></i>Informações Pessoais</h3>
+                    </div>
+                    <div className="corp-card-body space-y-3">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('name')}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><i className="fas fa-user text-blue-500"></i></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Nome</p>
+                                    <p className="font-medium">{user.name}</p>
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-gray-900">{followers.length}</p>
-                                <p className="text-sm text-gray-500">Seguidores</p>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('cargo')}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center"><i className="fas fa-briefcase text-purple-500"></i></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Cargo</p>
+                                    <p className="font-medium">{user.cargo}</p>
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-gray-900">{following.length}</p>
-                                <p className="text-sm text-gray-500">Seguindo</p>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('municipio')}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center"><i className="fas fa-map-marker-alt text-green-500"></i></div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Município</p>
+                                    <p className="font-medium">{user.municipio || 'Não informado'}</p>
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-2xl font-bold text-amber-500">{userStars}</p>
-                                <p className="text-sm text-gray-500">Estrelas</p>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+    
+    // ========== REFLEXÕES DE IA - PLANIFICAÇÃO ==========
+    const AIInsightsView = () => {
+        const [activeCategory, setActiveCategory] = useState('organizacao');
+        const m = calcMetrics();
+        const ind = calcIndicators();
+        
+        const insights = {
+            organizacao: [
+                {
+                    icon: 'fa-sitemap',
+                    title: 'Organização da Demanda Espontânea',
+                    content: 'Considere implementar o acolhimento com classificação de risco para otimizar o fluxo de pacientes. A estratificação permite priorizar casos urgentes e organizar agendas de forma mais eficiente.',
+                    action: 'Mapear o fluxo atual de atendimento e identificar gargalos'
+                },
+                {
+                    icon: 'fa-calendar-check',
+                    title: 'Agenda Programada por Condição',
+                    content: 'Estruture agendas específicas para grupos prioritários (gestantes, hipertensos, diabéticos). Isso facilita o acompanhamento longitudinal e melhora a adesão ao tratamento.',
+                    action: 'Definir dias/horários específicos para cada grupo de condição'
+                },
+                {
+                    icon: 'fa-route',
+                    title: 'Fluxos de Referência e Contrarreferência',
+                    content: 'Estabeleça protocolos claros de encaminhamento para a Atenção Especializada. A comunicação efetiva entre os pontos de atenção garante continuidade do cuidado.',
+                    action: 'Criar matriz de critérios de encaminhamento por especialidade'
+                }
+            ],
+            redes: [
+                {
+                    icon: 'fa-hospital',
+                    title: 'Integração com Atenção Especializada',
+                    content: 'Fortaleça a articulação com ambulatórios de especialidades e hospitais. Reuniões periódicas de matriciamento podem qualificar as equipes e reduzir encaminhamentos desnecessários.',
+                    action: 'Agendar reuniões mensais de matriciamento com especialistas'
+                },
+                {
+                    icon: 'fa-ambulance',
+                    title: 'Articulação com Urgência e Emergência',
+                    content: 'Defina critérios claros para acionamento do SAMU e encaminhamento para UPAs. Capacite a equipe para reconhecer sinais de alerta e agir rapidamente.',
+                    action: 'Treinar equipe em protocolos de urgência e emergência'
+                },
+                {
+                    icon: 'fa-pills',
+                    title: 'Assistência Farmacêutica Integrada',
+                    content: 'Garanta o abastecimento regular de medicamentos essenciais. A falta de medicamentos compromete a adesão ao tratamento e os resultados clínicos.',
+                    action: 'Revisar lista de medicamentos e criar sistema de alerta de estoque'
+                }
+            ],
+            territorio: [
+                {
+                    icon: 'fa-map-marked-alt',
+                    title: 'Diagnóstico Territorial',
+                    content: 'Realize mapeamento das vulnerabilidades e recursos do território. Conhecer a realidade local permite planejar ações mais assertivas e focadas nas necessidades reais.',
+                    action: 'Atualizar mapa de riscos e recursos da área de abrangência'
+                },
+                {
+                    icon: 'fa-users',
+                    title: 'Participação Comunitária',
+                    content: 'Envolva lideranças comunitárias e conselhos locais no planejamento. A participação social fortalece o vínculo e aumenta a efetividade das ações.',
+                    action: 'Organizar reunião com lideranças para discutir prioridades'
+                },
+                {
+                    icon: 'fa-handshake',
+                    title: 'Parcerias Intersetoriais',
+                    content: 'Articule com escolas, CRAS, igrejas e outras instituições. Ações intersetoriais ampliam o alcance e potencializam os resultados em saúde.',
+                    action: 'Identificar parceiros potenciais e propor ações conjuntas'
+                }
+            ],
+            processos: [
+                {
+                    icon: 'fa-clipboard-list',
+                    title: 'Padronização de Protocolos',
+                    content: 'Implemente protocolos clínicos baseados em evidências para as condições prioritárias. A padronização reduz variabilidade e melhora a qualidade do cuidado.',
+                    action: 'Revisar e atualizar protocolos de atendimento da unidade'
+                },
+                {
+                    icon: 'fa-chart-line',
+                    title: 'Monitoramento Contínuo',
+                    content: 'Estabeleça rotina de análise dos indicadores com a equipe. O acompanhamento regular permite identificar problemas precocemente e ajustar estratégias.',
+                    action: 'Criar reunião mensal de análise de indicadores com a equipe'
+                },
+                {
+                    icon: 'fa-graduation-cap',
+                    title: 'Educação Permanente',
+                    content: 'Promova momentos de capacitação e discussão de casos. A educação permanente mantém a equipe atualizada e engajada na melhoria contínua.',
+                    action: 'Planejar cronograma de capacitações para o próximo trimestre'
+                }
+            ]
+        };
+        
+        const categories = [
+            { key: 'organizacao', label: 'Organização do Processo de Trabalho', icon: 'fa-cogs' },
+            { key: 'redes', label: 'Redes de Atenção à Saúde', icon: 'fa-project-diagram' },
+            { key: 'territorio', label: 'Territorialização', icon: 'fa-map' },
+            { key: 'processos', label: 'Melhoria de Processos', icon: 'fa-sync-alt' }
+        ];
+        
+        return (
+            <div className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Reflexões para Planificação</h1>
+                        <p className="text-gray-500">Insights estratégicos baseados no contexto do PlanificaSUS</p>
+                    </div>
+                    <a href="https://planificasus.com.br/" target="_blank" rel="noopener noreferrer" className="btn-primary">
+                        <i className="fas fa-external-link-alt mr-2"></i>Acessar e-Planifica
+                    </a>
+                </div>
+                
+                {/* Banner Informativo */}
+                <div className="corp-card corp-card-accent blue mb-6">
+                    <div className="corp-card-body">
+                        <div className="flex items-start gap-4">
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                                <i className="fas fa-lightbulb text-white text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-800 mb-2">Sobre esta seção</h3>
+                                <p className="text-gray-600">Esta área traz reflexões inspiradas na metodologia do <strong>PlanificaSUS</strong>, projeto do PROADI-SUS que apoia a organização das Redes de Atenção à Saúde. Use estes insights como ponto de partida para pensar em ações estratégicas na sua realidade local.</p>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                {/* Tabs */}
-                <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl">
-                    {[['perfil', 'fa-user', 'Meu Perfil'], ['conquistas', 'fa-trophy', 'Conquistas'], ['metas', 'fa-bullseye', 'Progresso']].map(([key, icon, label]) => (
-                        <button key={key} onClick={() => setActiveTab(key)} className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all flex items-center justify-center gap-2 ${activeTab === key ? 'bg-white shadow text-blue-600' : 'text-gray-600 hover:text-gray-900'}`}>
-                            <i className={`fas ${icon}`}></i><span className="hidden sm:inline">{label}</span>
+                {/* Categorias */}
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {categories.map(cat => (
+                        <button 
+                            key={cat.key} 
+                            onClick={() => setActiveCategory(cat.key)}
+                            className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center gap-2 ${activeCategory === cat.key ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}
+                        >
+                            <i className={`fas ${cat.icon}`}></i>
+                            <span className="hidden sm:inline">{cat.label}</span>
                         </button>
                     ))}
                 </div>
                 
+                {/* Cards de Insights */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Coluna Principal */}
-                    <div className="lg:col-span-2 space-y-4">
-                        {activeTab === 'perfil' && (
-                            <div className="card p-6">
-                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-user-edit text-blue-500"></i>Informações Pessoais</h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('name')}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><i className="fas fa-user text-blue-500"></i></div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Nome</p>
-                                                <p className="font-medium">{user.name}</p>
-                                            </div>
-                                        </div>
-                                        <i className="fas fa-chevron-right text-gray-400"></i>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('cargo')}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center"><i className="fas fa-briefcase text-purple-500"></i></div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Cargo</p>
-                                                <p className="font-medium">{user.cargo}</p>
-                                            </div>
-                                        </div>
-                                        <i className="fas fa-chevron-right text-gray-400"></i>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors" onClick={() => openEditModal('municipio')}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center"><i className="fas fa-map-marker-alt text-green-500"></i></div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Município</p>
-                                                <p className="font-medium">{user.municipio || 'Não informado'}</p>
-                                            </div>
-                                        </div>
-                                        <i className="fas fa-chevron-right text-gray-400"></i>
-                                    </div>
+                    {insights[activeCategory].map((insight, idx) => (
+                        <div key={idx} className="corp-card hover:shadow-xl transition-all">
+                            <div className="p-6">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-4">
+                                    <i className={`fas ${insight.icon} text-white text-xl`}></i>
+                                </div>
+                                <h3 className="font-bold text-lg text-gray-800 mb-3">{insight.title}</h3>
+                                <p className="text-gray-600 text-sm mb-4 leading-relaxed">{insight.content}</p>
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <p className="text-sm text-amber-800">
+                                        <i className="fas fa-lightbulb text-amber-500 mr-2"></i>
+                                        <strong>Ação sugerida:</strong> {insight.action}
+                                    </p>
                                 </div>
                             </div>
-                        )}
-                        
-                        {activeTab === 'conquistas' && (
-                            <div className="card p-6">
-                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-trophy text-amber-500"></i>Suas Conquistas</h3>
-                                <p className="text-gray-500 mb-4">Atinja as metas definidas para desbloquear estrelas!</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {achievements.map(a => (
-                                        <div key={a.id} className={`p-4 rounded-xl border-2 transition-all ${a.unlocked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 bg-gray-50'}`}>
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${a.unlocked ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                                                    <i className={`fas ${a.icon} text-xl`}></i>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className={`font-bold ${a.unlocked ? 'text-amber-700' : 'text-gray-500'}`}>{a.name}</p>
-                                                    <p className="text-sm text-gray-500">{a.desc}</p>
-                                                </div>
-                                                {a.unlocked && <i className="fas fa-star text-amber-500 text-xl"></i>}
-                                            </div>
-                                        </div>
-                                    ))}
+                        </div>
+                    ))}
+                </div>
+                
+                {/* Seção de Contexto */}
+                <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="corp-card">
+                        <div className="corp-card-header">
+                            <h3 className="corp-card-title"><i className="fas fa-info-circle"></i>Sobre o PlanificaSUS</h3>
+                        </div>
+                        <div className="corp-card-body">
+                            <p className="text-gray-600 mb-4">O PlanificaSUS é um projeto do PROADI-SUS que apoia estados e municípios na organização das Redes de Atenção à Saúde, com foco na Atenção Primária.</p>
+                            <div className="grid grid-cols-2 gap-4 text-center">
+                                <div className="p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-2xl font-bold text-blue-600">19</p>
+                                    <p className="text-xs text-gray-500">Unidades Federativas</p>
+                                </div>
+                                <div className="p-3 bg-green-50 rounded-lg">
+                                    <p className="text-2xl font-bold text-green-600">733</p>
+                                    <p className="text-xs text-gray-500">Municípios</p>
+                                </div>
+                                <div className="p-3 bg-purple-50 rounded-lg">
+                                    <p className="text-2xl font-bold text-purple-600">4.069</p>
+                                    <p className="text-xs text-gray-500">Unidades APS</p>
+                                </div>
+                                <div className="p-3 bg-amber-50 rounded-lg">
+                                    <p className="text-2xl font-bold text-amber-600">55</p>
+                                    <p className="text-xs text-gray-500">Regiões de Saúde</p>
                                 </div>
                             </div>
-                        )}
-                        
-                        {activeTab === 'metas' && (
-                            <div className="card p-6">
-                                <h3 className="font-bold text-xl mb-4 flex items-center gap-2"><i className="fas fa-bullseye text-blue-500"></i>Progresso das Metas</h3>
-                                {!goals.taxa && Object.keys(goals).filter(k => k.startsWith('comp')).length === 0 ? (
-                                    <div className="text-center py-8">
-                                        <i className="fas fa-bullseye text-gray-300 text-5xl mb-4"></i>
-                                        <p className="text-gray-500 mb-2">Nenhuma meta definida ainda</p>
-                                        <p className="text-sm text-gray-400">Vá para "Planejamento de Metas" para definir suas metas</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {goals.taxa && (
-                                            <div className="p-4 bg-gray-50 rounded-xl">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="font-medium">Taxa de Boas Práticas</span>
-                                                    <span className={`font-bold ${m.taxa >= goals.taxa ? 'text-green-600' : 'text-amber-600'}`}>{m.taxa.toFixed(1)}% / {goals.taxa}%</span>
-                                                </div>
-                                                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div className={`h-full transition-all ${m.taxa >= goals.taxa ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: Math.min(100, (m.taxa / goals.taxa) * 100) + '%'}}></div>
-                                                </div>
-                                                {m.taxa >= goals.taxa && <p className="text-green-600 text-sm mt-2"><i className="fas fa-check-circle mr-1"></i>Meta atingida!</p>}
-                                            </div>
-                                        )}
-                                        {ind.map(i => {
-                                            const meta = goals['comp' + i.index];
-                                            if (!meta) return null;
-                                            const atingida = i.pct >= meta;
-                                            return (
-                                                <div key={i.index} className="p-4 bg-gray-50 rounded-xl">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-medium">C{i.index} - {i.name}</span>
-                                                        <span className={`font-bold ${atingida ? 'text-green-600' : 'text-amber-600'}`}>{i.pct.toFixed(1)}% / {meta}%</span>
-                                                    </div>
-                                                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                                                        <div className={`h-full transition-all ${atingida ? 'bg-green-500' : 'bg-amber-500'}`} style={{width: Math.min(100, (i.pct / meta) * 100) + '%'}}></div>
-                                                    </div>
-                                                    {atingida && <p className="text-green-600 text-sm mt-2"><i className="fas fa-check-circle mr-1"></i>Meta atingida!</p>}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        </div>
                     </div>
                     
-                    {/* Coluna Lateral */}
-                    <div className="space-y-4">
-                        {/* Estrelas */}
-                        <div className="card p-4 text-center">
-                            <h4 className="font-bold mb-3">Suas Estrelas</h4>
-                            <div className="flex items-center justify-center gap-1 mb-3">
-                                {[1,2,3,4,5].map(i => (
-                                    <i key={i} className={`fas fa-star text-3xl ${i <= userStars ? 'text-amber-400' : 'text-gray-200'}`}></i>
-                                ))}
-                            </div>
-                            <p className="text-sm text-gray-500">{userStars} de 5 conquistas</p>
-                            {userStars === 0 && <p className="text-xs text-gray-400 mt-2">Atinja metas para ganhar estrelas!</p>}
+                    <div className="corp-card">
+                        <div className="corp-card-header">
+                            <h3 className="corp-card-title"><i className="fas fa-chart-pie"></i>Seu Contexto Atual</h3>
                         </div>
-                        
-                        {/* Seguidores */}
-                        <div className="card p-4">
-                            <h4 className="font-bold mb-3 flex items-center gap-2"><i className="fas fa-users text-blue-500"></i>Seguidores</h4>
-                            {followers.length === 0 ? (
-                                <p className="text-sm text-gray-500 text-center py-2">Nenhum seguidor ainda</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {followers.slice(0, 5).map(f => (
-                                        <div key={f.id} className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                                                <i className={`fas ${f.avatar || 'fa-user'} text-white text-xs`}></i>
-                                            </div>
-                                            <span className="text-sm truncate">{f.name}</span>
-                                        </div>
-                                    ))}
-                                    {followers.length > 5 && <p className="text-xs text-gray-500 text-center">+{followers.length - 5} mais</p>}
+                        <div className="corp-card-body">
+                            <p className="text-gray-600 mb-4">Use os dados do seu território para direcionar as reflexões:</p>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-600">Taxa de Boas Práticas</span>
+                                    <span className="font-bold text-blue-600">{m.taxa.toFixed(2)}</span>
                                 </div>
-                            )}
-                        </div>
-                        
-                        {/* Próxima Conquista */}
-                        {achievements.find(a => !a.unlocked) && (
-                            <div className="card p-4">
-                                <h4 className="font-bold mb-3">Próxima Conquista</h4>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                                        <i className={`fas ${achievements.find(a => !a.unlocked).icon} text-gray-400 text-xl`}></i>
-                                    </div>
-                                    <div>
-                                        <p className="font-medium">{achievements.find(a => !a.unlocked).name}</p>
-                                        <p className="text-xs text-gray-500">{achievements.find(a => !a.unlocked).desc}</p>
-                                    </div>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-600">Total de Pacientes</span>
+                                    <span className="font-bold text-purple-600">{m.totalPacientes.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-600">Equipes Ativas</span>
+                                    <span className="font-bold text-green-600">{m.equipes}</span>
+                                </div>
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <span className="text-gray-600">Componente com menor %</span>
+                                    <span className="font-bold text-amber-600">{ind.length > 0 ? `C${ind.sort((a,b) => a.pct - b.pct)[0].index}` : '-'}</span>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2858,7 +2817,7 @@ const Dashboard = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center landing-bg"><div className="text-center"><i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i><p className="text-white text-lg">Carregando dados...</p></div></div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</div>;
 
-    return (<div className="min-h-screen"><Sidebar /><ProfileDropdown /><BabyAPSTip view={activeView} /><div className="main-content">{activeView === 'home' && <HomeView />}{activeView === 'indicators' && <IndicatorsView />}{activeView === 'components' && <ComponentsView />}{activeView === 'strategic' && <StrategicView />}{activeView === 'goals' && <GoalsView />}{activeView === 'evaluation' && <EvaluationView />}{activeView === 'notes' && <NotesView />}{activeView === 'map' && <MapView />}{activeView === 'dataCollection' && <DataCollectionView />}{activeView === 'network' && <NetworkView />}{activeView === 'profile' && <ProfileView />}</div></div>);
+    return (<div className="min-h-screen"><Sidebar /><ProfileDropdown /><BabyAPSTip view={activeView} /><div className="main-content">{activeView === 'home' && <HomeView />}{activeView === 'indicators' && <IndicatorsView />}{activeView === 'components' && <ComponentsView />}{activeView === 'strategic' && <StrategicView />}{activeView === 'goals' && <GoalsView />}{activeView === 'evaluation' && <EvaluationView />}{activeView === 'map' && <MapView />}{activeView === 'dataCollection' && <DataCollectionView />}{activeView === 'aiInsights' && <AIInsightsView />}{activeView === 'profile' && <ProfileView />}</div></div>);
 };
 
 ReactDOM.render(<Dashboard />, document.getElementById('root'));
