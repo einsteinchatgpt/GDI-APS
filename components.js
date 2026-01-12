@@ -1,7 +1,8 @@
 // Configuração de estados
 const STATE_CONFIG = {
     acre: { name: 'Acre', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-12-mun.json' },
-    rn: { name: 'Rio Grande do Norte', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' }
+    rn: { name: 'Rio Grande do Norte', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
+    am: { name: 'Amazonas', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' }
 };
 
 // Configurações por tipo de indicador
@@ -15,7 +16,8 @@ const INDICATOR_CONFIG = {
         totalLabel: 'gestantes',
         csvFiles: {
             acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
-            rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' }
+            rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
+            am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ',', encoding: 'utf-8' }
         },
         indicatorCount: 11,
         fullNames: [
