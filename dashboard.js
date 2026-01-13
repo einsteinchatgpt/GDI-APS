@@ -86,6 +86,7 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
                                     <option>Coordenador(a) APS</option>
                                     <option>Técnico(a) de Enfermagem</option>
                                     <option>Agente Comunitário de Saúde</option>
+                                    <option>Time interno</option>
                                 </select>
                             </div>
                             <div className="animate-slideUp" style={{ animationDelay: '0.5s' }}>
@@ -120,7 +121,7 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
     const [sel, setSel] = useState(null);
 
     return (
-        <div className="min-h-screen landing-bg relative overflow-hidden">
+        <div className="min-h-screen landing-bg relative overflow-hidden flex flex-col">
             <div className="landing-pattern"></div>
             <FloatingParticles />
             
@@ -136,76 +137,154 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                             <p className="text-xs text-white/60 uppercase tracking-wider">Gestão de Desempenho</p>
                         </div>
                     </div>
-                    <button onClick={onOpenAuth} className="flex items-center gap-3 bg-white/10 backdrop-blur px-5 py-3 rounded-xl hover:bg-white/20 transition-all">
-                        <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-user text-white"></i>
-                        </div>
-                        <div className="text-left">
-                            <p className="text-sm font-semibold text-white">{user?.name || 'Acessar'}</p>
-                            <p className="text-xs text-white/60">{user?.cargo || 'Entre ou cadastre-se'}</p>
-                        </div>
-                    </button>
+                    {(() => {
+                        const [expanded, setExpanded] = useState(false);
+                        return (
+                            <div className="relative">
+                                <button 
+                                    onClick={() => user ? setExpanded(!expanded) : onOpenAuth()} 
+                                    className="flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-2 rounded-xl hover:bg-white/20 transition-all group"
+                                >
+                                    <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                                        <i className="fas fa-user text-white text-sm"></i>
+                                    </div>
+                                    {user && (
+                                        <i className={`fas fa-chevron-down text-white/60 text-xs transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
+                                    )}
+                                </button>
+                                
+                                {expanded && user && (
+                                    <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-scaleIn z-50">
+                                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                                    <i className="fas fa-user text-white text-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-white">{user.name}</p>
+                                                    <p className="text-xs text-white/80">{user.cargo}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="p-3">
+                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm flex items-center gap-2">
+                                                <i className="fas fa-user-circle text-indigo-500"></i>
+                                                Meu Perfil
+                                            </button>
+                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm flex items-center gap-2">
+                                                <i className="fas fa-cog text-gray-500"></i>
+                                                Configurações
+                                            </button>
+                                            <hr className="my-2" />
+                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm flex items-center gap-2 text-red-600">
+                                                <i className="fas fa-sign-out-alt"></i>
+                                                Sair
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
             </header>
             
-            {/* Hero Section */}
-            <section className="relative z-10 px-8 py-16">
-                <div className="max-w-7xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-8">
-                        <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                        <span className="text-sm text-white/80">Plataforma Nacional de Indicadores da APS</span>
-                    </div>
-                    <h2 className="text-5xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-                        Transformando dados em<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">decisões estratégicas</span>
-                    </h2>
-                    <p className="text-xl text-white/70 max-w-3xl mx-auto mb-12">
-                        Monitore, analise e otimize os indicadores de saúde da Atenção Primária com visualizações avançadas.
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-                        {[
-                            { icon: 'fa-chart-line', title: 'Análise Real-Time', desc: 'Dados atualizados' },
-                            { icon: 'fa-map-marked-alt', title: 'Mapas Interativos', desc: 'Visualização espacial' },
-                            { icon: 'fa-brain', title: 'Insights IA', desc: 'Análises preditivas' },
-                            { icon: 'fa-file-export', title: 'Relatórios', desc: 'Exportação executiva' }
-                        ].map((f, i) => (
-                            <div key={i} className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-5 text-left animate-slideUp" style={{ animationDelay: `${i * 0.1}s` }}>
-                                <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center mb-3">
-                                    <i className={`fas ${f.icon} text-white`}></i>
-                                </div>
-                                <h4 className="text-white font-semibold mb-1">{f.title}</h4>
-                                <p className="text-white/50 text-sm">{f.desc}</p>
+            {/* Hero Section - Compacto e Elegante */}
+            <section className="relative z-10 px-8 py-8 flex-1 flex items-center">
+                <div className="max-w-6xl mx-auto w-full">
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+                        {/* Lado Esquerdo - Texto Principal */}
+                        <div className="lg:col-span-3">
+                            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-4">
+                                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                <span className="text-sm text-white/80 font-medium">Plataforma Nacional de Indicadores da APS</span>
                             </div>
-                        ))}
+                            <h2 className="text-5xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
+                                Transformando dados em <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">decisões estratégicas</span>
+                            </h2>
+                            <p className="text-xl text-white/90 mb-8 leading-relaxed">
+                                Monitore e analise os indicadores de saúde da Atenção Primária com inteligência e precisão
+                            </p>
+                            
+                            {/* Stats Rápidos */}
+                            <div className="grid grid-cols-3 gap-6">
+                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
+                                    <p className="text-3xl font-bold text-white mb-1">3</p>
+                                    <p className="text-sm text-white/70">Indicadores</p>
+                                </div>
+                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
+                                    <p className="text-3xl font-bold text-white mb-1">3</p>
+                                    <p className="text-sm text-white/70">Estados</p>
+                                </div>
+                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
+                                    <p className="text-3xl font-bold text-white mb-1">+50</p>
+                                    <p className="text-sm text-white/70">Municípios</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Lado Direito - Features */}
+                        <div className="lg:col-span-2 space-y-4">
+                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                        <i className="fas fa-chart-line text-white text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold text-lg mb-1">Análise em Tempo Real</p>
+                                        <p className="text-sm text-white/70">Dados atualizados mensalmente</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                        <i className="fas fa-bullseye text-white text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold text-lg mb-1">Gestão de Metas</p>
+                                        <p className="text-sm text-white/70">Defina e acompanhe objetivos</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                                        <i className="fas fa-map-marked-alt text-white text-lg"></i>
+                                    </div>
+                                    <div>
+                                        <p className="text-white font-bold text-lg mb-1">Visualização Geográfica</p>
+                                        <p className="text-sm text-white/70">Mapas interativos por região</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
             
             {/* Cards de Indicadores */}
-            <section className="relative z-10 px-8 pb-20">
-                <div className="max-w-7xl mx-auto">
-                    <h3 className="text-2xl font-bold text-white text-center mb-8">Selecione o Indicador</h3>
+            <section className="relative z-10 px-8 pb-8">
+                <div className="max-w-6xl mx-auto">
+                    <h3 className="text-3xl font-bold text-white mb-6 text-center">Selecione a Boa Prática</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {indicators.map((ind, idx) => (
                             <div 
                                 key={ind.key} 
-                                onClick={() => ind.states.length === 1 ? onSelectIndicator(ind.key, ind.states[0]) : setSel(ind)}
-                                className="bg-white/10 backdrop-blur border border-white/20 rounded-2xl p-8 cursor-pointer group hover:bg-white/20 transition-all duration-300 animate-slideUp"
-                                style={{ animationDelay: `${idx * 0.15}s` }}
+                                onClick={() => setSel(ind)}
+                                className="bg-white/10 backdrop-blur border-2 border-white/20 rounded-2xl p-6 cursor-pointer group hover:bg-white/20 hover:border-white/40 transition-all duration-300 animate-slideUp hover:scale-105"
+                                style={{ animationDelay: `${idx * 0.1}s` }}
                             >
-                                <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 transition-transform group-hover:scale-110" style={{ backgroundColor: ind.color }}>
-                                    <i className={`fas ${ind.icon} text-white text-3xl`}></i>
-                                </div>
-                                <h4 className="text-xl font-bold text-white text-center mb-2">{ind.title}</h4>
-                                <p className="text-white/60 text-center mb-4">{ind.desc}</p>
-                                <div className="flex items-center justify-center gap-2 text-white/40 text-sm">
-                                    <i className="fas fa-layer-group"></i>
-                                    <span>{ind.stats}</span>
-                                </div>
-                                <div className="mt-6 pt-4 border-t border-white/10 text-center">
-                                    <span className="text-white/60 text-sm group-hover:text-white transition-colors flex items-center justify-center gap-2">
-                                        Acessar <i className="fas fa-arrow-right group-hover:translate-x-2 transition-transform"></i>
-                                    </span>
+                                <div className="text-center">
+                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 mx-auto mb-4" style={{ backgroundColor: ind.color }}>
+                                        <i className={`fas ${ind.icon} text-white text-2xl`}></i>
+                                    </div>
+                                    <h4 className="text-xl font-bold text-white mb-2">{ind.title}</h4>
+                                    <p className="text-white/70 text-sm mb-3">{ind.desc}</p>
+                                    <div className="flex items-center justify-center gap-2 text-white/50 text-xs">
+                                        <i className="fas fa-layer-group"></i>
+                                        <span>{ind.stats}</span>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -242,8 +321,8 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
             )}
             
             {/* Footer */}
-            <footer className="relative z-10 px-8 py-8 border-t border-white/10">
-                <div className="max-w-7xl mx-auto text-center">
+            <footer className="relative z-10 px-8 py-6 border-t border-white/10">
+                <div className="max-w-6xl mx-auto text-center">
                     <p className="text-white/40 text-sm">© 2025 GDI-APS Brasil - Gestão de Desempenho de Indicadores da APS</p>
                 </div>
             </footer>
@@ -261,6 +340,9 @@ const Dashboard = () => {
     const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('gdiaps_topics')) || []);
     const [authModal, setAuthModal] = useState(false), [authMode, setAuthMode] = useState('login');
     const [babyTipsShown, setBabyTipsShown] = useState(() => JSON.parse(sessionStorage.getItem('gdiaps_baby_tips_shown')) || {});
+    const [showNotaTecnica, setShowNotaTecnica] = useState(false);
+    const [notaTecnicaMinimized, setNotaTecnicaMinimized] = useState(false);
+    const [profileMinimized, setProfileMinimized] = useState(false);
     const config = indicatorType ? INDICATOR_CONFIG[indicatorType] : null;
     const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2', '#c026d3', '#ea580c'];
     
@@ -271,47 +353,181 @@ const Dashboard = () => {
     };
     
     const babyTips = {
-        home: "Esse é o painel principal! Aqui você vê um resumo de tudo. Os cards coloridos mostram as métricas mais importantes!",
-        indicators: "Aqui você compara regiões e municípios! Veja quem está mandando bem e quem precisa de ajuda.",
-        components: "Cada componente é uma ação de saúde. Veja a evolução de cada um ao longo do tempo!",
-        strategic: "Visão para gestores! Aqui tem projeções e análises para tomar decisões importantes.",
-        goals: "Defina suas metas aqui! Acompanhe o progresso e veja se está no caminho certo.",
-        evaluation: "Avalie o desempenho! Gráficos e tabelas mostram como está indo em relação às metas.",
-        notes: "Anote tudo importante aqui! Problemas, ideias, ações... Não deixe nada escapar!",
-        map: "O mapa mostra tudo visualmente! As cores indicam o desempenho de cada município.",
-        dataCollection: "Importe novos dados aqui! Arquivos Excel com informações atualizadas.",
-        profile: "Seu perfil! Personalize suas informações e veja seus feedbacks."
+        home: "O painel principal, este é! Resumo de tudo, aqui você vê. Métricas importantes, os cards coloridos mostram, hmm!",
+        indicators: "Comparar regiões e municípios, aqui você pode. Quem bem está e quem ajuda precisa, descobrir você deve!",
+        components: "Cada componente, uma ação de saúde é. A evolução ao longo do tempo, observar você deve!",
+        strategic: "Para gestores, esta visão é! Projeções e análises, decisões importantes tomar, ajudam elas!",
+        goals: "Suas metas, definir aqui você deve! O progresso acompanhar, no caminho certo estar, verificar você pode!",
+        evaluation: "Avaliar o desempenho, importante é! Gráficos e tabelas, em relação às metas, como indo está, mostram!",
+        notes: "Anotar tudo importante, aqui você deve! Problemas, ideias, ações... Nada escapar, deixe não!",
+        map: "Visualmente tudo, o mapa mostra! As cores, o desempenho de cada município indicam, hmm!",
+        dataCollection: "Novos dados importar, aqui você pode! Arquivos Excel com informações atualizadas, trazer você deve!",
+        profile: "Seu perfil, este é! Suas informações personalizar e feedbacks ver, aqui você pode!"
     };
     
     const BabyAPSTip = ({ view }) => {
-        if (babyTipsShown[view]) return null;
+        // Sempre mostrar na primeira vez que a view é carregada
+        if (!view || babyTipsShown[view]) return null;
         return (
             <div className="fixed bottom-6 left-24 z-40 animate-slideUp">
                 <div className="flex items-end gap-3">
                     <div className="relative">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-300 to-pink-400 flex items-center justify-center shadow-xl border-3 border-white/50 animate-float overflow-hidden">
-                            <div className="relative">
-                                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 flex gap-0.5">
-                                    <div className="w-1.5 h-3 bg-amber-600 rounded-full transform -rotate-12"></div>
-                                    <div className="w-1.5 h-3.5 bg-amber-700 rounded-full"></div>
-                                    <div className="w-1.5 h-3 bg-amber-600 rounded-full transform rotate-12"></div>
+                        {/* Túnica/Manto */}
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-20 h-12 bg-gradient-to-b from-amber-800 to-amber-900 rounded-b-full" style={{clipPath: 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)'}}></div>
+                        {/* Corpo do Yoda */}
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-600 to-green-700 flex items-center justify-center shadow-2xl border-4 border-amber-500/60 animate-float overflow-visible relative">
+                            {/* Orelhas grandes e pontudas */}
+                            <div className="absolute -left-7 top-3 w-5 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-full transform -rotate-25 shadow-lg" style={{clipPath: 'polygon(0% 20%, 100% 0%, 100% 100%, 0% 80%)'}}></div>
+                            <div className="absolute -right-7 top-3 w-5 h-10 bg-gradient-to-l from-green-600 to-green-700 rounded-full transform rotate-25 shadow-lg" style={{clipPath: 'polygon(0% 0%, 100% 20%, 100% 80%, 0% 100%)'}}></div>
+                            
+                            <div className="relative z-10">
+                                {/* Pelos/Cabelo branco */}
+                                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex gap-0.5">
+                                    <div className="w-1 h-3 bg-gray-100 rounded-full opacity-90"></div>
+                                    <div className="w-1 h-4 bg-white rounded-full"></div>
+                                    <div className="w-1 h-3.5 bg-gray-100 rounded-full opacity-90"></div>
+                                    <div className="w-1 h-3 bg-white rounded-full opacity-80"></div>
                                 </div>
-                                <div className="w-10 h-10 bg-gradient-to-b from-amber-100 to-amber-200 rounded-full flex flex-col items-center justify-center">
-                                    <div className="flex gap-2 mb-0.5">
-                                        <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
-                                        <div className="w-1.5 h-1.5 bg-gray-800 rounded-full"></div>
+                                
+                                {/* Rosto verde enrugado */}
+                                <div className="w-12 h-12 bg-gradient-to-b from-green-500 to-green-600 rounded-full flex flex-col items-center justify-center relative">
+                                    {/* Rugas na testa */}
+                                    <div className="absolute top-2 left-2 right-2 flex flex-col gap-0.5">
+                                        <div className="w-full h-0.5 bg-green-800/40 rounded-full"></div>
+                                        <div className="w-3/4 h-0.5 bg-green-800/30 rounded-full mx-auto"></div>
                                     </div>
-                                    <div className="w-3 h-1.5 border-b-2 border-pink-400 rounded-b-full"></div>
+                                    
+                                    {/* Olhos grandes e sábios */}
+                                    <div className="flex gap-2 mb-1 mt-2">
+                                        <div className="w-3 h-3 bg-amber-50 rounded-full relative border-2 border-green-800 shadow-inner">
+                                            <div className="absolute top-0.5 left-1 w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                                            <div className="absolute top-0.5 left-1.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                        </div>
+                                        <div className="w-3 h-3 bg-amber-50 rounded-full relative border-2 border-green-800 shadow-inner">
+                                            <div className="absolute top-0.5 left-1 w-1.5 h-1.5 bg-gray-900 rounded-full"></div>
+                                            <div className="absolute top-0.5 left-1.5 w-0.5 h-0.5 bg-white rounded-full"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Nariz pequeno */}
+                                    <div className="w-1.5 h-2 bg-green-700 rounded-full mb-0.5"></div>
+                                    
+                                    {/* Boca sábia */}
+                                    <div className="w-4 h-2 border-b-2 border-green-900 rounded-b-full"></div>
                                 </div>
+                            </div>
+                            
+                            {/* Bastão/Cajado do Jedi */}
+                            <div className="absolute -right-2 bottom-2 transform rotate-20">
+                                <div className="w-1 h-16 bg-gradient-to-b from-amber-700 to-amber-900 rounded-full shadow-lg"></div>
+                                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1.5 h-2 bg-amber-600 rounded-t-full"></div>
+                            </div>
+                            
+                            {/* Aura da Força */}
+                            <div className="absolute -top-2 -right-2 w-7 h-7 bg-green-400/30 rounded-full border-2 border-green-400/50 animate-pulse flex items-center justify-center">
+                                <i className="fas fa-star text-amber-300 text-sm drop-shadow-lg"></i>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white rounded-2xl rounded-bl-none p-3 shadow-xl max-w-xs relative animate-scaleIn">
-                        <div className="absolute -left-2 bottom-3 w-3 h-3 bg-white transform rotate-45"></div>
-                        <p className="text-gray-700 text-sm leading-relaxed mb-2">{babyTips[view]}</p>
-                        <button onClick={() => markBabyTipShown(view)} className="text-xs bg-pink-500 text-white px-3 py-1 rounded-full hover:bg-pink-600 transition-colors">
-                            Entendi!
-                        </button>
+                    <div className="bg-gradient-to-br from-amber-50 via-green-50 to-emerald-50 rounded-2xl rounded-bl-none p-4 shadow-2xl max-w-sm relative animate-scaleIn border-2 border-amber-400/40">
+                        <div className="absolute -left-2 bottom-4 w-4 h-4 bg-gradient-to-br from-amber-50 to-green-50 transform rotate-45 border-l-2 border-b-2 border-amber-400/40"></div>
+                        
+                        {/* Citação estilo Star Wars */}
+                        <div className="flex items-start gap-2 mb-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center flex-shrink-0 border-2 border-amber-400/50 shadow-lg">
+                                <i className="fas fa-jedi text-amber-200 text-sm"></i>
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-green-800 text-xs font-bold mb-1">Mestre Yoda</p>
+                                <p className="text-gray-700 text-sm leading-relaxed italic font-medium">{babyTips[view]}</p>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-2 border-t border-green-200/50">
+                            <div className="text-xs text-green-600 flex items-center gap-1">
+                                <i className="fas fa-lightbulb"></i>
+                                <span>Dica Jedi</span>
+                            </div>
+                            <button onClick={() => markBabyTipShown(view)} className="text-xs bg-gradient-to-r from-green-600 via-green-700 to-emerald-700 text-white px-4 py-1.5 rounded-full hover:from-green-700 hover:to-emerald-800 transition-all shadow-md font-semibold flex items-center gap-1">
+                                <i className="fas fa-check-circle"></i>
+                                Compreendi, Mestre!
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const NotaTecnicaModal = () => {
+        if (!showNotaTecnica) return null;
+        return (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={() => setShowNotaTecnica(false)}>
+                <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden animate-scaleIn" onClick={e => e.stopPropagation()}>
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i className="fas fa-book-open text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Nota Técnica</h2>
+                                    <p className="text-blue-200 text-sm">Metodologia de Cálculo dos Indicadores</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowNotaTecnica(false)} className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center hover:bg-white/30 transition-colors">
+                                <i className="fas fa-times text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                        <div className="space-y-6">
+                            <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                                <h3 className="font-bold text-blue-800 mb-2 flex items-center gap-2"><i className="fas fa-database"></i> Fonte dos Dados</h3>
+                                <p className="text-sm text-gray-700">Os dados são extraídos do <strong>e-Gestor AB</strong> (Atenção Básica), sistema oficial do Ministério da Saúde para gestão da Atenção Primária à Saúde. O relatório utilizado é o <strong>"Relatório de Boas Práticas"</strong> disponível na visão por competência.</p>
+                            </div>
+                            
+                            <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                                <h3 className="font-bold text-green-800 mb-3 flex items-center gap-2"><i className="fas fa-calculator"></i> Taxa de Boas Práticas</h3>
+                                <div className="bg-white p-3 rounded-lg mb-3">
+                                    <p className="text-center font-mono text-lg text-green-700">Taxa = Somatório ÷ Total de Pacientes</p>
+                                </div>
+                                <p className="text-sm text-gray-700 mb-2">A <strong>Taxa de Boas Práticas</strong> representa a média de componentes/ações de saúde realizados por paciente. Quanto maior o valor, melhor o acompanhamento.</p>
+                                <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
+                                    <li><strong>Somatório:</strong> Total de componentes realizados para todos os pacientes</li>
+                                    <li><strong>Total de Pacientes:</strong> Número de pacientes vinculados às equipes</li>
+                                </ul>
+                            </div>
+                            
+                            <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                                <h3 className="font-bold text-purple-800 mb-3 flex items-center gap-2"><i className="fas fa-layer-group"></i> Componentes (C1 a C{config?.indicatorCount || 11})</h3>
+                                <p className="text-sm text-gray-700 mb-3">Cada componente representa uma ação de saúde específica que deve ser realizada. O percentual de cada componente é calculado:</p>
+                                <div className="bg-white p-3 rounded-lg mb-3">
+                                    <p className="text-center font-mono text-lg text-purple-700">% Componente = (Realizados ÷ Total Pacientes) × 100</p>
+                                </div>
+                                {config && <div className="text-xs text-gray-600 space-y-1 max-h-40 overflow-y-auto">{config.fullNames.map((name, i) => <p key={i}><strong>C{i+1}:</strong> {name}</p>)}</div>}
+                            </div>
+                            
+                            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                <h3 className="font-bold text-amber-800 mb-3 flex items-center gap-2"><i className="fas fa-chart-bar"></i> Classificação de Desempenho</h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="bg-green-500 text-white p-3 rounded-lg text-center"><p className="font-bold">Ótimo</p><p className="text-sm">≥ 75</p></div>
+                                    <div className="bg-lime-500 text-white p-3 rounded-lg text-center"><p className="font-bold">Bom</p><p className="text-sm">50 - 74,99</p></div>
+                                    <div className="bg-amber-500 text-white p-3 rounded-lg text-center"><p className="font-bold">Suficiente</p><p className="text-sm">25 - 49,99</p></div>
+                                    <div className="bg-red-500 text-white p-3 rounded-lg text-center"><p className="font-bold">Regular</p><p className="text-sm">0 - 24,99</p></div>
+                                </div>
+                            </div>
+                            
+                            <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2"><i className="fas fa-info-circle"></i> Observações</h3>
+                                <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc">
+                                    <li>Os dados são agregados por <strong>equipe de saúde</strong> (identificadas pelo INE)</li>
+                                    <li>A <strong>competência</strong> refere-se ao mês de referência dos dados</li>
+                                    <li>Os filtros de região, município e competência afetam todos os cálculos exibidos</li>
+                                    <li>O mapa de calor utiliza a mesma escala de cores da classificação de desempenho</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -392,18 +608,32 @@ const Dashboard = () => {
 
     const ProfileDropdown = () => {
         const [dropdownOpen, setDropdownOpen] = useState(false);
+        if (profileMinimized) {
+            return (
+                <div className="absolute top-4 right-4 z-50">
+                    <button onClick={() => setProfileMinimized(false)} className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center" title="Expandir Perfil">
+                        <i className="fas fa-user text-white"></i>
+                    </button>
+                </div>
+            );
+        }
         return (
             <div className="absolute top-4 right-4 z-50">
-                <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border-2 border-white/20">
-                    <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                        <i className="fas fa-user-nurse text-white text-xl"></i>
-                    </div>
-                    <div className="text-left">
-                        <p className="font-bold text-white">{user?.name || 'Visitante'}</p>
-                        <p className="text-xs text-blue-200">{user?.cargo || 'Clique para acessar'}</p>
-                    </div>
-                    <i className={`fas fa-chevron-${dropdownOpen ? 'up' : 'down'} text-white/70 ml-2`}></i>
-                </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setProfileMinimized(true)} className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors" title="Minimizar">
+                        <i className="fas fa-minus text-white text-xs"></i>
+                    </button>
+                    <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border-2 border-white/20">
+                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                            <i className="fas fa-user-nurse text-white text-xl"></i>
+                        </div>
+                        <div className="text-left">
+                            <p className="font-bold text-white">{user?.name || 'Visitante'}</p>
+                            <p className="text-xs text-blue-200">{user?.cargo || 'Clique para acessar'}</p>
+                        </div>
+                        <i className={`fas fa-chevron-${dropdownOpen ? 'up' : 'down'} text-white/70 ml-2`}></i>
+                    </button>
+                </div>
                 {dropdownOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden animate-fadeIn">
                         {user ? (
@@ -436,19 +666,31 @@ const Dashboard = () => {
     };
 
     const Sidebar = () => {
+        const sidebarLabels = {
+            home: 'Painel Principal',
+            indicators: 'Análise Comparativa',
+            components: 'Análise por Componente',
+            strategic: 'Visão Estratégica',
+            goals: 'Metas e Objetivos',
+            evaluation: 'Avaliação de Desempenho',
+            map: 'Mapa Geográfico',
+            dataCollection: 'Importar Dados',
+            aiInsights: 'Insights com IA',
+            profile: 'Meu Perfil'
+        };
         const mainItems = [['home','fa-home'],['indicators','fa-chart-pie'],['components','fa-layer-group'],['strategic','fa-brain']];
         const planItems = [['goals','fa-bullseye'],['evaluation','fa-chart-bar']];
-        const otherItems = [['map','fa-map-marked-alt'],['dataCollection','fa-database'],['aiInsights','fa-lightbulb'],['profile','fa-user-circle']];
+        const otherItems = [['map','fa-map-marked-alt'],['dataCollection','fa-database'],['profile','fa-user-circle']];
         const allItems = [...mainItems, ...planItems, ...otherItems];
         return (
             <div className="sidebar flex flex-col">
                 <div className="pt-6 pb-4"><div className={'w-12 h-12 mx-auto rounded-xl flex items-center justify-center ' + (config?.bgColor || 'bg-blue-600')}><i className={'fas ' + (config?.icon || 'fa-heartbeat') + ' text-white text-xl'}></i></div></div>
-                <div className="mt-2"><div className="sidebar-icon hover:bg-red-100" onClick={handleBackToLanding}><i className="fas fa-arrow-left text-lg text-red-500"></i></div></div>
-                <div className="mt-2 flex-1">{allItems.map(([v,i]) => <div key={v} className={'sidebar-icon ' + (activeView===v?'active':'')} onClick={() => setActiveView(v)}><i className={'fas ' + i + ' text-lg'}></i></div>)}</div>
+                <div className="mt-2"><div className="sidebar-icon hover:bg-red-100" onClick={handleBackToLanding} title="Voltar ao Início"><i className="fas fa-arrow-left text-lg text-red-500"></i></div></div>
+                <div className="mt-2 flex-1">{allItems.map(([v,i]) => <div key={v} className={'sidebar-icon ' + (activeView===v?'active':'')} onClick={() => setActiveView(v)} title={sidebarLabels[v]}><i className={'fas ' + i + ' text-lg'}></i></div>)}</div>
             </div>
         );
     };
-    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-4 mb-6"><div className="flex flex-wrap items-center gap-4"><select className="filter-select" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos'})}><option value="Todas">Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="filter-select" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value})}><option value="Todos">Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select><select className="filter-select" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="filter-select" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">Taxa Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
+    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all"><div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><i className="fas fa-filter text-white text-sm"></i></div><h3 className="font-bold text-gray-800">Filtros</h3></div><div className="flex flex-wrap items-center gap-3"><select className="px-4 py-2 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-white font-medium" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos'})}><option value="Todas">🌍 Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="px-4 py-2 border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white font-medium" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value})}><option value="Todos">🏛️ Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select><select className="px-4 py-2 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all bg-white font-medium" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">📅 Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="px-4 py-2 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all bg-white font-medium" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">🎯 Taxa Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
 
     const HomeView = () => {
         const m = calcMetrics(), ind = calcIndicators(), trend = getTrend(filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData), hm = getHeatmap(), estabs = getEstabelecimentos();
@@ -472,13 +714,13 @@ const Dashboard = () => {
                 {popupContent && <div className="popup-content"><div className="text-sm">{popupContent}</div></div>}
             </div>
         );
-        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold text-gray-900 mb-1">Painel de Indicadores</h1><p className="text-gray-500 mb-6">{config?.title} - {STATE_CONFIG[selectedState]?.name}</p><FilterBar /><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} accent="blue" subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold mb-2">Taxa de Boas Práticas</p><p className="text-gray-600">Representa a proporção de pacientes que receberam todos os cuidados recomendados.</p><div className="mt-3 p-2 bg-gray-50 rounded-lg"><p className="text-xs text-gray-500">Fórmula: Somatório / Total de Pacientes</p></div></>} />
-            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} accent="green" popupContent={<><p className="font-semibold mb-2">Somatório de Componentes</p><p className="text-gray-600">Total de componentes realizados em todos os pacientes acompanhados.</p></>} />
-            <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} accent="purple" popupContent={<><p className="font-semibold mb-2">Total de Pacientes</p><p className="text-gray-600">Número total de pacientes cadastrados e acompanhados no período selecionado.</p></>} />
-            <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} accent="amber" popupContent={<><p className="font-semibold mb-2">Equipes de Saúde</p><p className="text-gray-600">Quantidade de equipes de saúde da família ativas no território.</p></>} />
-            <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} accent="rose" popupContent={<><p className="font-semibold mb-2">Municípios Atendidos</p><p className="text-gray-600">Total de municípios com dados registrados no período.</p></>} />
-        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-chart-area"></i>Evolução Mensal</h3></div><div className="corp-card-body"><div style={{height:'280px'}}><LineChart data={trend} /></div>{variation && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-layer-group"></i>Componentes</h3></div><div className="corp-card-body"><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-th"></i>Matriz de Desempenho</h3></div><div className="corp-card-body"><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} shortNames={config?.shortNames || []} /></div></div></div>);
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-chart-line animate-pulse"></i>Painel de Indicadores</h1><p className="text-white/90 text-lg">{config?.title} - {STATE_CONFIG[selectedState]?.name}</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} accent="blue" subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold text-blue-700 mb-1">Taxa de Boas Práticas</p><p className="text-gray-600 text-xs mb-2">Média de componentes por paciente.</p><p className="text-xs bg-blue-50 p-2 rounded"><strong>Cálculo:</strong> Somatório ÷ Total Pacientes</p></>} />
+            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} accent="green" popupContent={<><p className="font-semibold text-green-700 mb-1">Somatório de Boas Práticas</p><p className="text-gray-600 text-xs mb-2">Total de componentes realizados.</p><p className="text-xs bg-green-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
+            <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} accent="purple" popupContent={<><p className="font-semibold text-purple-700 mb-1">Total de Pacientes</p><p className="text-gray-600 text-xs mb-2">Pacientes vinculados às equipes.</p><p className="text-xs bg-purple-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
+            <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} accent="amber" popupContent={<><p className="font-semibold text-amber-700 mb-1">Equipes de Saúde</p><p className="text-gray-600 text-xs mb-2">Equipes (eSF, eAP) com dados.</p><p className="text-xs bg-amber-50 p-2 rounded"><strong>Cálculo:</strong> INEs únicos</p></>} />
+            <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} accent="rose" popupContent={<><p className="font-semibold text-rose-700 mb-1">Municípios Atendidos</p><p className="text-gray-600 text-xs mb-2">Municípios com dados registrados.</p><p className="text-xs bg-rose-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
+        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-chart-area"></i>Evolução Mensal</h3></div><div className="corp-card-body"><div style={{height:'280px'}}><LineChart data={trend} /></div>{variation && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-layer-group"></i>Componentes</h3></div><div className="corp-card-body"><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-th"></i>Matriz de Desempenho</h3></div><div className="corp-card-body"><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} shortNames={config?.shortNames || []} /></div></div><div className="corp-card mt-6"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-table text-indigo-500"></i>Matriz Componentes x Regiões</h3></div><div className="corp-card-body overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2 bg-gray-100 rounded-l-lg font-semibold">Região</th>{Array.from({length: config?.indicatorCount || 11}, (_,i) => <th key={i} className="p-2 bg-gray-100 text-center text-xs font-semibold">C{i+1}</th>)}<th className="p-2 bg-gray-100 rounded-r-lg text-center font-semibold">Taxa</th></tr></thead><tbody>{getRegioes().map(regiao => { const dados = rawData.filter(r => r.regiao === regiao); const totalPac = dados.reduce((s,r) => s + (r.totalPacientes||0), 0); const soma = dados.reduce((s,r) => s + r.somatorio, 0); const taxa = totalPac > 0 ? soma/totalPac : 0; const cat = getCategoriaTaxa(taxa); const comps = Array.from({length: config?.indicatorCount || 11}, (_,i) => { const sum = dados.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0); return totalPac > 0 ? (sum/totalPac)*100 : 0; }); return <tr key={regiao} className="border-b border-gray-100 hover:bg-gray-50"><td className="p-2 font-medium text-gray-800">{regiao}</td>{comps.map((c,i) => { const catC = getCategoriaComponente(c); return <td key={i} className="p-1 text-center"><span className="inline-block px-2 py-1 rounded text-xs text-white font-semibold" style={{backgroundColor: catC.color}}>{c.toFixed(0)}%</span></td>; })}<td className="p-2 text-center font-bold" style={{color: cat.color}}>{taxa.toFixed(2)}</td></tr>; })}</tbody></table></div></div></div>);
     };
 
     const IndicatorsView = () => {
@@ -519,7 +761,7 @@ const Dashboard = () => {
         const getCateg = (val) => indFilter === 'taxa' ? getCategoriaTaxa(val) : getCategoriaComponente(val);
         const formatVal = (val) => indFilter === 'taxa' ? val.toFixed(2) : val.toFixed(1) + '%';
         const RegionChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); chart.current = new Chart(ref.current, { type: 'bar', data: { labels: regioes.map(r => r.regiao), datasets: [{ data: regioes.map(r => r.taxa), backgroundColor: regioes.map(r => getTaxaColor(r.taxa)), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => indFilter === 'taxa' ? v.toFixed(1) : v.toFixed(0) + '%' } } } } }); return () => chart.current?.destroy(); }, [regioes, indFilter]); return <canvas ref={ref}></canvas>; };
-        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise Comparativa</h1><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="card p-6 mb-6"><h3 className="font-bold mb-4"><i className="fas fa-balance-scale mr-2 text-blue-500"></i>Comparação entre Regiões {indFilter !== 'taxa' && <span className="text-sm font-normal text-gray-500">({config?.shortNames[parseInt(indFilter.replace('ind',''))-1]})</span>}</h3><div style={{height:'300px'}}><RegionChart /></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="card p-6"><h3 className="font-bold mb-4">Ranking Municípios</h3><div className="space-y-2 max-h-96 overflow-y-auto">{hm.slice(0,15).map((m,i) => { const c = getCateg(m.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1"><p className="font-medium">{m.municipio}</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div><span className="font-bold" style={{color: c.color}}>{formatVal(m.taxa)}</span></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4">Ranking Unidades</h3><div className="space-y-2 max-h-96 overflow-y-auto">{estabs.slice(0,15).map((e,i) => { const c = getCateg(e.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1 min-w-0"><p className="font-medium truncate">{e.estabelecimento}</p><p className="text-xs text-gray-500">{e.municipio}</p></div><span className="font-bold" style={{color: c.color}}>{formatVal(e.taxa)}</span></div>; })}</div></div></div></div>);
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-balance-scale animate-pulse"></i>Análise Comparativa</h1><p className="text-white/90 text-lg">Compare regiões, municípios e unidades de saúde</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="card p-6 mb-6"><h3 className="font-bold mb-4"><i className="fas fa-balance-scale mr-2 text-blue-500"></i>Comparação entre Regiões {indFilter !== 'taxa' && <span className="text-sm font-normal text-gray-500">({config?.shortNames[parseInt(indFilter.replace('ind',''))-1]})</span>}</h3><div style={{height:'300px'}}><RegionChart /></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="card p-6"><h3 className="font-bold mb-4">Ranking Municípios</h3><div className="space-y-2 max-h-96 overflow-y-auto">{hm.slice(0,15).map((m,i) => { const c = getCateg(m.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1"><p className="font-medium">{m.municipio}</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div><span className="font-bold" style={{color: c.color}}>{formatVal(m.taxa)}</span></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4">Ranking Unidades</h3><div className="space-y-2 max-h-96 overflow-y-auto">{estabs.slice(0,15).map((e,i) => { const c = getCateg(e.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1 min-w-0"><p className="font-medium truncate">{e.estabelecimento}</p><p className="text-xs text-gray-500">{e.municipio}</p></div><span className="font-bold" style={{color: c.color}}>{formatVal(e.taxa)}</span></div>; })}</div></div></div></div>);
     };
 
     const ComponentsView = () => {
@@ -534,7 +776,7 @@ const Dashboard = () => {
         const MultiChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); const months = getUnique('competencia'); const orderedMonths = MONTH_ORDER.filter(m => months.includes(m)); const datasets = selRegioes.length ? selRegioes.map((r,i) => { const t = getComponentTrend(selComp, r); return { label: r, data: orderedMonths.map(m => t.find(x => x.month === m)?.pct ?? null), borderColor: COLORS[i%COLORS.length], backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, spanGaps: true }; }) : [{ label: 'Geral', data: orderedMonths.map(m => compTrend.find(x => x.month === m)?.pct ?? null), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, borderWidth: 3, tension: 0.4, spanGaps: true }]; chart.current = new Chart(ref.current, { type: 'line', data: { labels: orderedMonths.map(m => m.slice(0,3)), datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v+'%' } } } } }); return () => chart.current?.destroy(); }, [selComp, selRegioes, compTrend]); return <canvas ref={ref}></canvas>; };
         const pred = () => { const t = compTrend; if (t.length < 3) return null; const n = t.length, xM = (n-1)/2, yM = t.reduce((s,x) => s+x.pct, 0)/n; let num=0, den=0; t.forEach((p,i) => { num += (i-xM)*(p.pct-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; return { next: Math.min(100, Math.max(0, int + slope*n)), trend: slope > 0.5 ? 'crescente' : slope < -0.5 ? 'decrescente' : 'estável', slope: slope.toFixed(2) }; };
         const prediction = pred();
-        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise por Componente</h1><FilterBar /><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Selecione o Componente</h3><div className="flex flex-wrap gap-2">{ind.map(i => <button key={i.index} onClick={() => setSelComp(i.index)} className={'px-4 py-2 rounded-lg font-semibold ' + (selComp === i.index ? 'bg-blue-600 text-white' : 'bg-gray-100')}>{i.name}</button>)}</div></div><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Filtrar por Regiões (máx 5)</h3><div className="flex flex-wrap gap-2">{regioes.map((r,i) => <button key={r} onClick={() => toggleReg(r)} className={'px-3 py-1 rounded-full text-sm font-medium border-2 ' + (selRegioes.includes(r) ? 'text-white border-transparent' : 'bg-white border-gray-300')} style={selRegioes.includes(r) ? {backgroundColor: COLORS[selRegioes.indexOf(r)%COLORS.length]} : {}}>{r}</button>)}{selRegioes.length > 0 && <button onClick={() => setSelRegioes([])} className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-600">Limpar</button>}</div></div>{selInd && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-2">Evolução - {selInd.name}</h3><p className="text-sm text-gray-500 mb-4">{selInd.fullName}</p><div style={{height:'350px'}}><MultiChart /></div></div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4">Detalhes</h3><div className="p-3 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Valor Atual ({lastMonth})</p><p className="text-2xl font-bold" style={{color: lastCat.color}}>{lastPct.toFixed(1)}%</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: lastCat.color}}>{lastCat.label}</span></div><div className="p-3 bg-gray-50 rounded-xl"><p className="text-sm text-gray-500">Total Realizados</p><p className="text-xl font-bold">{selInd.total.toLocaleString()}</p></div></div>{prediction && <div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Predição</h3><div className="p-3 bg-purple-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Próximo Mês</p><p className="text-xl font-bold text-purple-600">{prediction.next.toFixed(1)}%</p></div><p className="text-sm mb-2">Tendência: <span className="font-bold">{prediction.trend}</span></p><p className="text-xs text-gray-500">Método: Regressão linear ({compTrend.length} meses). Coef: {prediction.slope}%/mês</p></div>}</div></div>}</div>);
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-layer-group animate-pulse"></i>Análise por Componente</h1><p className="text-white/90 text-lg">Explore cada componente individualmente e sua evolução</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Selecione o Componente</h3><div className="flex flex-wrap gap-2">{ind.map(i => <button key={i.index} onClick={() => setSelComp(i.index)} className={'px-4 py-2 rounded-lg font-semibold ' + (selComp === i.index ? 'bg-blue-600 text-white' : 'bg-gray-100')}>{i.name}</button>)}</div></div><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Filtrar por Regiões (máx 5)</h3><div className="flex flex-wrap gap-2">{regioes.map((r,i) => <button key={r} onClick={() => toggleReg(r)} className={'px-3 py-1 rounded-full text-sm font-medium border-2 ' + (selRegioes.includes(r) ? 'text-white border-transparent' : 'bg-white border-gray-300')} style={selRegioes.includes(r) ? {backgroundColor: COLORS[selRegioes.indexOf(r)%COLORS.length]} : {}}>{r}</button>)}{selRegioes.length > 0 && <button onClick={() => setSelRegioes([])} className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-600">Limpar</button>}</div></div>{selInd && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-2">Evolução - {selInd.name}</h3><p className="text-sm text-gray-500 mb-4">{selInd.fullName}</p><div style={{height:'350px'}}><MultiChart /></div></div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4">Detalhes</h3><div className="p-3 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Valor Atual ({lastMonth})</p><p className="text-2xl font-bold" style={{color: lastCat.color}}>{lastPct.toFixed(1)}%</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: lastCat.color}}>{lastCat.label}</span></div><div className="p-3 bg-gray-50 rounded-xl"><p className="text-sm text-gray-500">Total Realizados</p><p className="text-xl font-bold">{selInd.total.toLocaleString()}</p></div></div>{prediction && <div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Predição</h3><div className="p-3 bg-purple-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Próximo Mês</p><p className="text-xl font-bold text-purple-600">{prediction.next.toFixed(1)}%</p></div><p className="text-sm mb-2">Tendência: <span className="font-bold">{prediction.trend}</span></p><p className="text-xs text-gray-500">Método: Regressão linear ({compTrend.length} meses). Coef: {prediction.slope}%/mês</p></div>}</div></div>}</div>);
     };
 
     const StrategicView = () => {
@@ -542,7 +784,7 @@ const Dashboard = () => {
         const worstMun = [...hm].sort((a,b) => a.taxa - b.taxa).slice(0,5), bestMun = hm.slice(0,5);
         const pred = () => { if (trend.length < 3) return null; const n = trend.length, xM = (n-1)/2, yM = trend.reduce((s,t) => s+t.taxa, 0)/n; let num=0, den=0; trend.forEach((p,i) => { num += (i-xM)*(p.taxa-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; return [1,2,3].map(i => ({ label: 'Mês +'+i, val: Math.max(0, int + slope*(n+i-1)) })); };
         const prediction = pred(); const cat = getCategoria(m.taxa);
-        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-2">Análise Estratégica</h1><p className="text-gray-500 mb-6">Visão para Diretores e Gerentes de Saúde</p><FilterBar /><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-blue-600"><i className="fas fa-bullseye mr-2"></i>Resumo Executivo</h3><div className="p-4 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Taxa Atual</p><p className="text-3xl font-bold" style={{color: cat.color}}>{m.taxa.toFixed(2)}</p><span className="text-sm px-3 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span></div><div className="grid grid-cols-2 gap-3"><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Municípios</p><p className="text-lg font-bold">{m.municipios}</p></div><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Equipes</p><p className="text-lg font-bold">{m.equipes}</p></div></div></div><div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Projeção</h3>{prediction ? <div className="space-y-3">{prediction.map((p,i) => { const c = getCategoriaTaxa(p.val); return <div key={i} className="flex justify-between items-center p-3 bg-purple-50 rounded-xl"><span>{p.label}</span><div><span className="text-xl font-bold" style={{color: c.color}}>{p.val.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div> : <p className="text-gray-400">Dados insuficientes</p>}</div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-red-600"><i className="fas fa-exclamation-circle mr-2"></i>Municípios Críticos</h3><div className="space-y-2">{worstMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4 text-green-600"><i className="fas fa-star mr-2"></i>Municípios Referência</h3><div className="space-y-2">{bestMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-green-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div></div></div>);
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-brain animate-pulse"></i>Análise Estratégica</h1><p className="text-white/90 text-lg">Visão executiva para tomada de decisões</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-blue-600"><i className="fas fa-bullseye mr-2"></i>Resumo Executivo</h3><div className="p-4 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Taxa Atual</p><p className="text-3xl font-bold" style={{color: cat.color}}>{m.taxa.toFixed(2)}</p><span className="text-sm px-3 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span></div><div className="grid grid-cols-2 gap-3"><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Municípios</p><p className="text-lg font-bold">{m.municipios}</p></div><div className="p-3 bg-gray-50 rounded-xl text-center"><p className="text-xs text-gray-500">Equipes</p><p className="text-lg font-bold">{m.equipes}</p></div></div></div><div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Projeção</h3>{prediction ? <div className="space-y-3">{prediction.map((p,i) => { const c = getCategoriaTaxa(p.val); return <div key={i} className="flex justify-between items-center p-3 bg-purple-50 rounded-xl"><span>{p.label}</span><div><span className="text-xl font-bold" style={{color: c.color}}>{p.val.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div> : <p className="text-gray-400">Dados insuficientes</p>}</div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="card p-6"><h3 className="font-bold mb-4 text-red-600"><i className="fas fa-exclamation-circle mr-2"></i>Municípios Críticos</h3><div className="space-y-2">{worstMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-red-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4 text-green-600"><i className="fas fa-star mr-2"></i>Municípios Referência</h3><div className="space-y-2">{bestMun.map((m,i) => { const c = getCategoriaTaxa(m.taxa); return <div key={i} className="flex justify-between items-center p-3 bg-green-50 rounded-xl"><span className="font-medium">{m.municipio}</span><div><span className="font-bold" style={{color: c.color}}>{m.taxa.toFixed(2)}</span><span className="ml-2 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div></div></div>);
     };
 
     const MiniMap = ({ monthData, indFilter }) => {
@@ -567,7 +809,7 @@ const Dashboard = () => {
         const regiaoStats = getRegioes().map(r => { const d = filteredData.filter(x => x.regiao === r); let valor = 0; if (indFilter === 'taxa') { const s = d.reduce((a,x) => a + x.somatorio, 0), t = d.reduce((a,x) => a + (x.totalPacientes||0), 0); valor = t ? s/t : 0; } else { const idx = parseInt(indFilter.replace('ind','')); const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0), val = d.reduce((a,x) => a + (x['ind'+idx]||0), 0); valor = t ? (val/t)*100 : 0; } return { regiao: r, taxa: valor, municipios: new Set(d.map(x => x.municipio)).size }; }).sort((a,b) => b.taxa - a.taxa);
         const clusters = { otimo: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Ótimo').length, bom: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Bom').length, suficiente: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Suficiente').length, regular: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Regular').length };
         useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const map = L.map(mapRef.current).setView(selectedState === 'acre' ? [-9,-70] : selectedState === 'am' ? [-4,-65] : [-5.8,-36.5], selectedState === 'am' ? 5 : 7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: 1, color: 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter]);
-        return (<div className="animate-fadeIn"><h1 className="text-3xl font-bold mb-6">Análise Espacial</h1><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="grid grid-cols-4 gap-4 mb-6"><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"><i className="fas fa-trophy text-white"></i></div><div><p className="text-xs text-gray-500">Ótimo</p><p className="text-2xl font-bold text-green-600">{clusters.otimo}</p></div></div><div className="popup-content"><p className="font-semibold text-green-600 mb-1">Municípios com Desempenho Ótimo</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 75% a 100%' : 'Componente de 75% a 100%'} - Excelente cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center"><i className="fas fa-thumbs-up text-white"></i></div><div><p className="text-xs text-gray-500">Bom</p><p className="text-2xl font-bold text-lime-600">{clusters.bom}</p></div></div><div className="popup-content"><p className="font-semibold text-lime-600 mb-1">Municípios com Desempenho Bom</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 50% a 74,99%' : 'Componente de 50% a 74,99%'} - Boa cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"><i className="fas fa-exclamation text-white"></i></div><div><p className="text-xs text-gray-500">Suficiente</p><p className="text-2xl font-bold text-amber-600">{clusters.suficiente}</p></div></div><div className="popup-content"><p className="font-semibold text-amber-600 mb-1">Municípios com Desempenho Suficiente</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 25% a 49,99%' : 'Componente de 25% a 49,99%'} - Necessita melhorias</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-white"></i></div><div><p className="text-xs text-gray-500">Regular</p><p className="text-2xl font-bold text-red-600">{clusters.regular}</p></div></div><div className="popup-content"><p className="font-semibold text-red-600 mb-1">Municípios com Desempenho Regular</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 0% a 24,99%' : 'Componente de 0% a 24,99%'} - Atenção prioritária</p></div></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-4">Mapa de Desempenho</h3><div ref={mapRef} style={{height:'450px',borderRadius:'16px'}}></div><div className="flex justify-center gap-4 mt-4 text-xs"><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#22c55e'}}></span>Ótimo</span></div>{indFilter !== 'taxa' && config && <div className="mt-4 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-semibold text-gray-600 mb-2">Componente selecionado:</p><div className="text-sm text-gray-700"><span className="font-medium">C{parseInt(indFilter.replace('ind',''))}:</span> {config.fullNames[parseInt(indFilter.replace('ind',''))-1]}</div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-layer-group mr-2 text-blue-500"></i>Clusters por Região</h3><div className="space-y-2">{regiaoStats.map((r,i) => { const c = getCategoriaTaxa(r.taxa); return <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{r.regiao}</p><p className="text-xs text-gray-500">{r.municipios} mun.</p></div><div className="text-right"><span className="font-bold" style={{color: c.color}}>{r.taxa.toFixed(2)}</span><span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-chart-pie mr-2 text-purple-500"></i>Distribuição</h3><div className="space-y-2">{[{l:'Ótimo',c:'#22c55e',v:clusters.otimo},{l:'Bom',c:'#84cc16',v:clusters.bom},{l:'Suficiente',c:'#fbbf24',v:clusters.suficiente},{l:'Regular',c:'#ef4444',v:clusters.regular}].map(x => { const pct = hm.length ? (x.v/hm.length*100) : 0; return <div key={x.l}><div className="flex justify-between text-sm mb-1"><span>{x.l}</span><span className="font-bold">{pct.toFixed(0)}%</span></div><div className="h-2 bg-gray-200 rounded-full"><div className="h-2 rounded-full" style={{width: pct+'%', backgroundColor: x.c}}></div></div></div>; })}</div></div></div></div><div className="card p-6 mt-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-th text-blue-500"></i>Mosaico de Mapas Mensais<span className="ml-auto text-xs font-normal text-gray-500">Evolução temporal do território</span></h3><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{getUnique('competencia').slice(0, 12).map(month => { const monthData = rawData.filter(r => r.competencia === month); const monthMetrics = monthData.length ? { total: monthData.reduce((s,r) => s + (r.totalPacientes||0), 0), taxa: monthData.reduce((s,r) => s + r.somatorio, 0) / monthData.reduce((s,r) => s + (r.totalPacientes||0), 0) || 0 } : { total: 0, taxa: 0 }; const monthCat = getCategoriaTaxa(monthMetrics.taxa); return (<div key={month} className="mosaic-card bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all"><div className="flex items-center justify-between mb-2"><span className="text-sm font-bold text-gray-700">{month}</span><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: monthCat.color}}>{monthMetrics.taxa.toFixed(2)}</span></div><div className="relative bg-white rounded-lg overflow-hidden shadow-inner" style={{height:'260px'}}><MiniMap monthData={monthData} indFilter={indFilter} /></div><div className="mt-2 text-xs text-gray-500 text-center">{monthMetrics.total.toLocaleString()} pacientes</div></div>); })}</div></div></div>);
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-map-marked-alt animate-pulse"></i>Análise Espacial</h1><p className="text-white/90 text-lg">Visualização geográfica dos indicadores</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="grid grid-cols-4 gap-4 mb-6"><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center"><i className="fas fa-trophy text-white"></i></div><div><p className="text-xs text-gray-500">Ótimo</p><p className="text-2xl font-bold text-green-600">{clusters.otimo}</p></div></div><div className="popup-content"><p className="font-semibold text-green-600 mb-1">Municípios com Desempenho Ótimo</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 75% a 100%' : 'Componente de 75% a 100%'} - Excelente cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center"><i className="fas fa-thumbs-up text-white"></i></div><div><p className="text-xs text-gray-500">Bom</p><p className="text-2xl font-bold text-lime-600">{clusters.bom}</p></div></div><div className="popup-content"><p className="font-semibold text-lime-600 mb-1">Municípios com Desempenho Bom</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 50% a 74,99%' : 'Componente de 50% a 74,99%'} - Boa cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"><i className="fas fa-exclamation text-white"></i></div><div><p className="text-xs text-gray-500">Suficiente</p><p className="text-2xl font-bold text-amber-600">{clusters.suficiente}</p></div></div><div className="popup-content"><p className="font-semibold text-amber-600 mb-1">Municípios com Desempenho Suficiente</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 25% a 49,99%' : 'Componente de 25% a 49,99%'} - Necessita melhorias</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-white"></i></div><div><p className="text-xs text-gray-500">Regular</p><p className="text-2xl font-bold text-red-600">{clusters.regular}</p></div></div><div className="popup-content"><p className="font-semibold text-red-600 mb-1">Municípios com Desempenho Regular</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 0% a 24,99%' : 'Componente de 0% a 24,99%'} - Atenção prioritária</p></div></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-4">Mapa de Desempenho</h3><div ref={mapRef} style={{height:'450px',borderRadius:'16px'}}></div><div className="flex justify-center gap-4 mt-4 text-xs"><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#22c55e'}}></span>Ótimo</span></div>{indFilter !== 'taxa' && config && <div className="mt-4 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-semibold text-gray-600 mb-2">Componente selecionado:</p><div className="text-sm text-gray-700"><span className="font-medium">C{parseInt(indFilter.replace('ind',''))}:</span> {config.fullNames[parseInt(indFilter.replace('ind',''))-1]}</div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-layer-group mr-2 text-blue-500"></i>Clusters por Região</h3><div className="space-y-2">{regiaoStats.map((r,i) => { const c = getCategoriaTaxa(r.taxa); return <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{r.regiao}</p><p className="text-xs text-gray-500">{r.municipios} mun.</p></div><div className="text-right"><span className="font-bold" style={{color: c.color}}>{r.taxa.toFixed(2)}</span><span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-chart-pie mr-2 text-purple-500"></i>Distribuição</h3><div className="space-y-2">{[{l:'Ótimo',c:'#22c55e',v:clusters.otimo},{l:'Bom',c:'#84cc16',v:clusters.bom},{l:'Suficiente',c:'#fbbf24',v:clusters.suficiente},{l:'Regular',c:'#ef4444',v:clusters.regular}].map(x => { const pct = hm.length ? (x.v/hm.length*100) : 0; return <div key={x.l}><div className="flex justify-between text-sm mb-1"><span>{x.l}</span><span className="font-bold">{pct.toFixed(0)}%</span></div><div className="h-2 bg-gray-200 rounded-full"><div className="h-2 rounded-full" style={{width: pct+'%', backgroundColor: x.c}}></div></div></div>; })}</div></div></div></div><div className="card p-6 mt-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-th text-blue-500"></i>Mosaico de Mapas Mensais<span className="ml-auto text-xs font-normal text-gray-500">Evolução temporal do território</span></h3><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{getUnique('competencia').slice(0, 12).map(month => { const monthData = rawData.filter(r => r.competencia === month); const monthMetrics = monthData.length ? { total: monthData.reduce((s,r) => s + (r.totalPacientes||0), 0), taxa: monthData.reduce((s,r) => s + r.somatorio, 0) / monthData.reduce((s,r) => s + (r.totalPacientes||0), 0) || 0 } : { total: 0, taxa: 0 }; const monthCat = getCategoriaTaxa(monthMetrics.taxa); return (<div key={month} className="mosaic-card bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all"><div className="flex items-center justify-between mb-2"><span className="text-sm font-bold text-gray-700">{month}</span><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: monthCat.color}}>{monthMetrics.taxa.toFixed(2)}</span></div><div className="relative bg-white rounded-lg overflow-hidden shadow-inner" style={{height:'260px'}}><MiniMap monthData={monthData} indFilter={indFilter} /></div><div className="mt-2 text-xs text-gray-500 text-center">{monthMetrics.total.toLocaleString()} pacientes</div></div>); })}</div></div></div>);
     };
 
     // ========== METAS / PLANEJAMENTO ==========
@@ -610,19 +852,31 @@ const Dashboard = () => {
         
         return (
             <div className="animate-fadeIn">
-                <h1 className="text-3xl font-bold mb-2">Planejamento de Metas</h1>
-                <p className="text-gray-500 mb-6">Defina metas para os indicadores e acompanhe o progresso</p>
+                <div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-8 shadow-2xl">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative z-10">
+                        <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+                            <i className="fas fa-bullseye animate-pulse"></i>
+                            Planejamento de Metas
+                        </h1>
+                        <p className="text-white/90 text-lg">Defina metas estratégicas e acompanhe o progresso em tempo real</p>
+                    </div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
                 
                 {/* Seleção de Regional */}
-                <div className="card p-4 mb-6">
-                    <h3 className="font-bold mb-3 flex items-center gap-2">
-                        <i className="fas fa-map-marker-alt text-indigo-500"></i>
+                <div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all">
+                    <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                            <i className="fas fa-map-marker-alt text-white"></i>
+                        </div>
                         Selecione a Abrangência
                     </h3>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                         <button 
                             onClick={() => setSelectedRegiao('estadual')}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${selectedRegiao === 'estadual' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
+                            className={`px-5 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 ${selectedRegiao === 'estadual' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-300/50' : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300'}`}
                         >
                             <i className="fas fa-globe-americas mr-2"></i>Estadual
                         </button>
@@ -630,28 +884,35 @@ const Dashboard = () => {
                             <button 
                                 key={r}
                                 onClick={() => setSelectedRegiao(r)}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${selectedRegiao === r ? 'bg-indigo-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                className={`px-5 py-3 rounded-xl font-semibold transition-all transform hover:scale-105 ${selectedRegiao === r ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-300/50' : 'bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300'}`}
                             >
                                 {r}
                             </button>
                         ))}
                     </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                        <i className="fas fa-info-circle mr-1"></i>
-                        {selectedRegiao === 'estadual' ? 'Metas para todo o estado' : `Metas específicas para a regional ${selectedRegiao}`}
-                    </p>
+                    <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p className="text-sm text-indigo-700 flex items-center gap-2">
+                            <i className="fas fa-info-circle"></i>
+                            <span className="font-medium">{selectedRegiao === 'estadual' ? 'Metas para todo o estado' : `Metas específicas para a regional ${selectedRegiao}`}</span>
+                        </p>
+                    </div>
                 </div>
                 
                 {!isManager && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                        <p className="text-amber-700"><i className="fas fa-lock mr-2"></i>Apenas gestores e coordenadores podem editar metas. Você está visualizando em modo leitura.</p>
+                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-5 mb-6 shadow-lg animate-pulse-slow">
+                        <p className="text-amber-800 font-medium flex items-center gap-2">
+                            <i className="fas fa-lock text-xl"></i>
+                            <span>Apenas gestores e coordenadores podem editar metas. Você está visualizando em modo leitura.</span>
+                        </p>
                     </div>
                 )}
                 
                 {/* Configuração de Data Alvo */}
-                <div className="card p-6 mb-6">
-                    <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <i className="fas fa-calendar-alt text-blue-500"></i>
+                <div className="card p-6 mb-6 border-2 border-blue-100 hover:border-blue-300 transition-all hover:shadow-xl">
+                    <h3 className="font-bold mb-4 flex items-center gap-2 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center animate-float">
+                            <i className="fas fa-calendar-alt text-white"></i>
+                        </div>
                         Período de Avaliação
                     </h3>
                     <div className="flex items-center gap-4">
@@ -666,10 +927,10 @@ const Dashboard = () => {
                             />
                         </div>
                         {targetDate && (
-                            <div className="bg-blue-50 px-4 py-2 rounded-lg">
-                                <p className="text-sm text-blue-600">
-                                    <i className="fas fa-clock mr-1"></i>
-                                    {Math.ceil((new Date(targetDate) - new Date()) / (1000 * 60 * 60 * 24))} dias restantes
+                            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-5 py-3 rounded-xl border-2 border-blue-200 shadow-md animate-fadeIn">
+                                <p className="text-sm text-blue-700 font-semibold flex items-center gap-2">
+                                    <i className="fas fa-clock text-lg"></i>
+                                    <span>{Math.ceil((new Date(targetDate) - new Date()) / (1000 * 60 * 60 * 24))} dias restantes para atingir as metas</span>
                                 </p>
                             </div>
                         )}
@@ -677,9 +938,12 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Meta da Taxa de Boas Práticas */}
-                <div className="card p-6 mb-6">
-                    <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <i className="fas fa-bullseye text-green-500"></i>
+                <div className="card p-6 mb-6 border-2 border-green-100 hover:border-green-300 transition-all hover:shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-transparent rounded-full -mr-16 -mt-16"></div>
+                    <h3 className="font-bold mb-6 flex items-center gap-2 text-lg relative z-10">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center animate-pulse">
+                            <i className="fas fa-bullseye text-white"></i>
+                        </div>
                         Meta da Taxa de Boas Práticas
                     </h3>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -700,9 +964,9 @@ const Dashboard = () => {
                                 <span className="text-sm text-gray-600">Progresso Atual</span>
                                 <span className="font-bold">{m.taxa.toFixed(2)} / {goals.taxa || '?'}</span>
                             </div>
-                            <div className="h-8 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full overflow-hidden shadow-inner relative">
                                 <div 
-                                    className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 flex items-center justify-end pr-2"
+                                    className="h-full bg-gradient-to-r from-green-400 via-green-500 to-green-600 transition-all duration-1000 flex items-center justify-end pr-3 relative overflow-hidden"
                                     style={{ width: getProgress(m.taxa, goals.taxa) + '%' }}
                                 >
                                     <span className="text-white text-xs font-bold">{getProgress(m.taxa, goals.taxa).toFixed(1)}%</span>
@@ -722,59 +986,115 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Metas por Componente */}
-                <div className="card p-6">
-                    <h3 className="font-bold mb-4 flex items-center gap-2">
-                        <i className="fas fa-layer-group text-purple-500"></i>
+                <div className="card p-6 border-2 border-purple-100 hover:border-purple-300 transition-all hover:shadow-xl">
+                    <h3 className="font-bold mb-6 flex items-center gap-2 text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center animate-float">
+                            <i className="fas fa-layer-group text-white"></i>
+                        </div>
                         Metas por Componente
                     </h3>
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
                         {ind.map((i, idx) => {
                             const goalKey = 'comp' + i.index;
                             const goalValue = goals[goalKey] || 0;
                             const progress = getProgress(i.pct, goalValue);
                             const gap = getGap(i.pct, goalValue);
                             return (
-                                <div key={i.index} className="p-4 bg-gray-50 rounded-xl">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center font-bold">C{i.index}</span>
-                                            <div>
-                                                <p className="font-medium">{i.name}</p>
-                                                <p className="text-xs text-gray-500">{i.fullName}</p>
+                                <div key={i.index} className="group relative bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 rounded-2xl p-5 border-2 border-purple-100 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 animate-fadeIn" style={{animationDelay: `${idx * 0.05}s`}}>
+                                    {/* Brilho de fundo */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/0 via-purple-400/5 to-pink-400/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    
+                                    <div className="relative z-10">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-4">
+                                                <div className="relative">
+                                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 via-purple-600 to-pink-600 text-white flex items-center justify-center font-bold text-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                                        C{i.index}
+                                                    </div>
+                                                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-amber-400 to-amber-500 rounded-full border-2 border-white shadow-md flex items-center justify-center">
+                                                        <i className="fas fa-star text-white text-xs"></i>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-bold text-gray-800 text-lg mb-1">{i.name}</p>
+                                                    <p className="text-sm text-gray-500">{i.fullName}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-6">
+                                                {/* Valor Atual */}
+                                                <div className="text-center px-4 py-2 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
+                                                    <p className="text-xs text-purple-600 font-semibold mb-1">Atual</p>
+                                                    <p className="text-2xl font-extrabold text-purple-700">{i.pct.toFixed(1)}<span className="text-sm">%</span></p>
+                                                </div>
+                                                
+                                                {/* Input de Meta */}
+                                                <div className="relative">
+                                                    <label className="block text-xs text-gray-600 font-semibold mb-2 text-center">Meta Desejada</label>
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="number" 
+                                                            className="w-28 px-4 py-3 text-center text-xl font-bold border-2 border-purple-300 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition-all bg-white shadow-inner"
+                                                            value={goalValue || ''}
+                                                            onChange={e => updateGoal(goalKey, e.target.value)}
+                                                            placeholder="0"
+                                                            min="0" max="100"
+                                                            disabled={!isManager}
+                                                        />
+                                                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-purple-400 font-bold">%</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-right">
-                                                <p className="text-sm text-gray-500">Atual</p>
-                                                <p className="text-xl font-bold text-purple-600">{i.pct.toFixed(1)}%</p>
+                                        
+                                        {/* Barra de Progresso */}
+                                        {goalValue > 0 && (
+                                            <div className="mt-4 space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-600 font-medium">Progresso da Meta</span>
+                                                    <span className={`font-bold ${gap > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                                        {Math.min(progress, 100).toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                                <div className="relative h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full overflow-hidden shadow-inner">
+                                                    <div 
+                                                        className={`h-full transition-all duration-1000 ease-out relative overflow-hidden ${gap > 0 ? 'bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500' : 'bg-gradient-to-r from-green-400 via-green-500 to-emerald-500'}`}
+                                                        style={{ width: Math.min(progress, 100) + '%' }}
+                                                    >
+                                                        {/* Efeito de brilho animado */}
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer"></div>
+                                                        {/* Porcentagem dentro da barra */}
+                                                        {progress > 15 && (
+                                                            <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white text-xs font-bold drop-shadow">
+                                                                {Math.min(progress, 100).toFixed(0)}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <p className={`text-sm font-semibold flex items-center gap-2 ${gap > 0 ? 'text-amber-700' : 'text-green-700'}`}>
+                                                        {gap > 0 ? (
+                                                            <>
+                                                                <i className="fas fa-arrow-up"></i>
+                                                                Faltam {gap.toFixed(1)}% para a meta
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <i className="fas fa-check-circle"></i>
+                                                                Meta atingida! Parabéns!
+                                                            </>
+                                                        )}
+                                                    </p>
+                                                    {gap <= 0 && (
+                                                        <div className="flex items-center gap-1">
+                                                            <i className="fas fa-trophy text-amber-500 animate-bounce"></i>
+                                                            <i className="fas fa-star text-amber-400"></i>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <label className="text-xs text-gray-500">Meta (%)</label>
-                                                <input 
-                                                    type="number" 
-                                                    className="input-field w-20 text-center"
-                                                    value={goalValue || ''}
-                                                    onChange={e => updateGoal(goalKey, e.target.value)}
-                                                    placeholder="Meta"
-                                                    min="0" max="100"
-                                                    disabled={!isManager}
-                                                />
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
-                                    {goalValue > 0 && (
-                                        <div>
-                                            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                                                <div 
-                                                    className={`h-full transition-all duration-500 ${gap > 0 ? 'bg-amber-500' : 'bg-green-500'}`}
-                                                    style={{ width: Math.min(progress, 100) + '%' }}
-                                                ></div>
-                                            </div>
-                                            <p className={`text-xs mt-1 ${gap > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                                                {gap > 0 ? `Faltam ${gap.toFixed(1)}%` : 'Meta atingida!'}
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             );
                         })}
@@ -884,22 +1204,34 @@ const Dashboard = () => {
         
         return (
             <div className="animate-fadeIn">
-                <h1 className="text-3xl font-bold mb-2">Avaliação de Metas</h1>
-                <p className="text-gray-500 mb-6">Acompanhe o progresso em relação às metas definidas</p>
+                <div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 shadow-2xl">
+                    <div className="absolute inset-0 bg-black/10"></div>
+                    <div className="relative z-10">
+                        <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+                            <i className="fas fa-chart-line animate-pulse"></i>
+                            Avaliação de Metas
+                        </h1>
+                        <p className="text-white/90 text-lg">Acompanhe o progresso e análise de desempenho em tempo real</p>
+                    </div>
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
                 
                 {/* Filtros */}
-                <div className="card p-4 mb-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Seleção de Regional */}
                         <div>
-                            <h3 className="font-bold mb-3 flex items-center gap-2">
-                                <i className="fas fa-map-marker-alt text-indigo-500"></i>
+                            <h3 className="font-bold mb-3 flex items-center gap-2 text-lg">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                    <i className="fas fa-map-marker-alt text-white text-sm"></i>
+                                </div>
                                 Abrangência
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 <button 
                                     onClick={() => setSelectedRegiao('estadual')}
-                                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${selectedRegiao === 'estadual' ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                    className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${selectedRegiao === 'estadual' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
                                 >
                                     <i className="fas fa-globe-americas mr-1"></i>Estadual
                                 </button>
@@ -907,7 +1239,7 @@ const Dashboard = () => {
                                     <button 
                                         key={r}
                                         onClick={() => setSelectedRegiao(r)}
-                                        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${selectedRegiao === r ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                        className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${selectedRegiao === r ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}
                                     >
                                         {r}
                                     </button>
@@ -916,21 +1248,23 @@ const Dashboard = () => {
                         </div>
                         {/* Modo de Visualização */}
                         <div>
-                            <h3 className="font-bold mb-3 flex items-center gap-2">
-                                <i className="fas fa-eye text-purple-500"></i>
+                            <h3 className="font-bold mb-3 flex items-center gap-2 text-lg">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                    <i className="fas fa-eye text-white text-sm"></i>
+                                </div>
                                 Visualização
                             </h3>
                             <div className="flex flex-wrap gap-2">
-                                <button onClick={() => setViewMode('resumo')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'resumo' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                <button onClick={() => setViewMode('resumo')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${viewMode === 'resumo' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>
                                     <i className="fas fa-th-large mr-1"></i>Resumo
                                 </button>
-                                <button onClick={() => setViewMode('taxa')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'taxa' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                                    <i className="fas fa-bullseye mr-1"></i>Taxa
+                                <button onClick={() => setViewMode('radar')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${viewMode === 'radar' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                    <i className="fas fa-radar mr-1"></i>Radar 360°
                                 </button>
-                                <button onClick={() => setViewMode('componentes')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'componentes' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                <button onClick={() => setViewMode('componentes')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${viewMode === 'componentes' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>
                                     <i className="fas fa-layer-group mr-1"></i>Componentes
                                 </button>
-                                <button onClick={() => setViewMode('evolucao')} className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${viewMode === 'evolucao' ? 'bg-purple-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                <button onClick={() => setViewMode('evolucao')} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all transform hover:scale-105 ${viewMode === 'evolucao' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' : 'bg-gray-100 hover:bg-gray-200'}`}>
                                     <i className="fas fa-chart-line mr-1"></i>Evolução
                                 </button>
                             </div>
@@ -987,6 +1321,171 @@ const Dashboard = () => {
                         <div style={{ height: '300px' }}><TrendWithGoalChart /></div>
                     </div>
                 </div>}
+                
+                {/* Visualização Radar 360° - INOVADORA */}
+                {viewMode === 'radar' && (() => {
+                    const RadarChart = () => {
+                        const ref = useRef(null);
+                        const chart = useRef(null);
+                        useEffect(() => {
+                            if (!ref.current) return;
+                            if (chart.current) chart.current.destroy();
+                            const labels = ind.map(i => i.name);
+                            const atual = ind.map(i => i.pct);
+                            const metas = ind.map(i => goals['comp' + i.index] || 0);
+                            chart.current = new Chart(ref.current, {
+                                type: 'radar',
+                                data: {
+                                    labels,
+                                    datasets: [
+                                        { 
+                                            label: 'Desempenho Atual', 
+                                            data: atual, 
+                                            backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                                            borderColor: 'rgba(139, 92, 246, 1)',
+                                            borderWidth: 3,
+                                            pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+                                            pointBorderColor: '#fff',
+                                            pointHoverBackgroundColor: '#fff',
+                                            pointHoverBorderColor: 'rgba(139, 92, 246, 1)',
+                                            pointRadius: 5
+                                        },
+                                        { 
+                                            label: 'Metas Definidas', 
+                                            data: metas, 
+                                            backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                                            borderColor: 'rgba(234, 179, 8, 1)',
+                                            borderWidth: 2,
+                                            borderDash: [5, 5],
+                                            pointBackgroundColor: 'rgba(234, 179, 8, 1)',
+                                            pointBorderColor: '#fff',
+                                            pointRadius: 4
+                                        }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: { 
+                                        legend: { position: 'bottom' },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (context) => `${context.dataset.label}: ${context.parsed.r.toFixed(1)}%`
+                                            }
+                                        }
+                                    },
+                                    scales: { 
+                                        r: { 
+                                            beginAtZero: true, 
+                                            max: 100,
+                                            ticks: { 
+                                                stepSize: 20,
+                                                callback: v => v + '%'
+                                            },
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            },
+                                            angleLines: {
+                                                color: 'rgba(0, 0, 0, 0.1)'
+                                            }
+                                        } 
+                                    }
+                                }
+                            });
+                            return () => {
+                                if (chart.current) chart.current.destroy();
+                            };
+                        }, []);
+                        return <canvas ref={ref}></canvas>;
+                    };
+                    
+                    return <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div className="card p-6 border-2 border-purple-100 hover:border-purple-300 transition-all">
+                            <h3 className="font-bold mb-4 flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                    <i className="fas fa-radar text-white text-sm"></i>
+                                </div>
+                                Radar de Desempenho 360°
+                            </h3>
+                            <div style={{ height: '400px' }}>
+                                <RadarChart />
+                            </div>
+                        </div>
+                    
+                    {/* Análise de Cobertura */}
+                    <div className="card p-6 border-2 border-blue-100 hover:border-blue-300 transition-all">
+                        <h3 className="font-bold mb-4 flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
+                                <i className="fas fa-chart-pie text-white text-sm"></i>
+                            </div>
+                            Análise de Cobertura de Metas
+                        </h3>
+                        <div className="space-y-4">
+                            {(() => {
+                                const totalComps = ind.length;
+                                const compsComMeta = ind.filter(i => goals['comp' + i.index] > 0).length;
+                                const metasAtingidas = ind.filter(i => {
+                                    const goal = goals['comp' + i.index];
+                                    return goal > 0 && i.pct >= goal;
+                                }).length;
+                                const coberturaMetas = totalComps > 0 ? (compsComMeta / totalComps) * 100 : 0;
+                                const taxaSucesso = compsComMeta > 0 ? (metasAtingidas / compsComMeta) * 100 : 0;
+                                
+                                return (
+                                    <>
+                                        <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-semibold text-blue-700">Cobertura de Metas</span>
+                                                <span className="text-2xl font-bold text-blue-600">{coberturaMetas.toFixed(0)}%</span>
+                                            </div>
+                                            <div className="h-3 bg-blue-200 rounded-full overflow-hidden">
+                                                <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-1000" style={{width: coberturaMetas + '%'}}></div>
+                                            </div>
+                                            <p className="text-xs text-blue-600 mt-2">{compsComMeta} de {totalComps} componentes com metas definidas</p>
+                                        </div>
+                                        
+                                        <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-semibold text-green-700">Taxa de Sucesso</span>
+                                                <span className="text-2xl font-bold text-green-600">{taxaSucesso.toFixed(0)}%</span>
+                                            </div>
+                                            <div className="h-3 bg-green-200 rounded-full overflow-hidden">
+                                                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-1000" style={{width: taxaSucesso + '%'}}></div>
+                                            </div>
+                                            <p className="text-xs text-green-600 mt-2">{metasAtingidas} metas atingidas de {compsComMeta} definidas</p>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="p-3 bg-purple-50 rounded-lg border border-purple-200 text-center">
+                                                <i className="fas fa-bullseye text-purple-500 text-2xl mb-2"></i>
+                                                <p className="text-xs text-purple-600 mb-1">Componentes</p>
+                                                <p className="text-xl font-bold text-purple-700">{totalComps}</p>
+                                            </div>
+                                            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-center">
+                                                <i className="fas fa-trophy text-amber-500 text-2xl mb-2"></i>
+                                                <p className="text-xs text-amber-600 mb-1">Atingidas</p>
+                                                <p className="text-xl font-bold text-amber-700">{metasAtingidas}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {metasAtingidas === totalComps && totalComps > 0 && (
+                                            <div className="p-4 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-xl border-2 border-amber-300 animate-pulse">
+                                                <div className="flex items-center gap-3">
+                                                    <i className="fas fa-star text-amber-500 text-3xl"></i>
+                                                    <div>
+                                                        <p className="font-bold text-amber-800">Excelência Total!</p>
+                                                        <p className="text-sm text-amber-700">Todas as metas foram atingidas! 🎉</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </div>;
+                })()}
                 
                 {/* Gráfico de Evolução (modo evolução) */}
                 {viewMode === 'evolucao' && <div className="card p-6 mb-6">
@@ -1529,7 +2028,7 @@ const Dashboard = () => {
         const [profileData, setProfileData] = useState({ name: user?.name || '', cargo: user?.cargo || '', municipio: user?.municipio || '' });
         const avatarIcons = ['fa-user-nurse', 'fa-user-md', 'fa-stethoscope', 'fa-heartbeat', 'fa-hospital-user', 'fa-hand-holding-medical', 'fa-user-tie', 'fa-user-graduate'];
         const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || 'fa-user-nurse');
-        const cargoOptions = ['Profissional de Saúde', 'Enfermeiro(a)', 'Médico(a)', 'Técnico(a) de Enfermagem', 'Agente Comunitário de Saúde', 'Coordenador(a) de UBS', 'Gestor(a) Municipal', 'Gestor(a) Regional', 'Coordenador(a) Estadual'];
+        const cargoOptions = ['Profissional de Saúde', 'Enfermeiro(a)', 'Médico(a)', 'Técnico(a) de Enfermagem', 'Agente Comunitário de Saúde', 'Coordenador(a) de UBS', 'Gestor(a) Municipal', 'Gestor(a) Regional', 'Coordenador(a) Estadual', 'Time interno'];
         
         const handleSaveField = () => {
             setUser({ ...user, ...profileData, avatar: selectedAvatar });
@@ -1663,6 +2162,474 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+        );
+    };
+
+    // ========== GESTÃO PLANIFICASUS - TIME INTERNO ==========
+    const PlanificaSUSView = () => {
+        const [viewMode, setViewMode] = useState('comparativo');
+        const [selectedUF, setSelectedUF] = useState('todas');
+        
+        // Calcular métricas por UF (usando selectedState como base)
+        const ufData = {
+            name: STATE_CONFIG[selectedState]?.name || 'Estado',
+            uf: selectedState === 'acre' ? 'AC' : selectedState === 'rn' ? 'RN' : selectedState === 'am' ? 'AM' : ''
+        };
+        
+        // Calcular métricas por região de saúde
+        const regioesSaude = getRegioes().map(regiao => {
+            const dados = rawData.filter(r => r.regiao === regiao);
+            const totalPacientes = dados.reduce((s, r) => s + (r.totalPacientes || 0), 0);
+            const somatorio = dados.reduce((s, r) => s + r.somatorio, 0);
+            const taxa = totalPacientes > 0 ? somatorio / totalPacientes : 0;
+            const equipes = new Set(dados.map(r => r.ine)).size;
+            const municipios = new Set(dados.map(r => r.municipio)).size;
+            
+            // Calcular cada componente
+            const componentes = Array.from({ length: config?.indicatorCount || 11 }, (_, i) => {
+                const sum = dados.reduce((s, r) => s + (r['ind' + (i + 1)] || 0), 0);
+                return totalPacientes > 0 ? (sum / totalPacientes) * 100 : 0;
+            });
+            
+            // Calcular tendência
+            const meses = [...new Set(dados.map(r => r.competencia))];
+            const tendencia = meses.length >= 2 ? (() => {
+                const primeiro = dados.filter(r => r.competencia === meses[0]);
+                const ultimo = dados.filter(r => r.competencia === meses[meses.length - 1]);
+                const taxaPrimeiro = primeiro.reduce((s, r) => s + r.somatorio, 0) / (primeiro.reduce((s, r) => s + (r.totalPacientes || 0), 0) || 1);
+                const taxaUltimo = ultimo.reduce((s, r) => s + r.somatorio, 0) / (ultimo.reduce((s, r) => s + (r.totalPacientes || 0), 0) || 1);
+                return taxaUltimo - taxaPrimeiro;
+            })() : 0;
+            
+            // Projeção para atingir Ótimo (75+)
+            const mesesParaOtimo = taxa >= 75 ? 0 : tendencia > 0 ? Math.ceil((75 - taxa) / tendencia) : null;
+            
+            return { regiao, taxa, equipes, municipios, totalPacientes, componentes, tendencia, mesesParaOtimo, cat: getCategoriaTaxa(taxa) };
+        }).sort((a, b) => b.taxa - a.taxa);
+        
+        // Estatísticas gerais
+        const totalRegioes = regioesSaude.length;
+        const regioesOtimo = regioesSaude.filter(r => r.taxa >= 75).length;
+        const regioesBom = regioesSaude.filter(r => r.taxa >= 50 && r.taxa < 75).length;
+        const regioesSuficiente = regioesSaude.filter(r => r.taxa >= 25 && r.taxa < 50).length;
+        const regioesRegular = regioesSaude.filter(r => r.taxa < 25).length;
+        
+        // Componentes com pior desempenho geral
+        const componentesGerais = Array.from({ length: config?.indicatorCount || 11 }, (_, i) => {
+            const sum = rawData.reduce((s, r) => s + (r['ind' + (i + 1)] || 0), 0);
+            const total = rawData.reduce((s, r) => s + (r.totalPacientes || 0), 0);
+            return { index: i + 1, name: config?.shortNames?.[i] || `C${i + 1}`, pct: total > 0 ? (sum / total) * 100 : 0 };
+        }).sort((a, b) => a.pct - b.pct);
+        
+        // Regiões com projeção de atingir Ótimo
+        const regioesComProjecao = regioesSaude.filter(r => r.mesesParaOtimo !== null && r.mesesParaOtimo > 0 && r.mesesParaOtimo <= 12);
+        
+        const RegionComparisonChart = () => {
+            const ref = useRef(null), chart = useRef(null);
+            useEffect(() => {
+                if (!ref.current) return;
+                chart.current?.destroy();
+                chart.current = new Chart(ref.current, {
+                    type: 'bar',
+                    data: {
+                        labels: regioesSaude.map(r => r.regiao),
+                        datasets: [{
+                            label: 'Taxa de Boas Práticas',
+                            data: regioesSaude.map(r => r.taxa),
+                            backgroundColor: regioesSaude.map(r => r.cat.color),
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, max: 100 } }
+                    }
+                });
+                return () => chart.current?.destroy();
+            }, [regioesSaude]);
+            return <canvas ref={ref}></canvas>;
+        };
+        
+        const ProjectionChart = () => {
+            const ref = useRef(null), chart = useRef(null);
+            useEffect(() => {
+                if (!ref.current || regioesComProjecao.length === 0) return;
+                chart.current?.destroy();
+                chart.current = new Chart(ref.current, {
+                    type: 'bar',
+                    data: {
+                        labels: regioesComProjecao.map(r => r.regiao),
+                        datasets: [{
+                            label: 'Meses para Ótimo',
+                            data: regioesComProjecao.map(r => r.mesesParaOtimo),
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+                return () => chart.current?.destroy();
+            }, [regioesComProjecao]);
+            return <canvas ref={ref}></canvas>;
+        };
+
+        return (
+            <div className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <i className="fas fa-sitemap text-indigo-600"></i>
+                            Gestão PlanificaSUS
+                        </h1>
+                        <p className="text-gray-500 mt-1">Análise comparativa entre UFs e Regionais de Saúde - {ufData.name}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        {['comparativo', 'projecoes', 'componentes', 'ranking'].map(mode => (
+                            <button key={mode} onClick={() => setViewMode(mode)} className={`px-4 py-2 rounded-lg font-semibold transition-all ${viewMode === mode ? 'bg-indigo-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                {mode === 'comparativo' ? 'Comparativo' : mode === 'projecoes' ? 'Projeções' : mode === 'componentes' ? 'Componentes' : 'Ranking'}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Cards de Resumo */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-green-100 text-sm">Regiões Ótimo</p>
+                                <p className="text-3xl font-bold">{regioesOtimo}</p>
+                            </div>
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-trophy text-xl"></i>
+                            </div>
+                        </div>
+                        <p className="text-green-100 text-xs mt-2">{((regioesOtimo / totalRegioes) * 100).toFixed(0)}% do total</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-lime-500 to-lime-600 rounded-xl p-5 text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-lime-100 text-sm">Regiões Bom</p>
+                                <p className="text-3xl font-bold">{regioesBom}</p>
+                            </div>
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-thumbs-up text-xl"></i>
+                            </div>
+                        </div>
+                        <p className="text-lime-100 text-xs mt-2">{((regioesBom / totalRegioes) * 100).toFixed(0)}% do total</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-5 text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-amber-100 text-sm">Regiões Suficiente</p>
+                                <p className="text-3xl font-bold">{regioesSuficiente}</p>
+                            </div>
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-exclamation-triangle text-xl"></i>
+                            </div>
+                        </div>
+                        <p className="text-amber-100 text-xs mt-2">{((regioesSuficiente / totalRegioes) * 100).toFixed(0)}% do total</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-5 text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-red-100 text-sm">Regiões Regular</p>
+                                <p className="text-3xl font-bold">{regioesRegular}</p>
+                            </div>
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i className="fas fa-times-circle text-xl"></i>
+                            </div>
+                        </div>
+                        <p className="text-red-100 text-xs mt-2">{((regioesRegular / totalRegioes) * 100).toFixed(0)}% do total</p>
+                    </div>
+                </div>
+
+                {viewMode === 'comparativo' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-chart-bar"></i> Comparativo por Região de Saúde</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div style={{ height: '400px' }}><RegionComparisonChart /></div>
+                            </div>
+                        </div>
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-list-ol"></i> Detalhamento por Região</h3>
+                            </div>
+                            <div className="corp-card-body max-h-96 overflow-y-auto">
+                                <div className="space-y-3">
+                                    {regioesSaude.map((r, i) => (
+                                        <div key={r.regiao} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="w-8 h-8 rounded-full text-white text-sm font-bold flex items-center justify-center" style={{ backgroundColor: r.cat.color }}>{i + 1}</span>
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800">{r.regiao}</p>
+                                                        <p className="text-xs text-gray-500">{r.municipios} municípios • {r.equipes} equipes</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-xl font-bold" style={{ color: r.cat.color }}>{r.taxa.toFixed(2)}</p>
+                                                    <span className="text-xs px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: r.cat.color }}>{r.cat.label}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                <span className={r.tendencia >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                    <i className={`fas fa-arrow-${r.tendencia >= 0 ? 'up' : 'down'} mr-1`}></i>
+                                                    {r.tendencia >= 0 ? '+' : ''}{r.tendencia.toFixed(2)} tendência
+                                                </span>
+                                                {r.mesesParaOtimo !== null && r.mesesParaOtimo > 0 && (
+                                                    <span className="text-blue-600">• ~{r.mesesParaOtimo} meses para Ótimo</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'projecoes' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-chart-line"></i> Projeção para Atingir Ótimo</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                {regioesComProjecao.length > 0 ? (
+                                    <div style={{ height: '350px' }}><ProjectionChart /></div>
+                                ) : (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <i className="fas fa-chart-line text-4xl mb-3 opacity-30"></i>
+                                        <p>Nenhuma região com projeção calculável</p>
+                                        <p className="text-sm">Regiões já estão em Ótimo ou não há tendência positiva</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-bullseye"></i> Regiões Próximas do Ótimo</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {regioesSaude.filter(r => r.taxa >= 60 && r.taxa < 75).map(r => (
+                                        <div key={r.regiao} className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">{r.regiao}</p>
+                                                    <p className="text-sm text-gray-500">Faltam {(75 - r.taxa).toFixed(2)} pontos para Ótimo</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-2xl font-bold text-blue-600">{r.taxa.toFixed(2)}</p>
+                                                    {r.mesesParaOtimo && <p className="text-xs text-blue-500">~{r.mesesParaOtimo} meses</p>}
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                <div className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full" style={{ width: `${(r.taxa / 75) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {regioesSaude.filter(r => r.taxa >= 60 && r.taxa < 75).length === 0 && (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <i className="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
+                                            <p>Nenhuma região entre 60-75</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="corp-card lg:col-span-2">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-flag-checkered"></i> Regiões que Já Atingiram Ótimo</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {regioesSaude.filter(r => r.taxa >= 75).map(r => (
+                                        <div key={r.regiao} className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                                    <i className="fas fa-trophy text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">{r.regiao}</p>
+                                                    <p className="text-2xl font-bold text-green-600">{r.taxa.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {regioesSaude.filter(r => r.taxa >= 75).length === 0 && (
+                                        <div className="col-span-3 text-center py-8 text-gray-500">
+                                            <i className="fas fa-trophy text-4xl mb-3 opacity-30"></i>
+                                            <p>Nenhuma região atingiu Ótimo ainda</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'componentes' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-exclamation-circle text-red-500"></i> Componentes Críticos (Menor Desempenho)</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {componentesGerais.slice(0, 5).map((c, i) => {
+                                        const cat = getCategoriaComponente(c.pct);
+                                        return (
+                                            <div key={c.index} className="p-4 bg-red-50 rounded-xl border border-red-200">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 rounded-lg bg-red-500 text-white text-sm font-bold flex items-center justify-center">C{c.index}</span>
+                                                        <p className="font-medium text-gray-800">{c.name}</p>
+                                                    </div>
+                                                    <span className="text-xl font-bold" style={{ color: cat.color }}>{c.pct.toFixed(1)}%</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: cat.color }}></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="corp-card">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-check-circle text-green-500"></i> Componentes Destaque (Maior Desempenho)</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {[...componentesGerais].reverse().slice(0, 5).map((c, i) => {
+                                        const cat = getCategoriaComponente(c.pct);
+                                        return (
+                                            <div key={c.index} className="p-4 bg-green-50 rounded-xl border border-green-200">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 rounded-lg bg-green-500 text-white text-sm font-bold flex items-center justify-center">C{c.index}</span>
+                                                        <p className="font-medium text-gray-800">{c.name}</p>
+                                                    </div>
+                                                    <span className="text-xl font-bold" style={{ color: cat.color }}>{c.pct.toFixed(1)}%</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: cat.color }}></div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="corp-card lg:col-span-2">
+                            <div className="corp-card-header">
+                                <h3 className="corp-card-title"><i className="fas fa-th"></i> Matriz Componentes x Regiões</h3>
+                            </div>
+                            <div className="corp-card-body overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr>
+                                            <th className="text-left p-2 bg-gray-100 rounded-l-lg">Região</th>
+                                            {Array.from({ length: config?.indicatorCount || 11 }, (_, i) => (
+                                                <th key={i} className="p-2 bg-gray-100 text-center">C{i + 1}</th>
+                                            ))}
+                                            <th className="p-2 bg-gray-100 rounded-r-lg text-center">Média</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {regioesSaude.slice(0, 10).map(r => (
+                                            <tr key={r.regiao} className="border-b border-gray-100">
+                                                <td className="p-2 font-medium">{r.regiao}</td>
+                                                {r.componentes.map((c, i) => {
+                                                    const cat = getCategoriaComponente(c);
+                                                    return <td key={i} className="p-1 text-center"><span className="inline-block px-2 py-1 rounded text-xs text-white font-semibold" style={{ backgroundColor: cat.color }}>{c.toFixed(0)}%</span></td>;
+                                                })}
+                                                <td className="p-2 text-center font-bold" style={{ color: r.cat.color }}>{r.taxa.toFixed(1)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {viewMode === 'ranking' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="corp-card">
+                            <div className="corp-card-header bg-gradient-to-r from-green-500 to-green-600 text-white rounded-t-xl">
+                                <h3 className="font-bold flex items-center gap-2"><i className="fas fa-medal"></i> Top 5 Melhores</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {regioesSaude.slice(0, 5).map((r, i) => (
+                                        <div key={r.regiao} className="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                                            <span className="w-10 h-10 rounded-full bg-green-500 text-white font-bold flex items-center justify-center">{i + 1}º</span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{r.regiao}</p>
+                                                <p className="text-xs text-gray-500">{r.municipios} mun. • {r.equipes} eq.</p>
+                                            </div>
+                                            <p className="text-xl font-bold text-green-600">{r.taxa.toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="corp-card">
+                            <div className="corp-card-header bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-t-xl">
+                                <h3 className="font-bold flex items-center gap-2"><i className="fas fa-chart-line"></i> Maior Evolução</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {[...regioesSaude].sort((a, b) => b.tendencia - a.tendencia).slice(0, 5).map((r, i) => (
+                                        <div key={r.regiao} className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
+                                            <span className="w-10 h-10 rounded-full bg-amber-500 text-white font-bold flex items-center justify-center">{i + 1}º</span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{r.regiao}</p>
+                                                <p className="text-xs text-gray-500">Taxa: {r.taxa.toFixed(2)}</p>
+                                            </div>
+                                            <p className="text-xl font-bold text-amber-600">+{r.tendencia.toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="corp-card">
+                            <div className="corp-card-header bg-gradient-to-r from-red-500 to-red-600 text-white rounded-t-xl">
+                                <h3 className="font-bold flex items-center gap-2"><i className="fas fa-exclamation-triangle"></i> Atenção Prioritária</h3>
+                            </div>
+                            <div className="corp-card-body">
+                                <div className="space-y-3">
+                                    {[...regioesSaude].reverse().slice(0, 5).map((r, i) => (
+                                        <div key={r.regiao} className="flex items-center gap-3 p-3 bg-red-50 rounded-xl">
+                                            <span className="w-10 h-10 rounded-full bg-red-500 text-white font-bold flex items-center justify-center"><i className="fas fa-exclamation"></i></span>
+                                            <div className="flex-1">
+                                                <p className="font-semibold">{r.regiao}</p>
+                                                <p className="text-xs text-gray-500">{r.municipios} mun. • {r.equipes} eq.</p>
+                                            </div>
+                                            <p className="text-xl font-bold text-red-600">{r.taxa.toFixed(2)}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -2821,7 +3788,7 @@ const Dashboard = () => {
     if (loading) return <div className="min-h-screen flex items-center justify-center landing-bg"><div className="text-center"><i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i><p className="text-white text-lg">Carregando dados...</p></div></div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</div>;
 
-    return (<div className="min-h-screen"><Sidebar /><ProfileDropdown /><BabyAPSTip view={activeView} /><div className="main-content">{activeView === 'home' && <HomeView />}{activeView === 'indicators' && <IndicatorsView />}{activeView === 'components' && <ComponentsView />}{activeView === 'strategic' && <StrategicView />}{activeView === 'goals' && <GoalsView />}{activeView === 'evaluation' && <EvaluationView />}{activeView === 'map' && <MapView />}{activeView === 'dataCollection' && <DataCollectionView />}{activeView === 'aiInsights' && <AIInsightsView />}{activeView === 'profile' && <ProfileView />}</div></div>);
+    return (<div className="min-h-screen"><Sidebar /><ProfileDropdown /><NotaTecnicaModal /><BabyAPSTip view={activeView} />{notaTecnicaMinimized ? <button onClick={() => setNotaTecnicaMinimized(false)} className="fixed bottom-6 right-6 z-40 w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center" title="Expandir Nota Técnica"><i className="fas fa-book-open"></i></button> : <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2"><button onClick={() => setNotaTecnicaMinimized(true)} className="w-8 h-8 bg-gray-500 text-white rounded-full shadow hover:bg-gray-600 transition-all flex items-center justify-center" title="Minimizar"><i className="fas fa-minus text-xs"></i></button><button onClick={() => setShowNotaTecnica(true)} className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-xl shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-blue-800 transition-all flex items-center gap-2" title="Nota Técnica"><i className="fas fa-book-open"></i><span className="text-sm font-semibold">Nota Técnica</span></button></div>}<div className="main-content">{activeView === 'home' && <HomeView />}{activeView === 'indicators' && <IndicatorsView />}{activeView === 'components' && <ComponentsView />}{activeView === 'strategic' && <StrategicView />}{activeView === 'goals' && <GoalsView />}{activeView === 'evaluation' && <EvaluationView />}{activeView === 'map' && <MapView />}{activeView === 'dataCollection' && <DataCollectionView />}{activeView === 'profile' && <ProfileView />}</div></div>);
 };
 
 ReactDOM.render(<Dashboard />, document.getElementById('root'));

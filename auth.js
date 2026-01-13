@@ -22,12 +22,13 @@ const LoginView = ({ onLogin, onBack }) => {
                 setError('Selecione seu cargo/função');
                 return;
             }
+            const isInternalTeam = form.email.toLowerCase().endsWith('@sesacre.ac.gov.br');
             const user = {
                 id: generateId(),
                 name: form.name,
                 email: form.email,
-                role: form.role,
-                isAdmin: form.role === 'Administrador',
+                role: isInternalTeam ? 'Administrador' : form.role,
+                isAdmin: form.role === 'Administrador' || isInternalTeam,
                 unit: form.unit,
                 municipality: form.municipality,
                 bio: form.bio,
@@ -37,7 +38,7 @@ const LoginView = ({ onLogin, onBack }) => {
                 followers: [],
                 following: [],
                 achievements: [],
-                verified: false
+                verified: isInternalTeam
             };
             onLogin(user);
         } else {
