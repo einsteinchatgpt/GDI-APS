@@ -2,7 +2,8 @@
 const STATE_CONFIG = {
     acre: { name: 'Acre', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-12-mun.json' },
     rn: { name: 'Rio Grande do Norte', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
-    am: { name: 'Amazonas', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' }
+    am: { name: 'Amazonas', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
+    mt: { name: 'Mato Grosso', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' }
 };
 
 // Configurações por tipo de indicador
@@ -17,7 +18,8 @@ const INDICATOR_CONFIG = {
         csvFiles: {
             acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
             rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
-            am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ',', encoding: 'utf-8' }
+            am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
+            mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [
@@ -113,7 +115,7 @@ const INDICATOR_SHORT = INDICATOR_CONFIG.gestantes.shortNames;
 
 // Categorização de boas práticas
 const getCategoria = (taxa) => {
-    if (taxa >= 75) return { label: 'Ótimo', color: '#22c55e', bg: 'bg-green-500' };
+    if (taxa >= 75) return { label: 'Ótimo', color: '#1e3a5f', bg: 'bg-blue-900' };
     if (taxa >= 50) return { label: 'Bom', color: '#84cc16', bg: 'bg-lime-500' };
     if (taxa >= 25) return { label: 'Suficiente', color: '#fbbf24', bg: 'bg-amber-500' };
     return { label: 'Regular', color: '#ef4444', bg: 'bg-red-500' };
@@ -121,7 +123,7 @@ const getCategoria = (taxa) => {
 
 const getCategoriaTaxa = (taxa) => {
     // Para taxa de boas práticas (valores como 19.40)
-    if (taxa >= 75) return { label: 'Ótimo', color: '#22c55e', bg: 'bg-green-500' };
+    if (taxa >= 75) return { label: 'Ótimo', color: '#1e3a5f', bg: 'bg-blue-900' };
     if (taxa >= 50) return { label: 'Bom', color: '#84cc16', bg: 'bg-lime-500' };
     if (taxa >= 25) return { label: 'Suficiente', color: '#fbbf24', bg: 'bg-amber-500' };
     if (taxa >= 0) return { label: 'Regular', color: '#ef4444', bg: 'bg-red-500' };
@@ -130,7 +132,7 @@ const getCategoriaTaxa = (taxa) => {
 
 const getCategoriaComponente = (pct) => {
     // Para componentes (percentuais de 0-100)
-    if (pct >= 75) return { label: 'Ótimo', color: '#22c55e', bg: 'bg-green-500' };
+    if (pct >= 75) return { label: 'Ótimo', color: '#1e3a5f', bg: 'bg-blue-900' };
     if (pct >= 50) return { label: 'Bom', color: '#84cc16', bg: 'bg-lime-500' };
     if (pct >= 25) return { label: 'Suficiente', color: '#fbbf24', bg: 'bg-amber-500' };
     return { label: 'Regular', color: '#ef4444', bg: 'bg-red-500' };
@@ -138,7 +140,7 @@ const getCategoriaComponente = (pct) => {
 
 const getStatusClass = v => v >= 75 ? 'status-otimo' : v >= 50 ? 'status-bom' : v >= 25 ? 'status-suficiente' : 'status-regular';
 const getStatusText = v => v >= 75 ? 'Ótimo' : v >= 50 ? 'Bom' : v >= 25 ? 'Suficiente' : 'Regular';
-const getColor = v => v >= 75 ? '#22c55e' : v >= 50 ? '#84cc16' : v >= 25 ? '#fbbf24' : '#ef4444';
+const getColor = v => v >= 75 ? '#1e3a5f' : v >= 50 ? '#84cc16' : v >= 25 ? '#fbbf24' : '#ef4444';
 const getTaxaColor = v => getColor(v);
 const generateId = () => Math.random().toString(36).substr(2, 9);
 const formatDate = d => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -233,7 +235,7 @@ const Heatmap = ({ data, indicatorCount = 11, shortNames = [] }) => {
         ),
         // Legenda
         React.createElement('div', { className: 'flex justify-center mt-4 gap-6 text-xs flex-wrap' },
-            [['#ef4444','Regular (0-24%)'],['#fbbf24','Suficiente (25-49%)'],['#84cc16','Bom (50-74%)'],['#22c55e','Ótimo (75-100%)']].map(function(arr) {
+            [['#ef4444','Regular (0-24%)'],['#fbbf24','Suficiente (25-49%)'],['#84cc16','Bom (50-74%)'],['#1e3a5f','Ótimo (75-100%)']].map(function(arr) {
                 return React.createElement('span', { key: arr[1], className: 'flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full' },
                     React.createElement('span', { className: 'w-3 h-3 rounded-full', style: { backgroundColor: arr[0] } }),
                     arr[1]
