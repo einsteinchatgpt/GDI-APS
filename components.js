@@ -3,7 +3,8 @@ const STATE_CONFIG = {
     acre: { name: 'Acre', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-12-mun.json' },
     rn: { name: 'Rio Grande do Norte', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
     am: { name: 'Amazonas', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
-    mt: { name: 'Mato Grosso', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' }
+    mt: { name: 'Mato Grosso', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' },
+    msp: { name: 'São Paulo (Capital)', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' }
 };
 
 // Configurações por tipo de indicador
@@ -19,7 +20,8 @@ const INDICATOR_CONFIG = {
             acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
             rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
             am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
-            mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' }
+            mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
+            msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [

@@ -1,5 +1,10 @@
 const { useState, useEffect, useRef } = React;
 
+if (typeof ChartDataLabels !== 'undefined') {
+    Chart.register(ChartDataLabels);
+    Chart.defaults.set('plugins.datalabels', { display: false });
+}
+
 const fixMunicipioDisplay = (name) => {
     if (!name) return name;
     const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus', 'Mau�s': 'Maués', 'Nhamund�': 'Nhamundá', 'S�o Sebasti�o do Uatum�': 'São Sebastião do Uatumã', 'Urucar�': 'Urucará', 'Maues': 'Maués', 'Nhamunda': 'Nhamundá', 'Sao Sebastiao do Uatuma': 'São Sebastião do Uatumã', 'Urucara': 'Urucará' };
@@ -114,9 +119,9 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
 
 const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
     const indicators = [
-        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt'], stats: '11 componentes' },
-        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['rn'], stats: '4 componentes' },
-        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['rn'], stats: '6 componentes' }
+        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt'], municipios: ['msp'], stats: '11 Boas Práticas' },
+        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['rn'], stats: '4 Boas Práticas' },
+        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['rn'], stats: '6 Boas Práticas' }
     ];
     const [sel, setSel] = useState(null);
 
@@ -295,12 +300,17 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
             {/* Modal de seleção de estado */}
             {sel && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSel(null)}>
-                    <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-scaleIn" onClick={e => e.stopPropagation()}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                         <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: sel.color }}>
                             <i className={`fas ${sel.icon} text-white text-2xl`}></i>
                         </div>
                         <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{sel.title}</h3>
-                        <p className="text-gray-500 text-center mb-6">Selecione o estado</p>
+                        
+                        {/* Seção de UFs */}
+                        <p className="text-gray-500 text-center mb-4 mt-6 flex items-center justify-center gap-2">
+                            <i className="fas fa-flag text-gray-400"></i>
+                            <span>Unidades Federativas</span>
+                        </p>
                         <div className="space-y-3">
                             {sel.states.map(s => (
                                 <button 
@@ -316,6 +326,32 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                                 </button>
                             ))}
                         </div>
+                        
+                        {/* Seção de Municípios (se houver) */}
+                        {sel.municipios && sel.municipios.length > 0 && (
+                            <>
+                                <div className="border-t border-gray-200 my-6"></div>
+                                <p className="text-gray-500 text-center mb-4 flex items-center justify-center gap-2">
+                                    <i className="fas fa-city text-gray-400"></i>
+                                    <span>Municípios</span>
+                                </p>
+                                <div className="space-y-3">
+                                    {sel.municipios.map(m => (
+                                        <button 
+                                            key={m} 
+                                            onClick={() => onSelectIndicator(sel.key, m)} 
+                                            className="w-full p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center justify-between group"
+                                        >
+                                            <span className="flex items-center gap-3">
+                                                <i className="fas fa-city"></i>
+                                                {STATE_CONFIG[m].name}
+                                            </span>
+                                            <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -355,7 +391,7 @@ const Dashboard = () => {
     const babyTips = {
         home: "O painel principal, este é! Resumo de tudo, aqui você vê. Métricas importantes, os cards coloridos mostram, hmm!",
         indicators: "Comparar regiões e municípios, aqui você pode. Quem bem está e quem ajuda precisa, descobrir você deve!",
-        components: "Cada componente, uma ação de saúde é. A evolução ao longo do tempo, observar você deve!",
+        components: "Cada boa prática, uma ação de saúde é. A evolução ao longo do tempo, observar você deve!",
         strategic: "Para gestores, esta visão é! Projeções e análises, decisões importantes tomar, ajudam elas!",
         goals: "Suas metas, definir aqui você deve! O progresso acompanhar, no caminho certo estar, verificar você pode!",
         evaluation: "Avaliar o desempenho, importante é! Gráficos e tabelas, em relação às metas, como indo está, mostram!",
@@ -492,20 +528,20 @@ const Dashboard = () => {
                                 <div className="bg-white p-3 rounded-lg mb-3">
                                     <p className="text-center font-mono text-lg text-green-700">Taxa = Somatório ÷ Total de Pacientes</p>
                                 </div>
-                                <p className="text-sm text-gray-700 mb-2">A <strong>Taxa de Boas Práticas</strong> representa a média de componentes/ações de saúde realizados por paciente. Quanto maior o valor, melhor o acompanhamento.</p>
+                                <p className="text-sm text-gray-700 mb-2">A <strong>Taxa de Boas Práticas</strong> representa a média de boas práticas/ações de saúde realizados por paciente. Quanto maior o valor, melhor o acompanhamento.</p>
                                 <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
-                                    <li><strong>Somatório:</strong> Total de componentes realizados para todos os pacientes</li>
+                                    <li><strong>Somatório:</strong> Total de boas práticas realizadas para todos os pacientes</li>
                                     <li><strong>Total de Pacientes:</strong> Número de pacientes vinculados às equipes</li>
                                 </ul>
                             </div>
                             
                             <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
-                                <h3 className="font-bold text-purple-800 mb-3 flex items-center gap-2"><i className="fas fa-layer-group"></i> Componentes (C1 a C{config?.indicatorCount || 11})</h3>
-                                <p className="text-sm text-gray-700 mb-3">Cada componente representa uma ação de saúde específica que deve ser realizada. O percentual de cada componente é calculado:</p>
+                                <h3 className="font-bold text-purple-800 mb-3 flex items-center gap-2"><i className="fas fa-layer-group"></i> Boas Práticas (B1 a B{config?.indicatorCount || 11})</h3>
+                                <p className="text-sm text-gray-700 mb-3">Cada boa prática representa uma ação de saúde específica que deve ser realizada. O percentual de cada boa prática é calculado:</p>
                                 <div className="bg-white p-3 rounded-lg mb-3">
-                                    <p className="text-center font-mono text-lg text-purple-700">% Componente = (Realizados ÷ Total Pacientes) × 100</p>
+                                    <p className="text-center font-mono text-lg text-purple-700">% Boa Prática = (Realizados ÷ Total Pacientes) × 100</p>
                                 </div>
-                                {config && <div className="text-xs text-gray-600 space-y-1 max-h-40 overflow-y-auto">{config.fullNames.map((name, i) => <p key={i}><strong>C{i+1}:</strong> {name}</p>)}</div>}
+                                {config && <div className="text-xs text-gray-600 space-y-1 max-h-40 overflow-y-auto">{config.fullNames.map((name, i) => <p key={i}><strong>B{i+1}:</strong> {name}</p>)}</div>}
                             </div>
                             
                             <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
@@ -536,7 +572,7 @@ const Dashboard = () => {
 
     useEffect(() => { localStorage.setItem('gdiaps_topics', JSON.stringify(topics)); }, [topics]);
     useEffect(() => { user ? localStorage.setItem('gdiaps_user', JSON.stringify(user)) : localStorage.removeItem('gdiaps_user'); }, [user]);
-    useEffect(() => { if (selectedState) fetch(STATE_CONFIG[selectedState].geojson).then(r => r.json()).then(setGeoJson).catch(console.error); }, [selectedState]);
+    useEffect(() => { if (selectedState && STATE_CONFIG[selectedState]?.geojson) fetch(STATE_CONFIG[selectedState].geojson).then(r => r.json()).then(setGeoJson).catch(console.error); else setGeoJson(null); }, [selectedState]);
     useEffect(() => { if (indicatorType && selectedState) loadData(indicatorType, selectedState); }, [indicatorType, selectedState]);
 
     const loadData = (type, state) => {
@@ -670,7 +706,7 @@ const Dashboard = () => {
         const sidebarLabels = {
             home: 'Painel Principal',
             indicators: 'Análise Comparativa',
-            components: 'Análise por Componente',
+            components: 'Análise por Boa Prática',
             strategic: 'Visão Estratégica',
             goals: 'Metas e Objetivos',
             evaluation: 'Avaliação de Desempenho',
@@ -728,6 +764,74 @@ const Dashboard = () => {
         const variation = trend.length >= 2 ? { diff: trend[trend.length-1].taxa - trend[0].taxa } : null;
         const cat = getCategoria(m.taxa);
         const accentColors = ['blue', 'green', 'purple', 'amber', 'rose'];
+        
+        const LineChart = ({ data }) => {
+            const ref = useRef(null), chart = useRef(null);
+            useEffect(() => {
+                if (!ref.current || !data || data.length === 0) return;
+                chart.current?.destroy();
+                const ctx = ref.current.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 280);
+                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
+                gradient.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
+                const labels = data.map(d => d.month.slice(0, 3));
+                const values = data.map(d => d.taxa);
+                chart.current = new Chart(ref.current, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Taxa',
+                            data: values,
+                            borderColor: '#6366f1',
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#6366f1',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointHoverRadius: 8,
+                            pointHoverBackgroundColor: '#4f46e5',
+                            pointHoverBorderWidth: 3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 14, weight: 'bold' },
+                                bodyFont: { size: 13 },
+                                padding: 12,
+                                cornerRadius: 8,
+                                callbacks: { label: ctx => ` Taxa: ${ctx.parsed.y.toFixed(2)}` }
+                            },
+                            datalabels: {
+                                display: true,
+                                color: '#4338ca',
+                                font: { size: 10, weight: 'bold' },
+                                anchor: 'end',
+                                align: 'top',
+                                offset: 4,
+                                formatter: v => v ? v.toFixed(1) : ''
+                            }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }, ticks: { font: { size: 11 }, color: '#64748b', padding: 8 } },
+                            x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } }
+                        }
+                    }
+                });
+                return () => chart.current?.destroy();
+            }, [data]);
+            return <canvas ref={ref}></canvas>;
+        };
+        
         const MetricCard = ({ icon, iconBg, title, value, subtitle, popupContent, accent }) => (
             <div className={`corp-card corp-card-accent ${accent || 'blue'} popup-card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}>
                 <div className="corp-card-body">
@@ -747,7 +851,7 @@ const Dashboard = () => {
         );
         return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-chart-line animate-pulse"></i>Painel de Indicadores</h1><p className="text-white/90 text-lg">{config?.title} - {STATE_CONFIG[selectedState]?.name}</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <MetricCard icon="fa-chart-line" iconBg="bg-gradient-to-br from-blue-500 to-blue-600" title="Taxa Boas Práticas" value={m.taxa.toFixed(2)} accent="blue" subtitle={<span className="text-xs px-2 py-1 rounded-full text-white" style={{backgroundColor: cat.color}}>{cat.label}</span>} popupContent={<><p className="font-semibold text-blue-700 mb-1">Taxa de Boas Práticas</p><p className="text-gray-600 text-xs mb-2">Média de componentes por paciente.</p><p className="text-xs bg-blue-50 p-2 rounded"><strong>Cálculo:</strong> Somatório ÷ Total Pacientes</p></>} />
-            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} accent="green" popupContent={<><p className="font-semibold text-green-700 mb-1">Somatório de Boas Práticas</p><p className="text-gray-600 text-xs mb-2">Total de componentes realizados.</p><p className="text-xs bg-green-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
+            <MetricCard icon="fa-calculator" iconBg="bg-gradient-to-br from-green-500 to-green-600" title="Somatório" value={m.somatorio.toLocaleString()} accent="green" popupContent={<><p className="font-semibold text-green-700 mb-1">Somatório de Boas Práticas</p><p className="text-gray-600 text-xs mb-2">Total de boas práticas realizadas.</p><p className="text-xs bg-green-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
             <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} accent="purple" popupContent={<><p className="font-semibold text-purple-700 mb-1">Total de Pacientes</p><p className="text-gray-600 text-xs mb-2">Pacientes vinculados às equipes.</p><p className="text-xs bg-purple-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
             <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} accent="amber" popupContent={<><p className="font-semibold text-amber-700 mb-1">Equipes de Saúde</p><p className="text-gray-600 text-xs mb-2">Equipes (eSF, eAP) com dados.</p><p className="text-xs bg-amber-50 p-2 rounded"><strong>Cálculo:</strong> INEs únicos</p></>} />
             <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} accent="rose" popupContent={<><p className="font-semibold text-rose-700 mb-1">Municípios Atendidos</p><p className="text-gray-600 text-xs mb-2">Municípios com dados registrados.</p><p className="text-xs bg-rose-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
@@ -806,7 +910,7 @@ const Dashboard = () => {
         const lastMonth = compTrend.length > 0 ? compTrend[compTrend.length - 1].month : '';
         const lastCat = getCategoria(lastPct);
         
-        // Calcular dados acumulados para componente
+        // Calcular dados acumulados para boa prática
         const getAccumulatedCompTrend = (data = compTrend) => {
             let accVal = 0, accTotal = 0;
             return data.map(t => {
@@ -817,7 +921,7 @@ const Dashboard = () => {
             });
         };
         
-        // Calcular dados por quadrimestre para componente
+        // Calcular dados por quadrimestre para boa prática
         const getQuadCompTrend = () => {
             const quadrimestres = [
                 { label: '1º Quad', months: ['Janeiro', 'Fevereiro', 'Março', 'Abril'] },
@@ -835,10 +939,12 @@ const Dashboard = () => {
         
         const chartData = chartMode === 'acumulado' ? getAccumulatedCompTrend() : chartMode === 'quadrimestre' ? getQuadCompTrend() : compTrend;
         
-        const MultiChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); const labels = chartData.map(d => d.month.slice(0,3)); const datasets = selRegioes.length && chartMode === 'mensal' ? selRegioes.map((r,i) => { const t = getComponentTrend(selComp, r); return { label: r, data: labels.map((l,idx) => { const m = chartData[idx]?.month; return t.find(x => x.month === m)?.pct ?? null; }), borderColor: COLORS[i%COLORS.length], backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, spanGaps: true }; }) : [{ label: chartMode === 'mensal' ? 'Mensal' : chartMode === 'acumulado' ? 'Acumulado' : 'Quadrimestre', data: chartData.map(d => d.pct), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', fill: true, borderWidth: 3, tension: 0.4, spanGaps: true }]; chart.current = new Chart(ref.current, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v+'%' } } } } }); return () => chart.current?.destroy(); }, [selComp, selRegioes, chartData, chartMode]); return <canvas ref={ref}></canvas>; };
-        const pred = () => { const t = compTrend; if (t.length < 3) return null; const n = t.length, xM = (n-1)/2, yM = t.reduce((s,x) => s+x.pct, 0)/n; let num=0, den=0; t.forEach((p,i) => { num += (i-xM)*(p.pct-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; return { next: Math.min(100, Math.max(0, int + slope*n)), trend: slope > 0.5 ? 'crescente' : slope < -0.5 ? 'decrescente' : 'estável', slope: slope.toFixed(2) }; };
+        const MultiChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); const ctx = ref.current.getContext('2d'); const gradient = ctx.createLinearGradient(0, 0, 0, 350); gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); gradient.addColorStop(1, 'rgba(37, 99, 235, 0.02)'); const labels = chartData.map(d => d.month.slice(0,3)); const mainData = chartData.map(d => d.pct); const trendLine = chartData.length >= 2 ? (() => { const n = chartData.length; const xM = (n-1)/2; const yM = mainData.reduce((s,v) => s+v, 0)/n; let num=0, den=0; mainData.forEach((v,j) => { num += (j-xM)*(v-yM); den += (j-xM)*(j-xM); }); const slope = den ? num/den : 0; const int = yM - slope*xM; return mainData.map((_, i) => int + slope*i); })() : []; const datasets = selRegioes.length && chartMode === 'mensal' ? selRegioes.map((r,i) => { const t = getComponentTrend(selComp, r); const clr = COLORS[i%COLORS.length]; return { label: r, data: labels.map((l,idx) => { const m = chartData[idx]?.month; return t.find(x => x.month === m)?.pct ?? null; }), borderColor: clr, backgroundColor: 'transparent', borderWidth: 2.5, tension: 0.4, spanGaps: true, pointRadius: 4, pointBackgroundColor: clr, pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 6 }; }) : [{ label: chartMode === 'mensal' ? 'Mensal' : chartMode === 'acumulado' ? 'Acumulado' : 'Quadrimestre', data: mainData, borderColor: '#2563eb', backgroundColor: gradient, fill: true, borderWidth: 3, tension: 0.4, spanGaps: true, pointRadius: 5, pointBackgroundColor: '#2563eb', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 8, pointHoverBackgroundColor: '#1d4ed8', pointHoverBorderWidth: 3 }, { label: 'Tendência', data: trendLine, borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 2, borderDash: [6, 4], tension: 0, pointRadius: 0, spanGaps: true }]; chart.current = new Chart(ref.current, { type: 'line', data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12, weight: '500' } } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 }, padding: 12, cornerRadius: 8, displayColors: true, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` } }, datalabels: { display: ctx => ctx.datasetIndex === 0, color: '#1e40af', font: { size: 10, weight: 'bold' }, anchor: 'end', align: 'top', offset: 4, formatter: v => v ? v.toFixed(1) + '%' : '' } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }, ticks: { callback: v => v+'%', font: { size: 11 }, color: '#64748b', padding: 8 } }, x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } } } } }); return () => chart.current?.destroy(); }, [selComp, selRegioes, chartData, chartMode]); return <canvas ref={ref}></canvas>; };
+        const pred = () => { const t = compTrend; if (t.length < 3) return null; const n = t.length, xM = (n-1)/2, yM = t.reduce((s,x) => s+x.pct, 0)/n; let num=0, den=0; t.forEach((p,i) => { num += (i-xM)*(p.pct-yM); den += (i-xM)*(i-xM); }); const slope = den ? num/den : 0, int = yM - slope*xM; const currentExpected = Math.min(100, Math.max(0, int + slope*(n-1))); const nextExpected = Math.min(100, Math.max(0, int + slope*n)); return { current: currentExpected, next: nextExpected, trend: slope > 0.5 ? 'crescente' : slope < -0.5 ? 'decrescente' : 'estável', slope: slope.toFixed(2) }; };
         const prediction = pred();
-        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-layer-group animate-pulse"></i>Análise por Componente</h1><p className="text-white/90 text-lg">Explore cada componente individualmente e sua evolução</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Selecione o Componente</h3><div className="flex flex-wrap gap-2">{ind.map(i => <button key={i.index} onClick={() => setSelComp(i.index)} className={'px-4 py-2 rounded-lg font-semibold ' + (selComp === i.index ? 'bg-blue-600 text-white' : 'bg-gray-100')}>{i.name}</button>)}</div></div><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Filtrar por Regiões (máx 5)</h3><div className="flex flex-wrap gap-2">{regioes.map((r,i) => <button key={r} onClick={() => toggleReg(r)} className={'px-3 py-1 rounded-full text-sm font-medium border-2 ' + (selRegioes.includes(r) ? 'text-white border-transparent' : 'bg-white border-gray-300')} style={selRegioes.includes(r) ? {backgroundColor: COLORS[selRegioes.indexOf(r)%COLORS.length]} : {}}>{r}</button>)}{selRegioes.length > 0 && <button onClick={() => setSelRegioes([])} className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-600">Limpar</button>}</div></div>{selInd && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><div className="flex items-center justify-between mb-2"><h3 className="font-bold">{chartMode === 'mensal' ? 'Evolução Mensal' : chartMode === 'acumulado' ? 'Evolução Acumulada' : 'Por Quadrimestre'} - {selInd.name}</h3><div className="flex gap-1"><button onClick={() => setChartMode('mensal')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'mensal' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Mensal</button><button onClick={() => setChartMode('acumulado')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'acumulado' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Acumulado</button><button onClick={() => setChartMode('quadrimestre')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'quadrimestre' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Quadrimestre</button></div></div><p className="text-sm text-gray-500 mb-4">{selInd.fullName}</p><div style={{height:'350px'}}><MultiChart /></div></div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4">Detalhes</h3><div className="p-3 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Valor Atual ({lastMonth})</p><p className="text-2xl font-bold" style={{color: lastCat.color}}>{lastPct.toFixed(1)}%</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: lastCat.color}}>{lastCat.label}</span></div><div className="p-3 bg-gray-50 rounded-xl"><p className="text-sm text-gray-500">Total Realizados</p><p className="text-xl font-bold">{selInd.total.toLocaleString()}</p></div></div>{prediction && <div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Predição</h3><div className="p-3 bg-purple-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Próximo Mês</p><p className="text-xl font-bold text-purple-600">{prediction.next.toFixed(1)}%</p></div><p className="text-sm mb-2">Tendência: <span className="font-bold">{prediction.trend}</span></p><p className="text-xs text-gray-500">Método: Regressão linear ({compTrend.length} meses). Coef: {prediction.slope}%/mês</p></div>}</div></div>}</div>);
+        const getTrendAnalysis = () => { if (!prediction || !lastPct) return null; const currentRounded = Math.round(lastPct * 10) / 10; const expectedRounded = Math.round(prediction.current * 10) / 10; const diff = currentRounded - expectedRounded; const absDiff = Math.abs(diff).toFixed(1); if (diff === 0) return { status: 'neutro', icon: 'fa-equals', color: 'text-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', message: `O valor atual (${lastPct.toFixed(1)}%) é igual à predição esperada para este mês (${prediction.current.toFixed(1)}%), indicando que os resultados seguem exatamente a tendência esperada.` }; if (diff > 0) return { status: 'acima', icon: 'fa-arrow-up', color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', message: `O valor atual (${lastPct.toFixed(1)}%) está ${absDiff}% acima da predição esperada para este mês (${prediction.current.toFixed(1)}%), indicando que os resultados ultrapassaram a tendência esperada. Desempenho superior ao previsto!` }; return { status: 'abaixo', icon: 'fa-arrow-down', color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', message: `O valor atual (${lastPct.toFixed(1)}%) está ${absDiff}% abaixo da predição esperada para este mês (${prediction.current.toFixed(1)}%), indicando que os resultados não atingiram a tendência esperada. Atenção necessária.` }; };
+        const trendAnalysis = getTrendAnalysis();
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-layer-group animate-pulse"></i>Análise por Boa Prática</h1><p className="text-white/90 text-lg">Explore cada boa prática individualmente e sua evolução</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar /><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Selecione a Boa Prática</h3><div className="flex flex-wrap gap-2">{ind.map(i => <button key={i.index} onClick={() => setSelComp(i.index)} className={'px-4 py-2 rounded-lg font-semibold ' + (selComp === i.index ? 'bg-blue-600 text-white' : 'bg-gray-100')}>{i.name}</button>)}</div></div><div className="card p-6 mb-6"><h3 className="font-bold mb-4">Filtrar por Regiões (máx 5)</h3><div className="flex flex-wrap gap-2">{regioes.map((r,i) => <button key={r} onClick={() => toggleReg(r)} className={'px-3 py-1 rounded-full text-sm font-medium border-2 ' + (selRegioes.includes(r) ? 'text-white border-transparent' : 'bg-white border-gray-300')} style={selRegioes.includes(r) ? {backgroundColor: COLORS[selRegioes.indexOf(r)%COLORS.length]} : {}}>{r}</button>)}{selRegioes.length > 0 && <button onClick={() => setSelRegioes([])} className="px-3 py-1 rounded-full text-sm bg-red-100 text-red-600">Limpar</button>}</div></div>{selInd && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><div className="flex items-center justify-between mb-2"><h3 className="font-bold">{chartMode === 'mensal' ? 'Evolução Mensal' : chartMode === 'acumulado' ? 'Evolução Acumulada' : 'Por Quadrimestre'} - {selInd.name}</h3><div className="flex gap-1"><button onClick={() => setChartMode('mensal')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'mensal' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Mensal</button><button onClick={() => setChartMode('acumulado')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'acumulado' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Acumulado</button><button onClick={() => setChartMode('quadrimestre')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'quadrimestre' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>Quadrimestre</button></div></div><p className="text-sm text-gray-500 mb-4">{selInd.fullName}</p><div style={{height:'350px'}}><MultiChart /></div>{trendAnalysis && <div className={`mt-4 p-4 rounded-xl border ${trendAnalysis.bgColor} ${trendAnalysis.borderColor}`}><div className="flex items-start gap-3"><div className={`w-10 h-10 rounded-full flex items-center justify-center ${trendAnalysis.status === 'acima' ? 'bg-green-500' : trendAnalysis.status === 'abaixo' ? 'bg-orange-500' : 'bg-gray-500'}`}><i className={`fas ${trendAnalysis.icon} text-white`}></i></div><div><h4 className={`font-bold ${trendAnalysis.color} mb-1`}>Análise de Tendência</h4><p className="text-sm text-gray-700">{trendAnalysis.message}</p></div></div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4">Detalhes</h3><div className="p-3 bg-blue-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Valor Atual ({lastMonth})</p><p className="text-2xl font-bold" style={{color: lastCat.color}}>{lastPct.toFixed(1)}%</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: lastCat.color}}>{lastCat.label}</span></div><div className="p-3 bg-gray-50 rounded-xl"><p className="text-sm text-gray-500">Total Realizados</p><p className="text-xl font-bold">{selInd.total.toLocaleString()}</p></div></div>{prediction && <div className="card p-6"><h3 className="font-bold mb-4 text-purple-600"><i className="fas fa-chart-line mr-2"></i>Predição</h3><div className="p-3 bg-blue-50 rounded-xl mb-3 border border-blue-200"><p className="text-sm text-gray-500">Esperado Mês Atual</p><p className="text-xl font-bold text-blue-600">{prediction.current.toFixed(1)}%</p></div><div className="p-3 bg-purple-50 rounded-xl mb-3"><p className="text-sm text-gray-500">Próximo Mês</p><p className="text-xl font-bold text-purple-600">{prediction.next.toFixed(1)}%</p></div><p className="text-sm mb-2">Tendência: <span className="font-bold">{prediction.trend}</span></p><p className="text-xs text-gray-500">Método: Regressão linear ({compTrend.length} meses). Coef: {prediction.slope}%/mês</p></div>}</div></div>}</div>);
     };
 
     const StrategicView = () => {
@@ -852,15 +958,19 @@ const Dashboard = () => {
     const MiniMap = ({ monthData, indFilter }) => {
         const mapRef = useRef(null), mapInstance = useRef(null);
         const hm = getHeatmap(monthData, indFilter);
+        const isMunicipio = STATE_CONFIG[selectedState]?.isMunicipio;
+        const municipioCode = STATE_CONFIG[selectedState]?.municipioCode;
         useEffect(() => {
             if (!mapRef.current || !geoJson) return;
             if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
-            const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView(selectedState === 'acre' ? [-9, -70] : selectedState === 'am' ? [-4, -65] : selectedState === 'mt' ? [-13, -56] : [-5.8, -36.5], selectedState === 'acre' ? 5 : selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : 6);
+            const coords = selectedState === 'acre' ? [-9, -70] : selectedState === 'am' ? [-4, -65] : selectedState === 'mt' ? [-13, -56] : selectedState === 'msp' ? [-23.55, -46.63] : [-5.8, -36.5];
+            const zoom = selectedState === 'acre' ? 5 : selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 9 : 6;
+            const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView(coords, zoom);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-            L.geoJSON(geoJson, { style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: 0.5, color: 'white', fillOpacity: 0.8 }; } }).addTo(map);
+            L.geoJSON(geoJson, { filter: f => isMunicipio ? f.properties.id === municipioCode : true, style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: isMunicipio ? 2 : 0.5, color: isMunicipio ? '#4f46e5' : 'white', fillOpacity: 0.8 }; } }).addTo(map);
             mapInstance.current = map;
             return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
-        }, [geoJson, hm, indFilter]);
+        }, [geoJson, hm, indFilter, isMunicipio, municipioCode]);
         return <div ref={mapRef} className="mosaic-map" style={{height:'280px', width:'100%', borderRadius:'12px'}}></div>;
     };
 
@@ -868,9 +978,12 @@ const Dashboard = () => {
         const [indFilter, setIndFilter] = useState('taxa');
         const mapRef = useRef(null), mapInstance = useRef(null);
         const hm = getHeatmap(filteredData, indFilter);
+        const isMunicipio = STATE_CONFIG[selectedState]?.isMunicipio;
+        const municipioCode = STATE_CONFIG[selectedState]?.municipioCode;
         const regiaoStats = getRegioes().map(r => { const d = filteredData.filter(x => x.regiao === r); let valor = 0; if (indFilter === 'taxa') { const s = d.reduce((a,x) => a + x.somatorio, 0), t = d.reduce((a,x) => a + (x.totalPacientes||0), 0); valor = t ? s/t : 0; } else { const idx = parseInt(indFilter.replace('ind','')); const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0), val = d.reduce((a,x) => a + (x['ind'+idx]||0), 0); valor = t ? (val/t)*100 : 0; } return { regiao: r, taxa: valor, municipios: new Set(d.map(x => x.municipio)).size }; }).sort((a,b) => b.taxa - a.taxa);
         const clusters = { otimo: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Ótimo').length, bom: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Bom').length, suficiente: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Suficiente').length, regular: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Regular').length };
-        useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const map = L.map(mapRef.current).setView(selectedState === 'acre' ? [-9,-70] : selectedState === 'am' ? [-4,-65] : selectedState === 'mt' ? [-13,-56] : [-5.8,-36.5], selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : 7); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: 1, color: 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter]);
+        
+        useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const coords = selectedState === 'acre' ? [-9,-70] : selectedState === 'am' ? [-4,-65] : selectedState === 'mt' ? [-13,-56] : selectedState === 'msp' ? [-23.55,-46.63] : [-5.8,-36.5]; const zoom = selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 10 : 7; const map = L.map(mapRef.current).setView(coords, zoom); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { filter: f => isMunicipio ? f.properties.id === municipioCode : true, style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: isMunicipio ? 3 : 1, color: isMunicipio ? '#4f46e5' : 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter, isMunicipio, municipioCode]);
         return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-map-marked-alt animate-pulse"></i>Análise Espacial</h1><p className="text-white/90 text-lg">Visualização geográfica dos indicadores</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="grid grid-cols-4 gap-4 mb-6"><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-800 to-blue-900 flex items-center justify-center"><i className="fas fa-trophy text-white"></i></div><div><p className="text-xs text-gray-500">Ótimo</p><p className="text-2xl font-bold text-blue-900">{clusters.otimo}</p></div></div><div className="popup-content"><p className="font-semibold text-blue-900 mb-1">Municípios com Desempenho Ótimo</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 75% a 100%' : 'Componente de 75% a 100%'} - Excelente cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center"><i className="fas fa-thumbs-up text-white"></i></div><div><p className="text-xs text-gray-500">Bom</p><p className="text-2xl font-bold text-lime-600">{clusters.bom}</p></div></div><div className="popup-content"><p className="font-semibold text-lime-600 mb-1">Municípios com Desempenho Bom</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 50% a 74,99%' : 'Componente de 50% a 74,99%'} - Boa cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"><i className="fas fa-exclamation text-white"></i></div><div><p className="text-xs text-gray-500">Suficiente</p><p className="text-2xl font-bold text-amber-600">{clusters.suficiente}</p></div></div><div className="popup-content"><p className="font-semibold text-amber-600 mb-1">Municípios com Desempenho Suficiente</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 25% a 49,99%' : 'Componente de 25% a 49,99%'} - Necessita melhorias</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-white"></i></div><div><p className="text-xs text-gray-500">Regular</p><p className="text-2xl font-bold text-red-600">{clusters.regular}</p></div></div><div className="popup-content"><p className="font-semibold text-red-600 mb-1">Municípios com Desempenho Regular</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 0% a 24,99%' : 'Componente de 0% a 24,99%'} - Atenção prioritária</p></div></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-4">Mapa de Desempenho</h3><div ref={mapRef} style={{height:'450px',borderRadius:'16px'}}></div><div className="flex justify-center gap-4 mt-4 text-xs"><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#1e3a5f'}}></span>Ótimo</span></div>{indFilter !== 'taxa' && config && <div className="mt-4 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-semibold text-gray-600 mb-2">Componente selecionado:</p><div className="text-sm text-gray-700"><span className="font-medium">C{parseInt(indFilter.replace('ind',''))}:</span> {config.fullNames[parseInt(indFilter.replace('ind',''))-1]}</div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-layer-group mr-2 text-blue-500"></i>Clusters por Região</h3><div className="space-y-2">{regiaoStats.map((r,i) => { const c = getCategoriaTaxa(r.taxa); return <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{r.regiao}</p><p className="text-xs text-gray-500">{r.municipios} mun.</p></div><div className="text-right"><span className="font-bold" style={{color: c.color}}>{r.taxa.toFixed(2)}</span><span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-chart-pie mr-2 text-purple-500"></i>Distribuição</h3><div className="space-y-2">{[{l:'Ótimo',c:'#1e3a5f',v:clusters.otimo},{l:'Bom',c:'#84cc16',v:clusters.bom},{l:'Suficiente',c:'#fbbf24',v:clusters.suficiente},{l:'Regular',c:'#ef4444',v:clusters.regular}].map(x => { const pct = hm.length ? (x.v/hm.length*100) : 0; return <div key={x.l}><div className="flex justify-between text-sm mb-1"><span>{x.l}</span><span className="font-bold">{pct.toFixed(0)}%</span></div><div className="h-2 bg-gray-200 rounded-full"><div className="h-2 rounded-full" style={{width: pct+'%', backgroundColor: x.c}}></div></div></div>; })}</div></div></div></div><div className="card p-6 mt-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-th text-blue-500"></i>Mosaico de Mapas Mensais<span className="ml-auto text-xs font-normal text-gray-500">Evolução temporal do território</span></h3><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{getUnique('competencia').slice(0, 12).map(month => { const monthData = rawData.filter(r => r.competencia === month); const monthMetrics = monthData.length ? { total: monthData.reduce((s,r) => s + (r.totalPacientes||0), 0), taxa: monthData.reduce((s,r) => s + r.somatorio, 0) / monthData.reduce((s,r) => s + (r.totalPacientes||0), 0) || 0 } : { total: 0, taxa: 0 }; const monthCat = getCategoriaTaxa(monthMetrics.taxa); return (<div key={month} className="mosaic-card bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all"><div className="flex items-center justify-between mb-2"><span className="text-sm font-bold text-gray-700">{month}</span><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: monthCat.color}}>{monthMetrics.taxa.toFixed(2)}</span></div><div className="relative bg-white rounded-lg overflow-hidden shadow-inner" style={{height:'260px'}}><MiniMap monthData={monthData} indFilter={indFilter} /></div><div className="mt-2 text-xs text-gray-500 text-center">{monthMetrics.total.toLocaleString()} pacientes</div></div>); })}</div></div></div>);
     };
 
@@ -1047,13 +1160,13 @@ const Dashboard = () => {
                     </div>
                 </div>
                 
-                {/* Metas por Componente */}
+                {/* Metas por Boa Prática */}
                 <div className="card p-6 border-2 border-purple-100 hover:border-purple-300 transition-all hover:shadow-xl">
                     <h3 className="font-bold mb-6 flex items-center gap-2 text-lg">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center animate-float">
                             <i className="fas fa-layer-group text-white"></i>
                         </div>
-                        Metas por Componente
+                        Metas por Boa Prática
                     </h3>
                     <div className="grid grid-cols-1 gap-4">
                         {ind.map((i, idx) => {
@@ -1248,15 +1361,16 @@ const Dashboard = () => {
                     data: {
                         labels,
                         datasets: [
-                            { label: 'Taxa Atual', data: trend.map(t => t.taxa), borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', fill: true, tension: 0.4 },
-                            { label: 'Meta', data: trend.map(() => goals.taxa || 0), borderColor: '#eab308', borderDash: [5, 5], pointRadius: 0 }
+                            { label: 'Taxa Atual', data: trend.map(t => t.taxa), borderColor: '#6366f1', backgroundColor: (() => { const ctx = ref.current.getContext('2d'); const g = ctx.createLinearGradient(0, 0, 0, 280); g.addColorStop(0, 'rgba(99, 102, 241, 0.25)'); g.addColorStop(1, 'rgba(99, 102, 241, 0.02)'); return g; })(), fill: true, tension: 0.4, borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#6366f1', pointBorderColor: '#fff', pointBorderWidth: 2, pointHoverRadius: 8, pointHoverBackgroundColor: '#4f46e5' },
+                            { label: 'Meta', data: trend.map(() => goals.taxa || 0), borderColor: '#eab308', borderDash: [6, 4], pointRadius: 0, borderWidth: 2 }
                         ]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom' } },
-                        scales: { y: { beginAtZero: true } }
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12, weight: '500' } } }, tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)', titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 }, padding: 12, cornerRadius: 8, callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}` } }, datalabels: { display: ctx => ctx.datasetIndex === 0, color: '#4338ca', font: { size: 10, weight: 'bold' }, anchor: 'end', align: 'top', offset: 4, formatter: v => v ? v.toFixed(1) : '' } },
+                        scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }, ticks: { font: { size: 11 }, color: '#64748b', padding: 8 } }, x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } } }
                     }
                 });
                 return () => chart.current?.destroy();
@@ -2236,7 +2350,7 @@ const Dashboard = () => {
         // Calcular métricas por UF (usando selectedState como base)
         const ufData = {
             name: STATE_CONFIG[selectedState]?.name || 'Estado',
-            uf: selectedState === 'acre' ? 'AC' : selectedState === 'rn' ? 'RN' : selectedState === 'am' ? 'AM' : selectedState === 'mt' ? 'MT' : ''
+            uf: selectedState === 'acre' ? 'AC' : selectedState === 'rn' ? 'RN' : selectedState === 'am' ? 'AM' : selectedState === 'mt' ? 'MT' : selectedState === 'msp' ? 'SP' : ''
         };
         
         // Calcular métricas por região de saúde
