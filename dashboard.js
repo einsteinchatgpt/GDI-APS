@@ -370,7 +370,7 @@ const Dashboard = () => {
     const [indicatorType, setIndicatorType] = useState(null), [selectedState, setSelectedState] = useState(null);
     const [rawData, setRawData] = useState([]), [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(false), [error, setError] = useState(null), [activeView, setActiveView] = useState('home');
-    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas' });
+    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas' });
     const [geoJson, setGeoJson] = useState(null), [showProfile, setShowProfile] = useState(false);
     const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('gdiaps_user')) || null);
     const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('gdiaps_topics')) || []);
@@ -608,13 +608,21 @@ const Dashboard = () => {
             }
             const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
                 let regiao = r[7] || ''; if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
-                const base = { cnes: r[0], estabelecimento: r[1], municipio: fixMunicipioDisplay(r[6]), regiao, competencia: normalizeMonth(r[8]), ine: r[3], nomeEquipe: r[4] || '' };
-                if (type === 'gestantes') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), ind5: parseNum(r[14]), ind6: parseNum(r[15]), ind7: parseNum(r[16]), ind8: parseNum(r[17]), ind9: parseNum(r[18]), ind10: parseNum(r[19]), ind11: parseNum(r[20]), somatorio: parseNum(r[21]), totalPacientes: parseNum(r[22]) };
-                if (type === 'has') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), somatorio: parseNum(r[14]), totalPacientes: parseNum(r[15]) };
-                if (type === 'dm') return { ...base, ind1: parseNum(r[10]), ind2: parseNum(r[11]), ind3: parseNum(r[12]), ind4: parseNum(r[13]), ind5: parseNum(r[14]), ind6: parseNum(r[15]), somatorio: parseNum(r[16]), totalPacientes: parseNum(r[17]) };
+                // MSP tem colunas extras: Distrito (8) e OSS (9), deslocando os índices
+                const isMSP = state === 'msp';
+                const offset = isMSP ? 2 : 0;
+                const base = { 
+                    cnes: r[0], estabelecimento: r[1], municipio: fixMunicipioDisplay(r[6]), regiao, 
+                    competencia: normalizeMonth(r[8 + offset]), ine: r[3], nomeEquipe: r[4] || '',
+                    distrito: isMSP ? (r[8] || '') : '',
+                    oss: isMSP ? (r[9] || '') : ''
+                };
+                if (type === 'gestantes') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), ind7: parseNum(r[16 + offset]), ind8: parseNum(r[17 + offset]), ind9: parseNum(r[18 + offset]), ind10: parseNum(r[19 + offset]), ind11: parseNum(r[20 + offset]), somatorio: parseNum(r[21 + offset]), totalPacientes: parseNum(r[22 + offset]) };
+                if (type === 'has') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), somatorio: parseNum(r[14 + offset]), totalPacientes: parseNum(r[15 + offset]) };
+                if (type === 'dm') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), somatorio: parseNum(r[16 + offset]), totalPacientes: parseNum(r[17 + offset]) };
                 return base;
             });
-            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas' }); setLoading(false);
+            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas' }); setLoading(false);
         }).catch(e => { setError(e.message); setLoading(false); });
     };
 
@@ -628,6 +636,8 @@ const Dashboard = () => {
         if (filters.municipio !== 'Todos') f = f.filter(r => r.municipio === filters.municipio);
         if (filters.competencia !== 'Todas') f = f.filter(r => r.competencia === filters.competencia);
         if (filters.equipe !== 'Todas') f = f.filter(r => r.nomeEquipe === filters.equipe);
+        if (filters.distrito !== 'Todos') f = f.filter(r => r.distrito === filters.distrito);
+        if (filters.oss !== 'Todas') f = f.filter(r => r.oss === filters.oss);
         setFilteredData(f);
     }, [filters, rawData]);
 
@@ -727,7 +737,7 @@ const Dashboard = () => {
             </div>
         );
     };
-    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all"><div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><i className="fas fa-filter text-white text-sm"></i></div><h3 className="font-bold text-gray-800">Filtros</h3></div><div className="flex flex-wrap items-center gap-3"><select className="px-4 py-2 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-white font-medium" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos', equipe: 'Todas'})}><option value="Todas">🌍 Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="px-4 py-2 border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white font-medium" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value, equipe: 'Todas'})}><option value="Todos">🏛️ Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select><select className="px-4 py-2 border-2 border-teal-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all bg-white font-medium" value={filters.equipe} onChange={e => setFilters({...filters, equipe: e.target.value})}><option value="Todas">👥 Todas Equipes</option>{getUnique('nomeEquipe', filters.municipio !== 'Todos' ? rawData.filter(r => r.municipio === filters.municipio) : (filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData)).map(eq => <option key={eq}>{eq}</option>)}</select><select className="px-4 py-2 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all bg-white font-medium" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">📅 Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="px-4 py-2 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all bg-white font-medium" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">🎯 Taxa Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
+    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all"><div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><i className="fas fa-filter text-white text-sm"></i></div><h3 className="font-bold text-gray-800">Filtros</h3></div><div className="flex flex-wrap items-center gap-3"><select className="px-4 py-2 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-white font-medium" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos', equipe: 'Todas'})}><option value="Todas">🌍 Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="px-4 py-2 border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white font-medium" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value, equipe: 'Todas'})}><option value="Todos">🏛️ Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select>{selectedState === 'msp' && <select className="px-4 py-2 border-2 border-orange-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-100 transition-all bg-white font-medium" value={filters.distrito} onChange={e => setFilters({...filters, distrito: e.target.value, equipe: 'Todas'})}><option value="Todos">📍 Todos Distritos</option>{getUnique('distrito').map(d => <option key={d}>{d}</option>)}</select>}{selectedState === 'msp' && <select className="px-4 py-2 border-2 border-pink-200 rounded-xl focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition-all bg-white font-medium" value={filters.oss} onChange={e => setFilters({...filters, oss: e.target.value, equipe: 'Todas'})}><option value="Todas">🏥 Todas OSS</option>{getUnique('oss').map(o => <option key={o}>{o}</option>)}</select>}<select className="px-4 py-2 border-2 border-teal-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all bg-white font-medium" value={filters.equipe} onChange={e => setFilters({...filters, equipe: e.target.value})}><option value="Todas">👥 Todas Equipes</option>{getUnique('nomeEquipe', filters.municipio !== 'Todos' ? rawData.filter(r => r.municipio === filters.municipio) : (filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData)).map(eq => <option key={eq}>{eq}</option>)}</select><select className="px-4 py-2 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all bg-white font-medium" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">📅 Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="px-4 py-2 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all bg-white font-medium" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">📊 Taxa Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
 
     const HomeView = () => {
         const [chartMode, setChartMode] = useState('mensal'); // 'mensal', 'acumulado', 'quadrimestre'
@@ -860,24 +870,52 @@ const Dashboard = () => {
 
     const IndicatorsView = () => {
         const [indFilter, setIndFilter] = useState('taxa');
+        const [compareMode, setCompareMode] = useState('regiao'); // 'regiao', 'municipio', 'unidade', 'equipe', 'distrito', 'oss'
         const ind = calcIndicators();
         // Usar filteredData e indFilter para calcular heatmap
         const hm = getHeatmap(filteredData, indFilter);
-        // Calcular valores por região baseado no filtro selecionado
-        const regioes = getRegioes().map(r => { 
-            const d = filteredData.filter(x => x.regiao === r);
-            const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0);
-            let valor = 0;
-            if (indFilter === 'taxa') {
-                const s = d.reduce((a,x) => a + x.somatorio, 0);
-                valor = t ? s/t : 0;
-            } else {
-                const idx = parseInt(indFilter.replace('ind',''));
-                const sum = d.reduce((a,x) => a + (x['ind'+idx]||0), 0);
-                valor = t ? (sum/t)*100 : 0;
+        
+        // Função genérica para calcular valores por agrupamento
+        const calcByGroup = (field, labelField) => {
+            const groups = [...new Set(filteredData.map(r => r[field]).filter(Boolean))];
+            return groups.map(g => {
+                const d = filteredData.filter(x => x[field] === g);
+                const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0);
+                let valor = 0;
+                if (indFilter === 'taxa') {
+                    const s = d.reduce((a,x) => a + x.somatorio, 0);
+                    valor = t ? s/t : 0;
+                } else {
+                    const idx = parseInt(indFilter.replace('ind',''));
+                    const sum = d.reduce((a,x) => a + (x['ind'+idx]||0), 0);
+                    valor = t ? (sum/t)*100 : 0;
+                }
+                return { label: g, taxa: valor, total: t, equipes: new Set(d.map(x => x.ine)).size };
+            }).sort((a,b) => b.taxa - a.taxa);
+        };
+        
+        // Calcular dados para cada modo de comparação
+        const regioes = calcByGroup('regiao');
+        const municipios = calcByGroup('municipio');
+        const unidades = calcByGroup('estabelecimento');
+        const equipes = calcByGroup('nomeEquipe');
+        const distritos = selectedState === 'msp' ? calcByGroup('distrito') : [];
+        const ossList = selectedState === 'msp' ? calcByGroup('oss') : [];
+        
+        // Selecionar dados baseado no modo
+        const getCompareData = () => {
+            switch(compareMode) {
+                case 'municipio': return municipios.slice(0, 20);
+                case 'unidade': return unidades.slice(0, 20);
+                case 'equipe': return equipes.slice(0, 20);
+                case 'distrito': return distritos.slice(0, 20);
+                case 'oss': return ossList.slice(0, 20);
+                default: return regioes;
             }
-            return { regiao: r, taxa: valor, equipes: new Set(d.map(x => x.ine)).size, municipios: new Set(d.map(x => x.municipio)).size }; 
-        }).sort((a,b) => b.taxa - a.taxa);
+        };
+        const compareData = getCompareData();
+        const compareModeLabels = { regiao: 'Regiões', municipio: 'Municípios', unidade: 'Unidades', equipe: 'Equipes', distrito: 'Distritos', oss: 'OSS' };
+        
         // Calcular valores por estabelecimento baseado no filtro
         const estabs = [...new Set(filteredData.map(r => r.estabelecimento))].filter(Boolean).map(e => { 
             const d = filteredData.filter(r => r.estabelecimento === e);
@@ -895,8 +933,8 @@ const Dashboard = () => {
         }).sort((a,b) => b.taxa - a.taxa);
         const getCateg = (val) => indFilter === 'taxa' ? getCategoriaTaxa(val) : getCategoriaComponente(val);
         const formatVal = (val) => indFilter === 'taxa' ? val.toFixed(2) : val.toFixed(1) + '%';
-        const RegionChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); chart.current = new Chart(ref.current, { type: 'bar', data: { labels: regioes.map(r => r.regiao), datasets: [{ data: regioes.map(r => r.taxa), backgroundColor: regioes.map(r => getTaxaColor(r.taxa)), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => indFilter === 'taxa' ? v.toFixed(1) : v.toFixed(0) + '%' } } } } }); return () => chart.current?.destroy(); }, [regioes, indFilter]); return <canvas ref={ref}></canvas>; };
-        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-balance-scale animate-pulse"></i>Análise Comparativa</h1><p className="text-white/90 text-lg">Compare regiões, municípios e unidades de saúde</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="card p-6 mb-6"><h3 className="font-bold mb-4"><i className="fas fa-balance-scale mr-2 text-blue-500"></i>Comparação entre Regiões {indFilter !== 'taxa' && <span className="text-sm font-normal text-gray-500">({config?.shortNames[parseInt(indFilter.replace('ind',''))-1]})</span>}</h3><div style={{height:'300px'}}><RegionChart /></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="card p-6"><h3 className="font-bold mb-4">Ranking Municípios</h3><div className="space-y-2 max-h-96 overflow-y-auto">{hm.slice(0,15).map((m,i) => { const c = getCateg(m.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1"><p className="font-medium">{m.municipio}</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div><span className="font-bold" style={{color: c.color}}>{formatVal(m.taxa)}</span></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4">Ranking Unidades</h3><div className="space-y-2 max-h-96 overflow-y-auto">{estabs.slice(0,15).map((e,i) => { const c = getCateg(e.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1 min-w-0"><p className="font-medium truncate">{e.estabelecimento}</p><p className="text-xs text-gray-500">{e.municipio}</p></div><span className="font-bold" style={{color: c.color}}>{formatVal(e.taxa)}</span></div>; })}</div></div></div></div>);
+        const CompareChart = () => { const ref = useRef(null), chart = useRef(null); useEffect(() => { if (!ref.current) return; chart.current?.destroy(); const labels = compareData.map(r => r.label.length > 25 ? r.label.slice(0,25)+'...' : r.label); chart.current = new Chart(ref.current, { type: 'bar', data: { labels, datasets: [{ data: compareData.map(r => r.taxa), backgroundColor: compareData.map(r => getTaxaColor(r.taxa)), borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: compareData.length > 10 ? 'y' : 'x', plugins: { legend: { display: false }, tooltip: { callbacks: { title: (ctx) => compareData[ctx[0].dataIndex]?.label } } }, scales: { y: { ticks: { callback: v => indFilter === 'taxa' ? v.toFixed(1) : v.toFixed(0) + '%' } } } } }); return () => chart.current?.destroy(); }, [compareData, indFilter, compareMode]); return <canvas ref={ref}></canvas>; };
+        return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-balance-scale animate-pulse"></i>Análise Comparativa</h1><p className="text-white/90 text-lg">Compare regiões, municípios e unidades de saúde</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="card p-6 mb-6"><div className="flex items-center justify-between mb-4"><h3 className="font-bold"><i className="fas fa-balance-scale mr-2 text-blue-500"></i>Comparação por {compareModeLabels[compareMode]} {indFilter !== 'taxa' && <span className="text-sm font-normal text-gray-500">({config?.shortNames[parseInt(indFilter.replace('ind',''))-1]})</span>}</h3><div className="flex gap-1 flex-wrap">{['regiao', 'municipio', 'unidade', 'equipe'].map(mode => <button key={mode} onClick={() => setCompareMode(mode)} className={`px-3 py-1 text-xs rounded-lg transition-all ${compareMode === mode ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>{compareModeLabels[mode]}</button>)}{selectedState === 'msp' && ['distrito', 'oss'].map(mode => <button key={mode} onClick={() => setCompareMode(mode)} className={`px-3 py-1 text-xs rounded-lg transition-all ${compareMode === mode ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600 hover:bg-orange-200'}`}>{compareModeLabels[mode]}</button>)}</div></div><div style={{height: compareData.length > 10 ? '500px' : '300px'}}><CompareChart /></div></div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6"><div className="card p-6"><h3 className="font-bold mb-4">Ranking Municípios</h3><div className="space-y-2 max-h-96 overflow-y-auto">{hm.slice(0,15).map((m,i) => { const c = getCateg(m.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1"><p className="font-medium">{m.municipio}</p><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div><span className="font-bold" style={{color: c.color}}>{formatVal(m.taxa)}</span></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4">Ranking Unidades</h3><div className="space-y-2 max-h-96 overflow-y-auto">{estabs.slice(0,15).map((e,i) => { const c = getCateg(e.taxa); return <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg"><span className="w-8 h-8 rounded-full text-xs font-bold text-white flex items-center justify-center" style={{backgroundColor: c.color}}>{i+1}</span><div className="flex-1 min-w-0"><p className="font-medium truncate">{e.estabelecimento}</p><p className="text-xs text-gray-500">{e.municipio}</p></div><span className="font-bold" style={{color: c.color}}>{formatVal(e.taxa)}</span></div>; })}</div></div></div></div>);
     };
 
     const ComponentsView = () => {
