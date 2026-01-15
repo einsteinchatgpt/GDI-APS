@@ -7,7 +7,7 @@ if (typeof ChartDataLabels !== 'undefined') {
 
 const fixMunicipioDisplay = (name) => {
     if (!name) return name;
-    const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus', 'Mau�s': 'Maués', 'Nhamund�': 'Nhamundá', 'S�o Sebasti�o do Uatum�': 'São Sebastião do Uatumã', 'Urucar�': 'Urucará', 'Maues': 'Maués', 'Nhamunda': 'Nhamundá', 'Sao Sebastiao do Uatuma': 'São Sebastião do Uatumã', 'Urucara': 'Urucará' };
+    const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus', 'Mau�s': 'Maués', 'Nhamund�': 'Nhamundá', 'S�o Sebasti�o do Uatum�': 'São Sebastião do Uatumã', 'Urucar�': 'Urucará', 'Maues': 'Maués', 'Nhamunda': 'Nhamundá', 'Sao Sebastiao do Uatuma': 'São Sebastião do Uatumã', 'Urucara': 'Urucará', 'S�O PAULO': 'São Paulo', 'SAO PAULO': 'São Paulo', 'SÃO PAULO': 'São Paulo', 'Sï¿½O PAULO': 'São Paulo' };
     return fixes[name] || name;
 };
 const normalizeMunicipioForGeoJSON = (name) => name ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
@@ -34,8 +34,9 @@ const FloatingParticles = () => {
 };
 
 const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', cargo: '', municipio: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', cargo: '', municipio: '', unidade: '' });
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     if (!isOpen) return null;
 
@@ -46,7 +47,7 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
             if (mode === 'login') {
                 onLogin({ name: formData.email.split('@')[0], email: formData.email, cargo: 'Profissional de Saúde' });
             } else {
-                onLogin({ name: formData.name, email: formData.email, cargo: formData.cargo || 'Profissional de Saúde', municipio: formData.municipio });
+                onLogin({ name: formData.name, email: formData.email, cargo: formData.cargo || 'Profissional de Saúde', municipio: formData.municipio, unidade: formData.unidade });
             }
             setLoading(false);
             onClose();
@@ -54,64 +55,120 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 auth-modal" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/90 to-purple-900/95 backdrop-blur-sm"></div>
             <FloatingParticles />
-            <div className="auth-card w-full max-w-md animate-scaleIn relative z-10" onClick={e => e.stopPropagation()}>
-                <div className="auth-header">
-                    <div className="w-20 h-20 mx-auto bg-white/20 rounded-2xl flex items-center justify-center mb-4 animate-float">
-                        <i className={`fas ${mode === 'login' ? 'fa-user-shield' : 'fa-user-plus'} text-white text-3xl`}></i>
-                    </div>
-                    <h2 className="text-2xl font-bold text-white text-glow">{mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}</h2>
-                    <p className="text-blue-200 mt-2">{mode === 'login' ? 'Acesse o painel de indicadores' : 'Junte-se à comunidade GDI-APS'}</p>
-                </div>
-                <form onSubmit={handleSubmit} className="p-8 space-y-4">
-                    {mode === 'register' && (
-                        <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-user mr-2 text-blue-500"></i>Nome Completo</label>
-                            <input type="text" className="input-field" placeholder="Seu nome" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+            <div className="relative w-full max-w-lg animate-scaleIn z-10" onClick={e => e.stopPropagation()}>
+                {/* Close Button */}
+                <button onClick={onClose} className="absolute -top-2 -right-2 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gray-100 transition-all hover:scale-110 z-20">
+                    <i className="fas fa-times text-gray-600"></i>
+                </button>
+                
+                <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                    {/* Header com Gradiente */}
+                    <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-8 text-center overflow-hidden">
+                        <div className="absolute inset-0 bg-black/10"></div>
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16"></div>
+                        <div className="relative z-10">
+                            <div className="w-20 h-20 mx-auto bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mb-4 shadow-xl">
+                                <i className={`fas ${mode === 'login' ? 'fa-user-shield' : 'fa-user-plus'} text-white text-3xl`}></i>
+                            </div>
+                            <h2 className="text-2xl font-bold text-white">{mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}</h2>
+                            <p className="text-white/80 mt-2 text-sm">{mode === 'login' ? 'Acesse o painel de indicadores' : 'Junte-se à comunidade GDI-APS'}</p>
                         </div>
-                    )}
-                    <div className="animate-slideUp" style={{ animationDelay: '0.2s' }}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-envelope mr-2 text-blue-500"></i>E-mail</label>
-                        <input type="email" className="input-field" placeholder="seu@email.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
                     </div>
-                    <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-lock mr-2 text-blue-500"></i>Senha</label>
-                        <input type="password" className="input-field" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
-                    </div>
-                    {mode === 'register' && (
-                        <>
-                            <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-briefcase mr-2 text-blue-500"></i>Cargo</label>
-                                <select className="input-field" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})}>
-                                    <option value="">Selecione seu cargo</option>
-                                    <option>Enfermeiro(a)</option>
-                                    <option>Médico(a)</option>
-                                    <option>Gestor(a) de Saúde</option>
-                                    <option>Coordenador(a) APS</option>
-                                    <option>Técnico(a) de Enfermagem</option>
-                                    <option>Agente Comunitário de Saúde</option>
-                                    <option>Time interno</option>
-                                </select>
+                    
+                    {/* Formulário */}
+                    <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                        {mode === 'register' && (
+                            <div className="animate-slideUp">
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                    <i className="fas fa-user mr-2 text-indigo-500"></i>Nome Completo
+                                </label>
+                                <input type="text" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" placeholder="Seu nome completo" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
                             </div>
-                            <div className="animate-slideUp" style={{ animationDelay: '0.5s' }}>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2"><i className="fas fa-map-marker-alt mr-2 text-blue-500"></i>Município</label>
-                                <input type="text" className="input-field" placeholder="Seu município" value={formData.municipio} onChange={e => setFormData({...formData, municipio: e.target.value})} />
+                        )}
+                        <div className="animate-slideUp" style={{ animationDelay: '0.1s' }}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <i className="fas fa-envelope mr-2 text-indigo-500"></i>E-mail
+                            </label>
+                            <input type="email" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" placeholder="seu@email.com" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                        </div>
+                        <div className="animate-slideUp" style={{ animationDelay: '0.2s' }}>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                <i className="fas fa-lock mr-2 text-indigo-500"></i>Senha
+                            </label>
+                            <div className="relative">
+                                <input type={showPassword ? 'text' : 'password'} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white pr-12" placeholder="••••••••" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500 transition-colors">
+                                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </button>
                             </div>
-                        </>
-                    )}
-                    <button type="submit" disabled={loading} className="w-full btn-primary py-4 text-lg mt-6 flex items-center justify-center gap-3">
-                        {loading ? <><i className="fas fa-spinner fa-spin"></i> Processando...</> : <><i className={`fas ${mode === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i> {mode === 'login' ? 'Entrar' : 'Cadastrar'}</>}
-                    </button>
-                    <div className="text-center pt-4 border-t border-gray-200 mt-6">
-                        <p className="text-gray-600">
-                            {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-                            <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="ml-2 text-blue-600 font-semibold hover:underline">
-                                {mode === 'login' ? 'Cadastre-se' : 'Entrar'}
-                            </button>
-                        </p>
-                    </div>
-                </form>
+                        </div>
+                        {mode === 'register' && (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <i className="fas fa-briefcase mr-2 text-indigo-500"></i>Cargo
+                                        </label>
+                                        <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" value={formData.cargo} onChange={e => setFormData({...formData, cargo: e.target.value})}>
+                                            <option value="">Selecione...</option>
+                                            <option>Enfermeiro(a)</option>
+                                            <option>Médico(a)</option>
+                                            <option>Gestor(a) de Saúde</option>
+                                            <option>Coordenador(a) APS</option>
+                                            <option>Técnico(a) de Enfermagem</option>
+                                            <option>ACS</option>
+                                            <option>Outro</option>
+                                        </select>
+                                    </div>
+                                    <div className="animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            <i className="fas fa-map-marker-alt mr-2 text-indigo-500"></i>Município
+                                        </label>
+                                        <input type="text" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" placeholder="Seu município" value={formData.municipio} onChange={e => setFormData({...formData, municipio: e.target.value})} />
+                                    </div>
+                                </div>
+                                <div className="animate-slideUp" style={{ animationDelay: '0.5s' }}>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <i className="fas fa-hospital mr-2 text-indigo-500"></i>Unidade de Saúde (opcional)
+                                    </label>
+                                    <input type="text" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" placeholder="Nome da sua unidade" value={formData.unidade} onChange={e => setFormData({...formData, unidade: e.target.value})} />
+                                </div>
+                            </>
+                        )}
+                        
+                        <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 mt-6">
+                            {loading ? (
+                                <><i className="fas fa-circle-notch fa-spin"></i> Processando...</>
+                            ) : (
+                                <><i className={`fas ${mode === 'login' ? 'fa-sign-in-alt' : 'fa-user-plus'}`}></i> {mode === 'login' ? 'Entrar' : 'Criar Conta'}</>
+                            )}
+                        </button>
+                        
+                        {mode === 'login' && (
+                            <div className="text-center">
+                                <button type="button" className="text-sm text-indigo-600 hover:underline">Esqueceu sua senha?</button>
+                            </div>
+                        )}
+                        
+                        <div className="relative py-4">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                            <div className="relative flex justify-center"><span className="bg-white px-4 text-sm text-gray-500">ou</span></div>
+                        </div>
+                        
+                        <div className="text-center">
+                            <p className="text-gray-600">
+                                {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
+                                <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="ml-2 text-indigo-600 font-bold hover:underline">
+                                    {mode === 'login' ? 'Cadastre-se grátis' : 'Fazer login'}
+                                </button>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
@@ -144,46 +201,84 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                     </div>
                     {(() => {
                         const [expanded, setExpanded] = useState(false);
+                        const [showAuthOptions, setShowAuthOptions] = useState(false);
                         return (
                             <div className="relative">
-                                <button 
-                                    onClick={() => user ? setExpanded(!expanded) : onOpenAuth()} 
-                                    className="flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-2 rounded-xl hover:bg-white/20 transition-all group"
-                                >
-                                    <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <i className="fas fa-user text-white text-sm"></i>
-                                    </div>
-                                    {user && (
+                                {user ? (
+                                    <button 
+                                        onClick={() => setExpanded(!expanded)} 
+                                        className="flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl hover:bg-white/20 transition-all group border border-white/20"
+                                    >
+                                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                            <i className="fas fa-user-nurse text-white"></i>
+                                        </div>
+                                        <div className="text-left hidden sm:block">
+                                            <p className="text-sm font-bold text-white">{user.name}</p>
+                                            <p className="text-xs text-white/70">{user.cargo}</p>
+                                        </div>
                                         <i className={`fas fa-chevron-down text-white/60 text-xs transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
-                                    )}
-                                </button>
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => { onOpenAuth(); }}
+                                            className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-xl hover:bg-white/20 transition-all border border-white/20 text-white font-medium"
+                                        >
+                                            <i className="fas fa-sign-in-alt"></i>
+                                            <span className="hidden sm:inline">Entrar</span>
+                                        </button>
+                                        <button 
+                                            onClick={() => { setShowAuthOptions(true); onOpenAuth(); }}
+                                            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all text-white font-medium"
+                                        >
+                                            <i className="fas fa-user-plus"></i>
+                                            <span className="hidden sm:inline">Cadastrar</span>
+                                        </button>
+                                    </div>
+                                )}
                                 
                                 {expanded && user && (
-                                    <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden animate-scaleIn z-50">
-                                        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                                    <i className="fas fa-user text-white text-lg"></i>
+                                    <div className="absolute top-full right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scaleIn z-50">
+                                        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center shadow-lg">
+                                                    <i className="fas fa-user-nurse text-white text-xl"></i>
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-bold text-white">{user.name}</p>
-                                                    <p className="text-xs text-white/80">{user.cargo}</p>
+                                                    <p className="font-bold text-white text-lg">{user.name}</p>
+                                                    <p className="text-sm text-white/80">{user.cargo}</p>
+                                                    {user.municipio && <p className="text-xs text-white/60 mt-1"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio}</p>}
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="p-3">
-                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm flex items-center gap-2">
-                                                <i className="fas fa-user-circle text-indigo-500"></i>
-                                                Meu Perfil
+                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-indigo-50 transition-colors flex items-center gap-3 group">
+                                                <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                                                    <i className="fas fa-user-circle text-indigo-600"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-800">Meu Perfil</p>
+                                                    <p className="text-xs text-gray-500">Visualizar e editar dados</p>
+                                                </div>
                                             </button>
-                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-sm flex items-center gap-2">
-                                                <i className="fas fa-cog text-gray-500"></i>
-                                                Configurações
+                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 group">
+                                                <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                    <i className="fas fa-cog text-gray-600"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-gray-800">Configurações</p>
+                                                    <p className="text-xs text-gray-500">Preferências do sistema</p>
+                                                </div>
                                             </button>
-                                            <hr className="my-2" />
-                                            <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 transition-colors text-sm flex items-center gap-2 text-red-600">
-                                                <i className="fas fa-sign-out-alt"></i>
-                                                Sair
+                                            <hr className="my-2 border-gray-100" />
+                                            <button onClick={() => { localStorage.removeItem('gdiaps_user'); window.location.reload(); }} className="w-full text-left px-4 py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-3 group">
+                                                <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                                                    <i className="fas fa-sign-out-alt text-red-600"></i>
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-red-600">Sair</p>
+                                                    <p className="text-xs text-red-400">Encerrar sessão</p>
+                                                </div>
                                             </button>
                                         </div>
                                     </div>
@@ -370,7 +465,7 @@ const Dashboard = () => {
     const [indicatorType, setIndicatorType] = useState(null), [selectedState, setSelectedState] = useState(null);
     const [rawData, setRawData] = useState([]), [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(false), [error, setError] = useState(null), [activeView, setActiveView] = useState('home');
-    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas' });
+    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas' });
     const [geoJson, setGeoJson] = useState(null), [showProfile, setShowProfile] = useState(false);
     const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('gdiaps_user')) || null);
     const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('gdiaps_topics')) || []);
@@ -622,7 +717,7 @@ const Dashboard = () => {
                 if (type === 'dm') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), somatorio: parseNum(r[16 + offset]), totalPacientes: parseNum(r[17 + offset]) };
                 return base;
             });
-            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas' }); setLoading(false);
+            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas' }); setLoading(false);
         }).catch(e => { setError(e.message); setLoading(false); });
     };
 
@@ -638,6 +733,7 @@ const Dashboard = () => {
         if (filters.equipe !== 'Todas') f = f.filter(r => r.nomeEquipe === filters.equipe);
         if (filters.distrito !== 'Todos') f = f.filter(r => r.distrito === filters.distrito);
         if (filters.oss !== 'Todas') f = f.filter(r => r.oss === filters.oss);
+        if (filters.unidade !== 'Todas') f = f.filter(r => r.estabelecimento === filters.unidade);
         setFilteredData(f);
     }, [filters, rawData]);
 
@@ -658,7 +754,7 @@ const Dashboard = () => {
         if (profileMinimized) {
             return (
                 <div className="absolute top-4 right-4 z-50">
-                    <button onClick={() => setProfileMinimized(false)} className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center" title="Expandir Perfil">
+                    <button onClick={() => setProfileMinimized(false)} className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center" title="Expandir Perfil">
                         <i className="fas fa-user text-white"></i>
                     </button>
                 </div>
@@ -667,45 +763,77 @@ const Dashboard = () => {
         return (
             <div className="absolute top-4 right-4 z-50">
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setProfileMinimized(true)} className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors" title="Minimizar">
-                        <i className="fas fa-minus text-white text-xs"></i>
+                    <button onClick={() => setProfileMinimized(true)} className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors shadow" title="Minimizar">
+                        <i className="fas fa-minus text-gray-600 text-xs"></i>
                     </button>
-                    <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl px-5 py-3 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border-2 border-white/20">
-                        <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                            <i className="fas fa-user-nurse text-white text-xl"></i>
+                    {user ? (
+                        <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-3 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 rounded-2xl px-4 py-2.5 shadow-xl hover:shadow-2xl transition-all hover:scale-105 border border-white/20">
+                            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                <i className="fas fa-user-nurse text-white text-lg"></i>
+                            </div>
+                            <div className="text-left">
+                                <p className="font-bold text-white text-sm">{user.name}</p>
+                                <p className="text-xs text-white/70">{user.cargo}</p>
+                            </div>
+                            <i className={`fas fa-chevron-${dropdownOpen ? 'up' : 'down'} text-white/70 ml-1 text-xs`}></i>
+                        </button>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { setAuthMode('login'); setAuthModal(true); }} className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-all shadow-lg text-indigo-600 font-medium text-sm">
+                                <i className="fas fa-sign-in-alt"></i>
+                                Entrar
+                            </button>
+                            <button onClick={() => { setAuthMode('register'); setAuthModal(true); }} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all text-white font-medium text-sm">
+                                <i className="fas fa-user-plus"></i>
+                                Cadastrar
+                            </button>
                         </div>
-                        <div className="text-left">
-                            <p className="font-bold text-white">{user?.name || 'Visitante'}</p>
-                            <p className="text-xs text-blue-200">{user?.cargo || 'Clique para acessar'}</p>
-                        </div>
-                        <i className={`fas fa-chevron-${dropdownOpen ? 'up' : 'down'} text-white/70 ml-2`}></i>
-                    </button>
+                    )}
                 </div>
-                {dropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden animate-fadeIn">
-                        {user ? (
-                            <>
-                                <button onClick={() => { setActiveView('profile'); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors">
-                                    <i className="fas fa-user-circle text-blue-500"></i>
-                                    <span className="font-medium">Meu Perfil</span>
-                                </button>
-                                <button onClick={() => { setUser(null); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-red-50 flex items-center gap-3 transition-colors text-red-600 border-t">
-                                    <i className="fas fa-sign-out-alt"></i>
-                                    <span className="font-medium">Sair</span>
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <button onClick={() => { setAuthMode('login'); setAuthModal(true); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center gap-3 transition-colors">
-                                    <i className="fas fa-sign-in-alt text-blue-500"></i>
-                                    <span className="font-medium">Entrar</span>
-                                </button>
-                                <button onClick={() => { setAuthMode('register'); setAuthModal(true); setDropdownOpen(false); }} className="w-full px-4 py-3 text-left hover:bg-green-50 flex items-center gap-3 transition-colors border-t">
-                                    <i className="fas fa-user-plus text-green-500"></i>
-                                    <span className="font-medium">Cadastre-se</span>
-                                </button>
-                            </>
-                        )}
+                {dropdownOpen && user && (
+                    <div className="absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fadeIn">
+                        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center shadow-lg">
+                                    <i className="fas fa-user-nurse text-white text-xl"></i>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-white text-lg">{user.name}</p>
+                                    <p className="text-sm text-white/80">{user.cargo}</p>
+                                    {user.municipio && <p className="text-xs text-white/60 mt-1"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio}</p>}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-3">
+                            <button onClick={() => { setActiveView('profile'); setDropdownOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl hover:bg-indigo-50 transition-colors flex items-center gap-3 group">
+                                <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                                    <i className="fas fa-user-circle text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-800">Meu Perfil</p>
+                                    <p className="text-xs text-gray-500">Visualizar e editar dados</p>
+                                </div>
+                            </button>
+                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 group">
+                                <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                    <i className="fas fa-cog text-gray-600"></i>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-800">Configurações</p>
+                                    <p className="text-xs text-gray-500">Preferências do sistema</p>
+                                </div>
+                            </button>
+                            <hr className="my-2 border-gray-100" />
+                            <button onClick={() => { setUser(null); setDropdownOpen(false); }} className="w-full text-left px-4 py-3 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-3 group">
+                                <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
+                                    <i className="fas fa-sign-out-alt text-red-600"></i>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-red-600">Sair</p>
+                                    <p className="text-xs text-red-400">Encerrar sessão</p>
+                                </div>
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -737,7 +865,39 @@ const Dashboard = () => {
             </div>
         );
     };
-    const FilterBar = ({ showInd, indFilter, setIndFilter }) => (<div className="card p-6 mb-6 border-2 border-indigo-100 hover:border-indigo-300 transition-all"><div className="flex items-center gap-2 mb-3"><div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"><i className="fas fa-filter text-white text-sm"></i></div><h3 className="font-bold text-gray-800">Filtros</h3></div><div className="flex flex-wrap items-center gap-3"><select className="px-4 py-2 border-2 border-indigo-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-white font-medium" value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos', equipe: 'Todas'})}><option value="Todas">🌍 Todas Regiões</option>{getUnique('regiao').map(r => <option key={r}>{r}</option>)}</select><select className="px-4 py-2 border-2 border-purple-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all bg-white font-medium" value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value, equipe: 'Todas'})}><option value="Todos">🏛️ Todos Municípios</option>{getUnique('municipio', filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData).map(m => <option key={m}>{m}</option>)}</select>{selectedState === 'msp' && <select className="px-4 py-2 border-2 border-orange-200 rounded-xl focus:border-orange-500 focus:ring-4 focus:ring-orange-100 transition-all bg-white font-medium" value={filters.distrito} onChange={e => setFilters({...filters, distrito: e.target.value, equipe: 'Todas'})}><option value="Todos">📍 Todos Distritos</option>{getUnique('distrito').map(d => <option key={d}>{d}</option>)}</select>}{selectedState === 'msp' && <select className="px-4 py-2 border-2 border-pink-200 rounded-xl focus:border-pink-500 focus:ring-4 focus:ring-pink-100 transition-all bg-white font-medium" value={filters.oss} onChange={e => setFilters({...filters, oss: e.target.value, equipe: 'Todas'})}><option value="Todas">🏥 Todas OSS</option>{getUnique('oss').map(o => <option key={o}>{o}</option>)}</select>}<select className="px-4 py-2 border-2 border-teal-200 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-100 transition-all bg-white font-medium" value={filters.equipe} onChange={e => setFilters({...filters, equipe: e.target.value})}><option value="Todas">👥 Todas Equipes</option>{getUnique('nomeEquipe', filters.municipio !== 'Todos' ? rawData.filter(r => r.municipio === filters.municipio) : (filters.regiao !== 'Todas' ? rawData.filter(r => r.regiao === filters.regiao) : rawData)).map(eq => <option key={eq}>{eq}</option>)}</select><select className="px-4 py-2 border-2 border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all bg-white font-medium" value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">📅 Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>{showInd && <select className="px-4 py-2 border-2 border-green-200 rounded-xl focus:border-green-500 focus:ring-4 focus:ring-green-100 transition-all bg-white font-medium" value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">📊 Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}</div></div>);
+    const FilterBar = ({ showInd, indFilter, setIndFilter }) => {
+        const getFilteredBase = (exclude = []) => {
+            let d = [...rawData];
+            if (!exclude.includes('regiao') && filters.regiao !== 'Todas') d = d.filter(r => r.regiao === filters.regiao);
+            if (!exclude.includes('municipio') && filters.municipio !== 'Todos') d = d.filter(r => r.municipio === filters.municipio);
+            if (!exclude.includes('distrito') && filters.distrito !== 'Todos') d = d.filter(r => r.distrito === filters.distrito);
+            if (!exclude.includes('oss') && filters.oss !== 'Todas') d = d.filter(r => r.oss === filters.oss);
+            if (!exclude.includes('unidade') && filters.unidade !== 'Todas') d = d.filter(r => r.estabelecimento === filters.unidade);
+            return d;
+        };
+        const regiaoOpts = getUnique('regiao', getFilteredBase(['regiao']));
+        const municipioOpts = getUnique('municipio', getFilteredBase(['municipio']));
+        const distritoOpts = selectedState === 'msp' ? getUnique('distrito', getFilteredBase(['distrito'])) : [];
+        const ossOpts = selectedState === 'msp' ? getUnique('oss', getFilteredBase(['oss'])) : [];
+        const unidadeOpts = getUnique('estabelecimento', getFilteredBase(['unidade']));
+        const equipeOpts = getUnique('nomeEquipe', getFilteredBase(['equipe']));
+        const selectClass = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer hover:border-gray-400";
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium"><i className="fas fa-filter"></i><span>Filtros:</span></div>
+                    <select className={selectClass} value={filters.regiao} onChange={e => setFilters({...filters, regiao: e.target.value, municipio: 'Todos', unidade: 'Todas', equipe: 'Todas'})}><option value="Todas">Todas Regiões</option>{regiaoOpts.map(r => <option key={r}>{r}</option>)}</select>
+                    <select className={selectClass} value={filters.municipio} onChange={e => setFilters({...filters, municipio: e.target.value, unidade: 'Todas', equipe: 'Todas'})}><option value="Todos">Todos Municípios</option>{municipioOpts.map(m => <option key={m}>{m}</option>)}</select>
+                    {selectedState === 'msp' && <select className={selectClass} value={filters.distrito} onChange={e => setFilters({...filters, distrito: e.target.value, unidade: 'Todas', equipe: 'Todas'})}><option value="Todos">Todos Distritos</option>{distritoOpts.map(d => <option key={d}>{d}</option>)}</select>}
+                    {selectedState === 'msp' && <select className={selectClass} value={filters.oss} onChange={e => setFilters({...filters, oss: e.target.value, unidade: 'Todas', equipe: 'Todas'})}><option value="Todas">Todas OSS</option>{ossOpts.map(o => <option key={o}>{o}</option>)}</select>}
+                    <select className={selectClass} value={filters.unidade} onChange={e => setFilters({...filters, unidade: e.target.value, equipe: 'Todas'})}><option value="Todas">Todas Unidades</option>{unidadeOpts.map(u => <option key={u}>{u}</option>)}</select>
+                    <select className={selectClass} value={filters.equipe} onChange={e => setFilters({...filters, equipe: e.target.value})}><option value="Todas">Todas Equipes</option>{equipeOpts.map(eq => <option key={eq}>{eq}</option>)}</select>
+                    <select className={selectClass} value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>
+                    {showInd && <select className={selectClass + " bg-indigo-50 border-indigo-300"} value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}
+                </div>
+            </div>
+        );
+    };
 
     const HomeView = () => {
         const [chartMode, setChartMode] = useState('mensal'); // 'mensal', 'acumulado', 'quadrimestre'
@@ -786,6 +946,7 @@ const Dashboard = () => {
                 gradient.addColorStop(1, 'rgba(99, 102, 241, 0.02)');
                 const labels = data.map(d => d.month.slice(0, 3));
                 const values = data.map(d => d.taxa);
+                const maxVal = Math.max(...values);
                 chart.current = new Chart(ref.current, {
                     type: 'line',
                     data: {
@@ -810,6 +971,7 @@ const Dashboard = () => {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        layout: { padding: { top: 25, right: 10, bottom: 5, left: 10 } },
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
                             legend: { display: false },
@@ -824,15 +986,15 @@ const Dashboard = () => {
                             datalabels: {
                                 display: true,
                                 color: '#4338ca',
-                                font: { size: 10, weight: 'bold' },
+                                font: { size: 11, weight: 'bold' },
                                 anchor: 'end',
                                 align: 'top',
-                                offset: 4,
+                                offset: 6,
                                 formatter: v => v ? v.toFixed(1) : ''
                             }
                         },
                         scales: {
-                            y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }, ticks: { font: { size: 11 }, color: '#64748b', padding: 8 } },
+                            y: { beginAtZero: true, max: maxVal * 1.15, grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false }, ticks: { font: { size: 11 }, color: '#64748b', padding: 8 } },
                             x: { grid: { display: false }, ticks: { font: { size: 11, weight: '500' }, color: '#64748b' } }
                         }
                     }
@@ -843,17 +1005,19 @@ const Dashboard = () => {
         };
         
         const MetricCard = ({ icon, iconBg, title, value, subtitle, popupContent, accent }) => (
-            <div className={`corp-card corp-card-accent ${accent || 'blue'} popup-card group hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}>
-                <div className="corp-card-body">
-                    <div className="flex items-center gap-4">
-                        <div className={`w-14 h-14 rounded-xl ${iconBg} text-white flex items-center justify-center shadow-lg`}>
-                            <i className={`fas ${icon} text-xl`}></i>
+            <div className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 popup-card group overflow-hidden`}>
+                <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                        <div className={`w-11 h-11 rounded-lg ${iconBg} text-white flex items-center justify-center shadow-md`}>
+                            <i className={`fas ${icon} text-lg`}></i>
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-1">{title}</p>
-                            <p className="text-2xl font-extrabold text-gray-800">{value}</p>
-                            <div className="mt-1">{subtitle}</div>
+                        <div className="text-right">
+                            <p className="text-2xl font-bold text-gray-900">{value}</p>
                         </div>
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+                        {subtitle && <div className="mt-1">{subtitle}</div>}
                     </div>
                 </div>
                 {popupContent && <div className="popup-content"><div className="text-sm">{popupContent}</div></div>}
@@ -2370,7 +2534,7 @@ const Dashboard = () => {
                 </div>
                 
                 {/* Informações Editáveis */}
-                <div className="corp-card">
+                <div className="corp-card mb-6">
                     <div className="corp-card-header">
                         <h3 className="corp-card-title"><i className="fas fa-user-edit"></i>Informações Pessoais</h3>
                     </div>
@@ -2405,6 +2569,89 @@ const Dashboard = () => {
                             </div>
                             <i className="fas fa-chevron-right text-gray-400"></i>
                         </div>
+                    </div>
+                </div>
+                
+                {/* Configurações */}
+                <div className="corp-card mb-6">
+                    <div className="corp-card-header">
+                        <h3 className="corp-card-title"><i className="fas fa-cog"></i>Configurações</h3>
+                    </div>
+                    <div className="corp-card-body space-y-3">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center"><i className="fas fa-bell text-indigo-500"></i></div>
+                                <div>
+                                    <p className="font-medium">Notificações</p>
+                                    <p className="text-xs text-gray-500">Receber alertas e atualizações</p>
+                                </div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" defaultChecked />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center"><i className="fas fa-moon text-amber-500"></i></div>
+                                <div>
+                                    <p className="font-medium">Modo Escuro</p>
+                                    <p className="text-xs text-gray-500">Tema escuro para o dashboard</p>
+                                </div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" className="sr-only peer" />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                            </label>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center"><i className="fas fa-language text-cyan-500"></i></div>
+                                <div>
+                                    <p className="font-medium">Idioma</p>
+                                    <p className="text-xs text-gray-500">Português (Brasil)</p>
+                                </div>
+                            </div>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center"><i className="fas fa-download text-teal-500"></i></div>
+                                <div>
+                                    <p className="font-medium">Exportar Dados</p>
+                                    <p className="text-xs text-gray-500">Baixar seus dados em CSV</p>
+                                </div>
+                            </div>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Ações da Conta */}
+                <div className="corp-card">
+                    <div className="corp-card-header">
+                        <h3 className="corp-card-title"><i className="fas fa-shield-alt"></i>Conta</h3>
+                    </div>
+                    <div className="corp-card-body space-y-3">
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-rose-100 flex items-center justify-center"><i className="fas fa-key text-rose-500"></i></div>
+                                <div>
+                                    <p className="font-medium">Alterar Senha</p>
+                                    <p className="text-xs text-gray-500">Atualizar sua senha de acesso</p>
+                                </div>
+                            </div>
+                            <i className="fas fa-chevron-right text-gray-400"></i>
+                        </div>
+                        <button onClick={() => setUser(null)} className="w-full flex items-center justify-between p-4 bg-red-50 rounded-xl hover:bg-red-100 cursor-pointer transition-colors text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center"><i className="fas fa-sign-out-alt text-red-500"></i></div>
+                                <div>
+                                    <p className="font-medium text-red-600">Sair da Conta</p>
+                                    <p className="text-xs text-red-400">Encerrar sua sessão</p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
             </div>
