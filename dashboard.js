@@ -465,7 +465,7 @@ const Dashboard = () => {
     const [indicatorType, setIndicatorType] = useState(null), [selectedState, setSelectedState] = useState(null);
     const [rawData, setRawData] = useState([]), [filteredData, setFilteredData] = useState([]);
     const [loading, setLoading] = useState(false), [error, setError] = useState(null), [activeView, setActiveView] = useState('home');
-    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas' });
+    const [filters, setFilters] = useState({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas', sigla: 'Todas' });
     const [geoJson, setGeoJson] = useState(null), [showProfile, setShowProfile] = useState(false);
     const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('gdiaps_user')) || null);
     const [topics, setTopics] = useState(() => JSON.parse(localStorage.getItem('gdiaps_topics')) || []);
@@ -709,6 +709,7 @@ const Dashboard = () => {
                 const base = { 
                     cnes: r[0], estabelecimento: r[1], municipio: fixMunicipioDisplay(r[6]), regiao, 
                     competencia: normalizeMonth(r[8 + offset]), ine: r[3], nomeEquipe: r[4] || '',
+                    sigla: r[5] || '',
                     distrito: isMSP ? (r[8] || '') : '',
                     oss: isMSP ? (r[9] || '') : ''
                 };
@@ -717,7 +718,7 @@ const Dashboard = () => {
                 if (type === 'dm') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), somatorio: parseNum(r[16 + offset]), totalPacientes: parseNum(r[17 + offset]) };
                 return base;
             });
-            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas' }); setLoading(false);
+            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas', sigla: 'Todas' }); setLoading(false);
         }).catch(e => { setError(e.message); setLoading(false); });
     };
 
@@ -734,6 +735,7 @@ const Dashboard = () => {
         if (filters.distrito !== 'Todos') f = f.filter(r => r.distrito === filters.distrito);
         if (filters.oss !== 'Todas') f = f.filter(r => r.oss === filters.oss);
         if (filters.unidade !== 'Todas') f = f.filter(r => r.estabelecimento === filters.unidade);
+        if (filters.sigla !== 'Todas') f = f.filter(r => r.sigla === filters.sigla);
         setFilteredData(f);
     }, [filters, rawData]);
 
@@ -873,6 +875,7 @@ const Dashboard = () => {
             if (!exclude.includes('distrito') && filters.distrito !== 'Todos') d = d.filter(r => r.distrito === filters.distrito);
             if (!exclude.includes('oss') && filters.oss !== 'Todas') d = d.filter(r => r.oss === filters.oss);
             if (!exclude.includes('unidade') && filters.unidade !== 'Todas') d = d.filter(r => r.estabelecimento === filters.unidade);
+            if (!exclude.includes('sigla') && filters.sigla !== 'Todas') d = d.filter(r => r.sigla === filters.sigla);
             return d;
         };
         const regiaoOpts = getUnique('regiao', getFilteredBase(['regiao']));
@@ -881,6 +884,7 @@ const Dashboard = () => {
         const ossOpts = selectedState === 'msp' ? getUnique('oss', getFilteredBase(['oss'])) : [];
         const unidadeOpts = getUnique('estabelecimento', getFilteredBase(['unidade']));
         const equipeOpts = getUnique('nomeEquipe', getFilteredBase(['equipe']));
+        const siglaOpts = getUnique('sigla', getFilteredBase(['sigla']));
         const selectClass = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer hover:border-gray-400";
         return (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
@@ -891,6 +895,7 @@ const Dashboard = () => {
                     {selectedState === 'msp' && <select className={selectClass} value={filters.distrito} onChange={e => setFilters({...filters, distrito: e.target.value, unidade: 'Todas', equipe: 'Todas'})}><option value="Todos">Todos Distritos</option>{distritoOpts.map(d => <option key={d}>{d}</option>)}</select>}
                     {selectedState === 'msp' && <select className={selectClass} value={filters.oss} onChange={e => setFilters({...filters, oss: e.target.value, unidade: 'Todas', equipe: 'Todas'})}><option value="Todas">Todas OSS</option>{ossOpts.map(o => <option key={o}>{o}</option>)}</select>}
                     <select className={selectClass} value={filters.unidade} onChange={e => setFilters({...filters, unidade: e.target.value, equipe: 'Todas'})}><option value="Todas">Todas Unidades</option>{unidadeOpts.map(u => <option key={u}>{u}</option>)}</select>
+                    <select className={selectClass} value={filters.sigla} onChange={e => setFilters({...filters, sigla: e.target.value})}><option value="Todas">Todas Siglas</option>{siglaOpts.map(s => <option key={s}>{s}</option>)}</select>
                     <select className={selectClass} value={filters.equipe} onChange={e => setFilters({...filters, equipe: e.target.value})}><option value="Todas">Todas Equipes</option>{equipeOpts.map(eq => <option key={eq}>{eq}</option>)}</select>
                     <select className={selectClass} value={filters.competencia} onChange={e => setFilters({...filters, competencia: e.target.value})}><option value="Todas">Todas Competências</option>{getUnique('competencia').map(c => <option key={c}>{c}</option>)}</select>
                     {showInd && <select className={selectClass + " bg-indigo-50 border-indigo-300"} value={indFilter} onChange={e => setIndFilter(e.target.value)}><option value="taxa">Boas Práticas</option>{config && Array.from({length: config.indicatorCount}, (_,i) => <option key={i} value={'ind'+(i+1)}>C{i+1}</option>)}</select>}

@@ -95,7 +95,7 @@ const MONTH_ORDER = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 
 // Mapeamento de nomes de meses (CSV pode ter variações)
 const MONTH_MAP = {
-    'janeiro': 'Janeiro', 'fevereiro': 'Fevereiro', 'março': 'Março', 'marco': 'Março',
+    'janeiro': 'Janeiro', 'fevereiro': 'Fevereiro', 'março': 'Março', 'marco': 'Março', 'mar�o': 'Março',
     'abril': 'Abril', 'maio': 'Maio', 'junho': 'Junho', 'julho': 'Julho',
     'agosto': 'Agosto', 'setembro': 'Setembro', 'outubro': 'Outubro',
     'novembro': 'Novembro', 'dezembro': 'Dezembro'
@@ -104,6 +104,8 @@ const MONTH_MAP = {
 const normalizeMonth = (m) => {
     if (!m) return m;
     const trimmed = m.trim();
+    // Detectar variações de Março com caracteres corrompidos (Mar?o, Marï¿½o, Mar�o, etc)
+    if (/^mar.{1,3}o$/i.test(trimmed)) return 'Março';
     const lower = trimmed.toLowerCase();
     if (MONTH_MAP[lower]) return MONTH_MAP[lower];
     if (MONTH_ORDER.includes(trimmed)) return trimmed;
