@@ -4322,20 +4322,38 @@ const Dashboard = () => {
     const loadEquidadeData = async () => {
         setEquidadeLoading(true);
         try {
-            const loadXlsx = async (url) => {
+            const loadCsv = async (url) => {
+                console.log('Carregando arquivo:', url);
                 const response = await fetch(url);
+                if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
                 const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                const sheets = {};
-                workbook.SheetNames.forEach(name => {
-                    sheets[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
+                const decoder = new TextDecoder('windows-1252');
+                const text = decoder.decode(arrayBuffer);
+                const lines = text.split('\n').filter(l => l.trim());
+                const headers = lines[0].split(';').map(h => h.trim());
+                console.log('Headers:', headers);
+                const data = lines.slice(1).map(line => {
+                    const values = line.split(';');
+                    const row = {};
+                    headers.forEach((h, i) => {
+                        let val = values[i]?.trim() || '';
+                        // Converter valores monetários R$ para número
+                        if (val.startsWith('R$')) {
+                            val = parseFloat(val.replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0;
+                        }
+                        row[h] = val;
+                    });
+                    return row;
                 });
-                return sheets;
+                console.log(`Carregados ${data.length} registros`);
+                return { 'eSF': data };
             };
             const [jan, fev] = await Promise.all([
-                loadXlsx('./componente equidade/janeiro.xlsx'),
-                loadXlsx('./componente equidade/fevereiro.xlsx')
+                loadCsv('./componente equidade/janeiro.csv'),
+                loadCsv('./componente equidade/fevereiro.csv')
             ]);
+            console.log('Janeiro:', jan.eSF?.length, 'registros');
+            console.log('Fevereiro:', fev.eSF?.length, 'registros');
             setEquidadeData({ janeiro: jan, fevereiro: fev });
         } catch (err) {
             console.error('Erro ao carregar dados de equidade:', err);
@@ -4348,7 +4366,18 @@ const Dashboard = () => {
         const [chartViewType, setChartViewType] = useState('total');
         
         const data = equidadeData[selectedEquidadeMes];
-        const tabs = data ? Object.keys(data).filter(t => t === 'eSF') : [];
+        console.log('Data disponível:', data ? Object.keys(data) : 'nenhum');
+        // Buscar aba eSF com diferentes variações de nome
+        const findEsfTab = (sheets) => {
+            if (!sheets) return null;
+            const keys = Object.keys(sheets);
+            // Tentar encontrar aba com nome exato ou similar
+            const esfTab = keys.find(k => k === 'eSF' || k.toLowerCase() === 'esf' || k.toLowerCase().includes('esf'));
+            // Se não encontrar, usar a primeira aba disponível
+            return esfTab || keys[0];
+        };
+        const esfTabName = findEsfTab(data);
+        const tabs = esfTabName ? [esfTabName] : [];
         
         const formatCurrency = (value) => {
             if (!value && value !== 0) return 'R$ 0,00';
@@ -4367,7 +4396,7 @@ const Dashboard = () => {
         const getMunicipioField = (row) => row['Município'] || row['MUNICÍPIO'] || row['Municipio'] || row['IBGE'] || '-';
         const getUFField = (row) => row['UF'] || row['uf'] || row['Uf'] || '-';
 
-        const rawTabData = data ? data[selectedEquidadeTab] : null;
+        const rawTabData = data && esfTabName ? data[esfTabName] : null;
         
         const tabData = rawTabData ? rawTabData.filter(row => {
             if (equidadeFilters.uf !== 'Todas' && getUFField(row) !== equidadeFilters.uf) return false;
@@ -4411,7 +4440,7 @@ const Dashboard = () => {
         const getChartData = () => {
             const meses = ['janeiro', 'fevereiro'];
             return meses.map(mes => {
-                const mesData = equidadeData[mes]?.[selectedEquidadeTab];
+                const mesData = equidadeData[mes]?.[esfTabName];
                 if (!mesData) return { mes: mes.charAt(0).toUpperCase() + mes.slice(1), valor: 0 };
                 const filteredMesData = mesData.filter(row => {
                     if (equidadeFilters.uf !== 'Todas' && getUFField(row) !== equidadeFilters.uf) return false;
@@ -4722,7 +4751,7 @@ const Dashboard = () => {
                                     <div className="p-5 border-b bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
                                         <h3 className="font-bold text-gray-800 flex items-center gap-2">
                                             <i className="fas fa-table text-emerald-600"></i>
-                                            Detalhamento - {selectedEquidadeTab}
+                                            Detalhamento - {esfTabName || 'eSF'}
                                         </h3>
                                         <span className="text-sm text-gray-500">{tabData.length} registros</span>
                                     </div>
