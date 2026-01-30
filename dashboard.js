@@ -4349,8 +4349,8 @@ const Dashboard = () => {
                 return { 'eSF': data };
             };
             const [jan, fev] = await Promise.all([
-                loadCsv('./componente equidade/janeiro.csv'),
-                loadCsv('./componente equidade/fevereiro.csv')
+                loadCsv('./janeiro.csv'),
+                loadCsv('./fevereiro.csv')
             ]);
             console.log('Janeiro:', jan.eSF?.length, 'registros');
             console.log('Fevereiro:', fev.eSF?.length, 'registros');

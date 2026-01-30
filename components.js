@@ -26,11 +26,11 @@ const INDICATOR_CONFIG = {
         totalField: 'totalGestantes',
         totalLabel: 'gestantes',
         csvFiles: {
-            acre: { file: './estados/acre/Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
-            rn: { file: './estados/rio grande do norte/RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
-            am: { file: './estados/amazonas/GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
-            mt: { file: './estados/mato grosso/GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
-            msp: { file: './estados/municipio de são paulo/GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
+            acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
+            rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
+            am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
+            mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
+            msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [
@@ -61,7 +61,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'hipertensos',
         csvFiles: {
-            rn: { file: './estados/rio grande do norte/RN_HAS.csv', delimiter: ';', encoding: 'windows-1252' }
+            rn: { file: './RN_HAS.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 4,
         fullNames: [
@@ -82,7 +82,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'diabéticos',
         csvFiles: {
-            rn: { file: './estados/rio grande do norte/RN_DM.csv', delimiter: ';', encoding: 'windows-1252' }
+            rn: { file: './RN_DM.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 6,
         fullNames: [
