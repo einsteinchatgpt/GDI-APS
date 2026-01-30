@@ -228,8 +228,9 @@ const LandingPage = ({ onSelectIndicator, onSelectComponent, user, onOpenAuth })
     
     const boasPraticas = [
         { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt'], municipios: ['msp'], stats: '11 Boas Práticas' },
-        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['rn'], stats: '4 Boas Práticas' },
-        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['rn'], stats: '6 Boas Práticas' }
+        { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['acre', 'rn'], stats: '4 Boas Práticas' },
+        { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['acre', 'rn'], stats: '6 Boas Práticas' },
+        { key: 'infantil', title: 'Desenvolvimento Infantil', icon: 'fa-child', color: '#10b981', desc: 'Acompanhamento de crianças até 2 anos', states: ['acre'], stats: '5 Boas Práticas' }
     ];
     
     const [selComponent, setSelComponent] = useState(null);
@@ -729,62 +730,186 @@ const Dashboard = () => {
     useEffect(() => { localStorage.setItem('gdiaps_topics', JSON.stringify(topics)); }, [topics]);
     useEffect(() => { user ? localStorage.setItem('gdiaps_user', JSON.stringify(user)) : localStorage.removeItem('gdiaps_user'); }, [user]);
     useEffect(() => { if (selectedState && STATE_CONFIG[selectedState]?.geojson) fetch(STATE_CONFIG[selectedState].geojson).then(r => r.json()).then(setGeoJson).catch(console.error); else setGeoJson(null); }, [selectedState]);
-    useEffect(() => { if (indicatorType && selectedState) loadData(indicatorType, selectedState); }, [indicatorType, selectedState]);
-
     const loadData = (type, state) => {
-        const cfg = INDICATOR_CONFIG[type]; if (!cfg?.csvFiles[state]) return;
+        const cfg = INDICATOR_CONFIG[type]; 
+        if (!cfg?.csvFiles[state]) {
+            console.error('Config não encontrada para:', type, state);
+            return;
+        }
+        
+        // Limpar dados anteriores ANTES de carregar novos
+        setRawData([]);
+        setFilteredData([]);
         setLoading(true);
+        setError(null);
+        
         const encoding = cfg.csvFiles[state].encoding || 'windows-1252';
-        fetch(cfg.csvFiles[state].file).then(r => r.arrayBuffer()).then(buf => Papa.parse(new TextDecoder(encoding).decode(buf), { header: false, skipEmptyLines: true, delimiter: cfg.csvFiles[state].delimiter, quoteChar: '"' })).then(results => {
-            const parseNum = v => { 
-                if (!v) return 0; 
-                let c = String(v).replace(/"/g, '').trim(); 
+        const fileUrl = cfg.csvFiles[state].file + '?t=' + Date.now();
+        console.log('=== LOADING DATA ===');
+        console.log('Type:', type, 'State:', state);
+        console.log('File:', fileUrl);
+        
+        fetch(fileUrl)
+            .then(r => {
+                if (!r.ok) throw new Error('Erro ao carregar arquivo: ' + r.status);
+                return r.arrayBuffer();
+            })
+            .then(buf => {
+                const text = new TextDecoder(encoding).decode(buf);
+                return Papa.parse(text, { 
+                    header: false, 
+                    skipEmptyLines: true, 
+                    delimiter: cfg.csvFiles[state].delimiter, 
+                    quoteChar: '"' 
+                });
+            })
+            .then(results => {
+                console.log('CSV parsed, rows:', results.data.length);
                 
-                // Detectar formato baseado no estado
-                if (state === 'acre' || state === 'am') {
-                    // Acre e Amazonas: vírgula é separador de milhar (formato americano: 1,007 = 1007)
-                    c = c.replace(/,/g, '');
-                } else {
-                    // RN e outros: vírgula é separador decimal (formato brasileiro: 34,32 = 34.32)
-                    // Se tem ponto E vírgula, ponto é milhar e vírgula é decimal
-                    if (c.includes('.') && c.includes(',')) {
-                        c = c.replace(/\./g, '').replace(',', '.');
-                    } else if (c.includes(',')) {
-                        c = c.replace(',', '.');
-                    }
-                }
-                return Math.round(parseFloat(c)) || 0; 
-            };
-            // Debug: log primeira linha para verificar índices
-            if (results.data.length > 1) {
-                console.log('CSV Debug - Primeira linha de dados:', results.data[1]);
-                console.log('CSV Debug - Número de colunas:', results.data[1]?.length);
-                console.log('CSV Debug - Coluna 21 (somatorio):', results.data[1]?.[21]);
-                console.log('CSV Debug - Coluna 22 (total):', results.data[1]?.[22]);
-            }
-            const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
-                let regiao = r[7] || ''; if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
-                // MSP tem colunas extras: Distrito (8) e OSS (9), deslocando os índices
-                const isMSP = state === 'msp';
-                const offset = isMSP ? 2 : 0;
-                const base = { 
-                    cnes: r[0], estabelecimento: r[1], municipio: fixMunicipioDisplay(r[6]), regiao, 
-                    competencia: normalizeMonth(r[8 + offset]), ine: r[3], nomeEquipe: r[4] || '',
-                    sigla: r[5] || '',
-                    distrito: isMSP ? (r[8] || '') : '',
-                    oss: isMSP ? (r[9] || '') : ''
+                // Função para parsear números no formato brasileiro
+                const parseNum = v => { 
+                    if (!v) return 0; 
+                    let c = String(v).replace(/"/g, '').trim(); 
+                    // Formato brasileiro: ponto é milhar, vírgula é decimal
+                    c = c.replace(/\./g, '').replace(',', '.');
+                    const result = Math.round(parseFloat(c)) || 0;
+                    return result; 
                 };
-                if (type === 'gestantes') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), ind7: parseNum(r[16 + offset]), ind8: parseNum(r[17 + offset]), ind9: parseNum(r[18 + offset]), ind10: parseNum(r[19 + offset]), ind11: parseNum(r[20 + offset]), somatorio: parseNum(r[21 + offset]), totalPacientes: parseNum(r[22 + offset]) };
-                if (type === 'has') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), somatorio: parseNum(r[14 + offset]), totalPacientes: parseNum(r[15 + offset]) };
-                if (type === 'dm') return { ...base, ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), somatorio: parseNum(r[16 + offset]), totalPacientes: parseNum(r[17 + offset]) };
-                return base;
+                
+                // Teste do parseNum
+                console.log('ParseNum test: "800" ->', parseNum('800'));
+                console.log('ParseNum test: "1.000" ->', parseNum('1.000'));
+                console.log('ParseNum test: "38" ->', parseNum('38'));
+                
+                const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
+                    let regiao = r[7] || ''; 
+                    if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                    
+                    const isMSP = state === 'msp';
+                    const offset = isMSP ? 2 : 0;
+                    
+                    const base = { 
+                        cnes: r[0], 
+                        estabelecimento: r[1], 
+                        municipio: fixMunicipioDisplay(r[6]), 
+                        regiao, 
+                        competencia: normalizeMonth(r[8 + offset]), 
+                        ine: r[3], 
+                        nomeEquipe: r[4] || '',
+                        sigla: r[5] || '',
+                        distrito: isMSP ? (r[8] || '') : '',
+                        oss: isMSP ? (r[9] || '') : ''
+                    };
+                    
+                    // Mapeamento específico por tipo de indicador
+                    if (type === 'gestantes') {
+                        return { 
+                            ...base, 
+                            ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), 
+                            ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), 
+                            ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), 
+                            ind7: parseNum(r[16 + offset]), ind8: parseNum(r[17 + offset]), 
+                            ind9: parseNum(r[18 + offset]), ind10: parseNum(r[19 + offset]), 
+                            ind11: parseNum(r[20 + offset]), 
+                            somatorio: parseNum(r[21 + offset]), 
+                            totalPacientes: parseNum(r[22 + offset]) 
+                        };
+                    }
+                    
+                    if (type === 'has') {
+                        // HAS: col 10 é INDICADOR (texto), indicadores col 11-14, somatório col 15, total col 16
+                        return { 
+                            ...base, 
+                            ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), 
+                            ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), 
+                            somatorio: parseNum(r[14 + offset]), 
+                            totalPacientes: parseNum(r[15 + offset]) 
+                        };
+                    }
+                    
+                    if (type === 'dm') {
+                        // DM: col 10 é INDICADOR (texto), indicadores col 11-16, somatório col 17, total col 18
+                        return { 
+                            ...base, 
+                            ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), 
+                            ind3: parseNum(r[12 + offset]), ind4: parseNum(r[13 + offset]), 
+                            ind5: parseNum(r[14 + offset]), ind6: parseNum(r[15 + offset]), 
+                            somatorio: parseNum(r[16 + offset]), 
+                            totalPacientes: parseNum(r[17 + offset]) 
+                        };
+                    }
+                    
+                    if (type === 'infantil') {
+                        // INFANTIL: col 9 é INDICADOR (texto), indicadores col 10-14, somatório col 15, total col 16
+                        // Exemplo linha: ...;Janeiro;Desenvolvimento Infantil;0;5;5;4;26;800;38;21,10
+                        const row = { 
+                            ...base, 
+                            ind1: parseNum(r[10]), ind2: parseNum(r[11]), 
+                            ind3: parseNum(r[12]), ind4: parseNum(r[13]), 
+                            ind5: parseNum(r[14]), 
+                            somatorio: parseNum(r[15]), 
+                            totalPacientes: parseNum(r[16]) 
+                        };
+                        // Debug primeira linha
+                        if (r[0] === '0257184' && r[8] === 'Janeiro') {
+                            console.log('INFANTIL DEBUG - Primeira linha:');
+                            console.log('  Raw r[15]:', r[15], '-> parsed:', parseNum(r[15]));
+                            console.log('  Raw r[16]:', r[16], '-> parsed:', parseNum(r[16]));
+                            console.log('  Row object:', { somatorio: row.somatorio, totalPacientes: row.totalPacientes });
+                        }
+                        return row;
+                    }
+                    
+                    return base;
+                });
+                
+                // Log para verificação
+                const totalSom = data.reduce((s, r) => s + (r.somatorio || 0), 0);
+                const totalPac = data.reduce((s, r) => s + (r.totalPacientes || 0), 0);
+                console.log('=== DATA LOADED ===');
+                console.log('Rows:', data.length);
+                console.log('Somatório total:', totalSom);
+                console.log('Total pacientes:', totalPac);
+                if (data[0]) console.log('First row sample:', { somatorio: data[0].somatorio, totalPacientes: data[0].totalPacientes });
+                
+                // Atualizar estado
+                setRawData(data); 
+                setFilteredData(data); 
+                setFilters({ 
+                    regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', 
+                    equipe: 'Todas', distrito: 'Todos', oss: 'Todas', 
+                    unidade: 'Todas', sigla: 'Todas' 
+                }); 
+                setLoading(false);
+            })
+            .catch(e => { 
+                console.error('Erro ao carregar dados:', e);
+                setError(e.message); 
+                setLoading(false); 
             });
-            setRawData(data); setFilteredData(data); setFilters({ regiao: 'Todas', municipio: 'Todos', competencia: 'Todas', equipe: 'Todas', distrito: 'Todos', oss: 'Todas', unidade: 'Todas', sigla: 'Todas' }); setLoading(false);
-        }).catch(e => { setError(e.message); setLoading(false); });
     };
 
-    const handleSelectIndicator = (type, state) => { setIndicatorType(type); setSelectedState(state); setActiveView('home'); };
-    const handleBackToLanding = () => { setIndicatorType(null); setSelectedState(null); setRawData([]); setFilteredData([]); };
+    const handleSelectIndicator = (type, state) => { 
+        console.log('=== SELECTING INDICATOR ===', type, state);
+        // Limpar estado anterior
+        setRawData([]);
+        setFilteredData([]);
+        setError(null);
+        // Definir novo indicador e estado
+        setIndicatorType(type); 
+        setSelectedState(state); 
+        setActiveView('home');
+        // Carregar dados
+        loadData(type, state);
+    };
+    
+    const handleBackToLanding = () => { 
+        setIndicatorType(null); 
+        setSelectedState(null); 
+        setRawData([]); 
+        setFilteredData([]); 
+        setError(null);
+    };
 
     useEffect(() => {
         if (!rawData.length) return;

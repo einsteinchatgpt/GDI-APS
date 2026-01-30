@@ -61,6 +61,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'hipertensos',
         csvFiles: {
+            acre: { file: './Hipertensão_Acre.csv', delimiter: ';', encoding: 'windows-1252' },
             rn: { file: './RN_HAS.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 4,
@@ -82,6 +83,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'diabéticos',
         csvFiles: {
+            acre: { file: './Diabetes_Acre.csv', delimiter: ';', encoding: 'windows-1252' },
             rn: { file: './RN_DM.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 6,
@@ -96,6 +98,29 @@ const INDICATOR_CONFIG = {
         shortNames: [
             'Consulta 6 meses', 'Medição PA 6 meses', '02 visitas ACS 12 meses', 
             'Peso/altura 12 meses', 'Hemoglobina glicada', 'Avaliação dos pés'
+        ]
+    },
+    infantil: {
+        title: 'Desenvolvimento Infantil',
+        icon: 'fa-child',
+        color: 'from-green-500 to-teal-600',
+        bgColor: 'bg-green-500',
+        totalField: 'totalPacientes',
+        totalLabel: 'crianças',
+        csvFiles: {
+            acre: { file: './Infantil_Acre.csv', delimiter: ';', encoding: 'windows-1252' }
+        },
+        indicatorCount: 5,
+        fullNames: [
+            'Ter realizado a 1ª consulta presencial ou remota até o 30º dia de vida',
+            'Ter pelo menos 09 consultas por médica(o) ou enfermeira(o) até dois anos de vida',
+            'Ter pelo menos 09 registros de peso e altura até os dois anos de vida',
+            'Ter recebido pelo menos 02 visitas domiciliares por ACS/TACS até os 06 meses de vida',
+            'Ter vacinação completa conforme calendário nacional'
+        ],
+        shortNames: [
+            '1ª consulta 30 dias', '09 consultas 2 anos', '09 registros peso/altura',
+            '02 visitas ACS', 'Vacinação completa'
         ]
     }
 };
