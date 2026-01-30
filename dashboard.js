@@ -34,24 +34,54 @@ const FloatingParticles = () => {
 };
 
 const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', cargo: '', municipio: '', unidade: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', password: '', cargo: '', municipio: '', unidade: '', ufKey: '' });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
 
     if (!isOpen) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setError('');
+        
+        if (mode === 'register' && !formData.ufKey) {
+            setError('Selecione a UF que você terá acesso');
+            return;
+        }
+        
         setLoading(true);
         setTimeout(() => {
             if (mode === 'login') {
-                onLogin({ name: formData.email.split('@')[0], email: formData.email, cargo: 'Profissional de Saúde' });
+                const saved = localStorage.getItem('gdiaps_users');
+                const users = saved ? JSON.parse(saved) : [];
+                const found = users.find(u => u.email === formData.email);
+                if (found) {
+                    onLogin(found);
+                    onClose();
+                } else {
+                    setError('Usuário não encontrado. Cadastre-se primeiro.');
+                }
             } else {
-                onLogin({ name: formData.name, email: formData.email, cargo: formData.cargo || 'Profissional de Saúde', municipio: formData.municipio, unidade: formData.unidade });
+                const userData = { 
+                    id: Math.random().toString(36).substr(2, 9),
+                    name: formData.name, 
+                    email: formData.email, 
+                    cargo: formData.cargo || 'Profissional de Saúde', 
+                    municipio: formData.municipio, 
+                    unidade: formData.unidade,
+                    ufKey: formData.ufKey,
+                    ufName: AVAILABLE_UFS.find(u => u.key === formData.ufKey)?.name || ''
+                };
+                const saved = localStorage.getItem('gdiaps_users');
+                const users = saved ? JSON.parse(saved) : [];
+                users.push(userData);
+                localStorage.setItem('gdiaps_users', JSON.stringify(users));
+                onLogin(userData);
+                onClose();
             }
             setLoading(false);
-            onClose();
-        }, 1500);
+        }, 1000);
     };
 
     return (
@@ -59,13 +89,11 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/90 to-purple-900/95 backdrop-blur-sm"></div>
             <FloatingParticles />
             <div className="relative w-full max-w-lg animate-scaleIn z-10" onClick={e => e.stopPropagation()}>
-                {/* Close Button */}
                 <button onClick={onClose} className="absolute -top-2 -right-2 w-10 h-10 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gray-100 transition-all hover:scale-110 z-20">
                     <i className="fas fa-times text-gray-600"></i>
                 </button>
                 
-                <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-                    {/* Header com Gradiente */}
+                <div className="bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
                     <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 p-8 text-center overflow-hidden">
                         <div className="absolute inset-0 bg-black/10"></div>
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
@@ -75,12 +103,17 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
                                 <i className={`fas ${mode === 'login' ? 'fa-user-shield' : 'fa-user-plus'} text-white text-3xl`}></i>
                             </div>
                             <h2 className="text-2xl font-bold text-white">{mode === 'login' ? 'Bem-vindo de volta!' : 'Crie sua conta'}</h2>
-                            <p className="text-white/80 mt-2 text-sm">{mode === 'login' ? 'Acesse o painel de indicadores' : 'Junte-se à comunidade GDI-APS'}</p>
+                            <p className="text-white/80 mt-2 text-sm">{mode === 'login' ? 'Acesse o painel de indicadores' : 'Selecione a UF que você terá acesso'}</p>
                         </div>
                     </div>
                     
-                    {/* Formulário */}
                     <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                        {error && (
+                            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm flex items-center gap-2 animate-fadeIn">
+                                <i className="fas fa-exclamation-circle"></i> {error}
+                            </div>
+                        )}
+                        
                         {mode === 'register' && (
                             <div className="animate-slideUp">
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -108,6 +141,18 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
                         </div>
                         {mode === 'register' && (
                             <>
+                                <div className="animate-slideUp" style={{ animationDelay: '0.25s' }}>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <i className="fas fa-flag mr-2 text-indigo-500"></i>UF de Acesso <span className="text-red-500">*</span>
+                                    </label>
+                                    <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all bg-gray-50 focus:bg-white" value={formData.ufKey} onChange={e => setFormData({...formData, ufKey: e.target.value})} required>
+                                        <option value="">Selecione a UF...</option>
+                                        {AVAILABLE_UFS.map(uf => (
+                                            <option key={uf.key} value={uf.key}>{uf.name} ({uf.uf})</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-1">Você só terá acesso aos dados desta UF</p>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="animate-slideUp" style={{ animationDelay: '0.3s' }}>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -162,7 +207,7 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
                         <div className="text-center">
                             <p className="text-gray-600">
                                 {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}
-                                <button type="button" onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className="ml-2 text-indigo-600 font-bold hover:underline">
+                                <button type="button" onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} className="ml-2 text-indigo-600 font-bold hover:underline">
                                     {mode === 'login' ? 'Cadastre-se grátis' : 'Fazer login'}
                                 </button>
                             </p>
@@ -174,13 +219,31 @@ const AuthModal = ({ isOpen, onClose, mode, setMode, onLogin }) => {
     );
 };
 
-const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
-    const indicators = [
+const LandingPage = ({ onSelectIndicator, onSelectComponent, user, onOpenAuth }) => {
+    const components = [
+        { key: 'equidade', title: 'I - Equidade', icon: 'fa-balance-scale', color: '#10b981', desc: 'Financiamento e distribuição de recursos', hasData: true },
+        { key: 'cadastro', title: 'II - Cadastro e Acompanhamento', icon: 'fa-clipboard-list', color: '#6366f1', desc: 'Gestão de cadastros e acompanhamento territorial', hasData: false },
+        { key: 'qualidade', title: 'III - Qualidade', icon: 'fa-star', color: '#f59e0b', desc: 'Boas práticas e indicadores de qualidade', hasData: true }
+    ];
+    
+    const boasPraticas = [
         { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt'], municipios: ['msp'], stats: '11 Boas Práticas' },
         { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['rn'], stats: '4 Boas Práticas' },
         { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['rn'], stats: '6 Boas Práticas' }
     ];
-    const [sel, setSel] = useState(null);
+    
+    const [selComponent, setSelComponent] = useState(null);
+    const [selBoaPratica, setSelBoaPratica] = useState(null);
+
+    const handleComponentClick = (comp) => {
+        if (comp.key === 'equidade') {
+            onSelectComponent('equidade');
+        } else if (comp.key === 'cadastro') {
+            alert('Componente II - Cadastro e Acompanhamento: Em breve! Aguardando bases de dados.');
+        } else if (comp.key === 'qualidade') {
+            setSelComponent(comp);
+        }
+    };
 
     return (
         <div className="min-h-screen landing-bg relative overflow-hidden flex flex-col">
@@ -201,7 +264,6 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                     </div>
                     {(() => {
                         const [expanded, setExpanded] = useState(false);
-                        const [showAuthOptions, setShowAuthOptions] = useState(false);
                         return (
                             <div className="relative">
                                 {user ? (
@@ -214,7 +276,7 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                                         </div>
                                         <div className="text-left hidden sm:block">
                                             <p className="text-sm font-bold text-white">{user.name}</p>
-                                            <p className="text-xs text-white/70">{user.cargo}</p>
+                                            <p className="text-xs text-white/70">{user.ufName || user.cargo}</p>
                                         </div>
                                         <i className={`fas fa-chevron-down text-white/60 text-xs transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
                                     </button>
@@ -228,7 +290,7 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                                             <span className="hidden sm:inline">Entrar</span>
                                         </button>
                                         <button 
-                                            onClick={() => { setShowAuthOptions(true); onOpenAuth(); }}
+                                            onClick={() => { onOpenAuth(); }}
                                             className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all text-white font-medium"
                                         >
                                             <i className="fas fa-user-plus"></i>
@@ -247,7 +309,7 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                                                 <div>
                                                     <p className="font-bold text-white text-lg">{user.name}</p>
                                                     <p className="text-sm text-white/80">{user.cargo}</p>
-                                                    {user.municipio && <p className="text-xs text-white/60 mt-1"><i className="fas fa-map-marker-alt mr-1"></i>{user.municipio}</p>}
+                                                    {user.ufName && <p className="text-xs text-white/60 mt-1"><i className="fas fa-flag mr-1"></i>{user.ufName}</p>}
                                                 </div>
                                             </div>
                                         </div>
@@ -259,15 +321,6 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                                                 <div>
                                                     <p className="font-medium text-gray-800">Meu Perfil</p>
                                                     <p className="text-xs text-gray-500">Visualizar e editar dados</p>
-                                                </div>
-                                            </button>
-                                            <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-3 group">
-                                                <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
-                                                    <i className="fas fa-cog text-gray-600"></i>
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium text-gray-800">Configurações</p>
-                                                    <p className="text-xs text-gray-500">Preferências do sistema</p>
                                                 </div>
                                             </button>
                                             <hr className="my-2 border-gray-100" />
@@ -289,102 +342,47 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                 </div>
             </header>
             
-            {/* Hero Section - Compacto e Elegante */}
-            <section className="relative z-10 px-8 py-8 flex-1 flex items-center">
+            {/* Hero Section */}
+            <section className="relative z-10 px-8 py-6 flex-1 flex items-center">
                 <div className="max-w-6xl mx-auto w-full">
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
-                        {/* Lado Esquerdo - Texto Principal */}
-                        <div className="lg:col-span-3">
-                            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-4">
-                                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                <span className="text-sm text-white/80 font-medium">Plataforma de Indicadores da APS</span>
-                            </div>
-                            <h2 className="text-5xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-                                Transformando dados em <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">decisões estratégicas</span>
-                            </h2>
-                            <p className="text-xl text-white/90 mb-8 leading-relaxed">
-                                Monitore e analise os indicadores de saúde da Atenção Primária com inteligência e precisão
-                            </p>
-                            
-                            {/* Stats Rápidos */}
-                            <div className="grid grid-cols-3 gap-6">
-                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
-                                    <p className="text-3xl font-bold text-white mb-1">3</p>
-                                    <p className="text-sm text-white/70">Indicadores</p>
-                                </div>
-                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
-                                    <p className="text-3xl font-bold text-white mb-1">4</p>
-                                    <p className="text-sm text-white/70">Estados</p>
-                                </div>
-                                <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/20 hover:bg-white/15 transition-all">
-                                    <p className="text-3xl font-bold text-white mb-1">+200</p>
-                                    <p className="text-sm text-white/70">Municípios</p>
-                                </div>
-                            </div>
+                    <div className="text-center mb-8">
+                        <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full mb-4">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            <span className="text-sm text-white/80 font-medium">Plataforma de Indicadores da APS</span>
                         </div>
-                        
-                        {/* Lado Direito - Features */}
-                        <div className="lg:col-span-2 space-y-4">
-                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                        <i className="fas fa-chart-line text-white text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-bold text-lg mb-1">Análise em Tempo Real</p>
-                                        <p className="text-sm text-white/70">Dados atualizados mensalmente</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                        <i className="fas fa-bullseye text-white text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-bold text-lg mb-1">Gestão de Metas</p>
-                                        <p className="text-sm text-white/70">Defina e acompanhe objetivos</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/20 hover:bg-white/15 transition-all group">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                                        <i className="fas fa-map-marked-alt text-white text-lg"></i>
-                                    </div>
-                                    <div>
-                                        <p className="text-white font-bold text-lg mb-1">Visualização Geográfica</p>
-                                        <p className="text-sm text-white/70">Mapas interativos por região</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+                            Transformando dados em <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-cyan-400">decisões estratégicas</span>
+                        </h2>
+                        <p className="text-lg text-white/80 max-w-2xl mx-auto">
+                            Monitore e analise os indicadores de saúde da Atenção Primária com inteligência e precisão
+                        </p>
                     </div>
                 </div>
             </section>
             
-            {/* Cards de Indicadores */}
+            {/* Cards de Componentes */}
             <section className="relative z-10 px-8 pb-8">
-                <div className="max-w-6xl mx-auto">
-                    <h3 className="text-3xl font-bold text-white mb-6 text-center">Selecione a Boa Prática</h3>
+                <div className="max-w-5xl mx-auto">
+                    <h3 className="text-2xl font-bold text-white mb-6 text-center">Selecione o Componente</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {indicators.map((ind, idx) => (
+                        {components.map((comp, idx) => (
                             <div 
-                                key={ind.key} 
-                                onClick={() => setSel(ind)}
-                                className="bg-white/10 backdrop-blur border-2 border-white/20 rounded-2xl p-6 cursor-pointer group hover:bg-white/20 hover:border-white/40 transition-all duration-300 animate-slideUp hover:scale-105"
+                                key={comp.key} 
+                                onClick={() => handleComponentClick(comp)}
+                                className={`bg-white/10 backdrop-blur border-2 border-white/20 rounded-2xl p-6 cursor-pointer group hover:bg-white/20 hover:border-white/40 transition-all duration-300 animate-slideUp hover:scale-105 ${!comp.hasData ? 'opacity-70' : ''}`}
                                 style={{ animationDelay: `${idx * 0.1}s` }}
                             >
                                 <div className="text-center">
-                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 mx-auto mb-4" style={{ backgroundColor: ind.color }}>
-                                        <i className={`fas ${ind.icon} text-white text-2xl`}></i>
+                                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 mx-auto mb-4" style={{ backgroundColor: comp.color }}>
+                                        <i className={`fas ${comp.icon} text-white text-2xl`}></i>
                                     </div>
-                                    <h4 className="text-xl font-bold text-white mb-2">{ind.title}</h4>
-                                    <p className="text-white/70 text-sm mb-3">{ind.desc}</p>
-                                    <div className="flex items-center justify-center gap-2 text-white/50 text-xs">
-                                        <i className="fas fa-layer-group"></i>
-                                        <span>{ind.stats}</span>
-                                    </div>
+                                    <h4 className="text-lg font-bold text-white mb-2">{comp.title}</h4>
+                                    <p className="text-white/70 text-sm mb-3">{comp.desc}</p>
+                                    {!comp.hasData && (
+                                        <span className="inline-flex items-center gap-1 text-xs text-amber-300 bg-amber-500/20 px-3 py-1 rounded-full">
+                                            <i className="fas fa-clock"></i> Em breve
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -392,59 +390,117 @@ const LandingPage = ({ onSelectIndicator, user, onOpenAuth }) => {
                 </div>
             </section>
             
-            {/* Modal de seleção de estado */}
-            {sel && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSel(null)}>
-                    <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: sel.color }}>
-                            <i className={`fas ${sel.icon} text-white text-2xl`}></i>
+            {/* Modal de seleção de Boa Prática (Componente Qualidade) */}
+            {selComponent && selComponent.key === 'qualidade' && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelComponent(null)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-lg w-full animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: selComponent.color }}>
+                            <i className={`fas ${selComponent.icon} text-white text-2xl`}></i>
                         </div>
-                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{sel.title}</h3>
+                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{selComponent.title}</h3>
+                        <p className="text-gray-500 text-center mb-6">Selecione a Boa Prática</p>
                         
-                        {/* Seção de UFs */}
-                        <p className="text-gray-500 text-center mb-4 mt-6 flex items-center justify-center gap-2">
-                            <i className="fas fa-flag text-gray-400"></i>
-                            <span>Unidades Federativas</span>
-                        </p>
                         <div className="space-y-3">
-                            {sel.states.map(s => (
+                            {boasPraticas.map(bp => (
                                 <button 
-                                    key={s} 
-                                    onClick={() => onSelectIndicator(sel.key, s)} 
-                                    className="w-full p-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl font-semibold hover:from-gray-900 hover:to-black transition-all flex items-center justify-between group"
+                                    key={bp.key} 
+                                    onClick={() => { setSelComponent(null); setSelBoaPratica(bp); }}
+                                    className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-xl font-semibold transition-all flex items-center justify-between group border border-gray-200"
                                 >
                                     <span className="flex items-center gap-3">
-                                        <i className="fas fa-map-marker-alt"></i>
-                                        {STATE_CONFIG[s].name}
+                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: bp.color }}>
+                                            <i className={`fas ${bp.icon} text-white`}></i>
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="text-gray-800">{bp.title}</p>
+                                            <p className="text-xs text-gray-500">{bp.stats}</p>
+                                        </div>
                                     </span>
-                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                    <i className="fas fa-arrow-right text-gray-400 group-hover:translate-x-1 transition-transform"></i>
                                 </button>
                             ))}
                         </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Modal de seleção de estado para Boa Prática */}
+            {selBoaPratica && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelBoaPratica(null)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-scaleIn max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: selBoaPratica.color }}>
+                            <i className={`fas ${selBoaPratica.icon} text-white text-2xl`}></i>
+                        </div>
+                        <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{selBoaPratica.title}</h3>
                         
-                        {/* Seção de Municípios (se houver) */}
-                        {sel.municipios && sel.municipios.length > 0 && (
+                        {user && user.ufKey ? (
                             <>
-                                <div className="border-t border-gray-200 my-6"></div>
-                                <p className="text-gray-500 text-center mb-4 flex items-center justify-center gap-2">
-                                    <i className="fas fa-city text-gray-400"></i>
-                                    <span>Municípios</span>
+                                <p className="text-gray-500 text-center mb-4 mt-6">Você tem acesso a:</p>
+                                <button 
+                                    onClick={() => {
+                                        const userState = user.ufKey;
+                                        const hasAccess = selBoaPratica.states.includes(userState) || (selBoaPratica.municipios && selBoaPratica.municipios.includes(userState));
+                                        if (hasAccess) {
+                                            onSelectIndicator(selBoaPratica.key, userState);
+                                        } else {
+                                            alert(`Esta boa prática não possui dados para ${user.ufName}. Disponível para: ${selBoaPratica.states.map(s => STATE_CONFIG[s]?.name).join(', ')}`);
+                                        }
+                                    }}
+                                    className="w-full p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center justify-between group"
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <i className="fas fa-flag"></i>
+                                        {user.ufName}
+                                    </span>
+                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-gray-500 text-center mb-4 mt-6 flex items-center justify-center gap-2">
+                                    <i className="fas fa-flag text-gray-400"></i>
+                                    <span>Selecione a UF</span>
                                 </p>
                                 <div className="space-y-3">
-                                    {sel.municipios.map(m => (
+                                    {selBoaPratica.states.map(s => (
                                         <button 
-                                            key={m} 
-                                            onClick={() => onSelectIndicator(sel.key, m)} 
-                                            className="w-full p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center justify-between group"
+                                            key={s} 
+                                            onClick={() => onSelectIndicator(selBoaPratica.key, s)} 
+                                            className="w-full p-4 bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-xl font-semibold hover:from-gray-900 hover:to-black transition-all flex items-center justify-between group"
                                         >
                                             <span className="flex items-center gap-3">
-                                                <i className="fas fa-city"></i>
-                                                {STATE_CONFIG[m].name}
+                                                <i className="fas fa-map-marker-alt"></i>
+                                                {STATE_CONFIG[s].name}
                                             </span>
                                             <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                                         </button>
                                     ))}
                                 </div>
+                                
+                                {selBoaPratica.municipios && selBoaPratica.municipios.length > 0 && (
+                                    <>
+                                        <div className="border-t border-gray-200 my-6"></div>
+                                        <p className="text-gray-500 text-center mb-4 flex items-center justify-center gap-2">
+                                            <i className="fas fa-city text-gray-400"></i>
+                                            <span>Municípios</span>
+                                        </p>
+                                        <div className="space-y-3">
+                                            {selBoaPratica.municipios.map(m => (
+                                                <button 
+                                                    key={m} 
+                                                    onClick={() => onSelectIndicator(selBoaPratica.key, m)} 
+                                                    className="w-full p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all flex items-center justify-between group"
+                                                >
+                                                    <span className="flex items-center gap-3">
+                                                        <i className="fas fa-city"></i>
+                                                        {STATE_CONFIG[m].name}
+                                                    </span>
+                                                    <i className="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </>
                         )}
                     </div>
@@ -474,6 +530,11 @@ const Dashboard = () => {
     const [showNotaTecnica, setShowNotaTecnica] = useState(false);
     const [notaTecnicaMinimized, setNotaTecnicaMinimized] = useState(false);
     const [profileMinimized, setProfileMinimized] = useState(false);
+    const [activeComponent, setActiveComponent] = useState(null);
+    const [equidadeData, setEquidadeData] = useState({ janeiro: null, fevereiro: null });
+    const [equidadeLoading, setEquidadeLoading] = useState(false);
+    const [selectedEquidadeTab, setSelectedEquidadeTab] = useState('eSF');
+    const [selectedEquidadeMes, setSelectedEquidadeMes] = useState('fevereiro');
     const config = indicatorType ? INDICATOR_CONFIG[indicatorType] : null;
     const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#0891b2', '#c026d3', '#ea580c'];
     
@@ -1034,7 +1095,7 @@ const Dashboard = () => {
             <MetricCard icon="fa-users" iconBg="bg-gradient-to-br from-purple-500 to-purple-600" title="Total Pacientes" value={m.totalPacientes.toLocaleString()} accent="purple" popupContent={<><p className="font-semibold text-purple-700 mb-1">Total de Pacientes</p><p className="text-gray-600 text-xs mb-2">Pacientes vinculados às equipes.</p><p className="text-xs bg-purple-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
             <MetricCard icon="fa-user-md" iconBg="bg-gradient-to-br from-amber-500 to-amber-600" title="Equipes" value={m.equipes} accent="amber" popupContent={<><p className="font-semibold text-amber-700 mb-1">Equipes de Saúde</p><p className="text-gray-600 text-xs mb-2">Equipes (eSF, eAP) com dados.</p><p className="text-xs bg-amber-50 p-2 rounded"><strong>Cálculo:</strong> INEs únicos</p></>} />
             <MetricCard icon="fa-map-marker-alt" iconBg="bg-gradient-to-br from-rose-500 to-rose-600" title="Municípios" value={m.municipios} accent="rose" popupContent={<><p className="font-semibold text-rose-700 mb-1">Municípios Atendidos</p><p className="text-gray-600 text-xs mb-2">Municípios com dados registrados.</p><p className="text-xs bg-rose-50 p-2 rounded"><strong>Fonte:</strong> e-Gestor AB</p></>} />
-        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="corp-card"><div className="corp-card-header flex items-center justify-between"><h3 className="corp-card-title"><i className="fas fa-chart-area"></i>{chartMode === 'mensal' ? 'Evolução Mensal' : chartMode === 'acumulado' ? 'Evolução Acumulada' : 'Por Quadrimestre'}</h3><div className="flex gap-1"><button onClick={() => setChartMode('mensal')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'mensal' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Série mensal">Mensal</button><button onClick={() => setChartMode('acumulado')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'acumulado' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Valores acumulados">Acumulado</button><button onClick={() => setChartMode('quadrimestre')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'quadrimestre' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Agrupado por quadrimestre">Quadrimestre</button></div></div><div className="corp-card-body"><div style={{height:'280px'}}><LineChart data={chartData} /></div>{variation && chartMode === 'mensal' && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-layer-group"></i>Componentes</h3></div><div className="corp-card-body"><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-th"></i>Matriz de Desempenho</h3></div><div className="corp-card-body"><Heatmap data={hm} indicatorCount={config?.indicatorCount || 11} shortNames={config?.shortNames || []} /></div></div><div className="corp-card mt-6"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-table text-indigo-500"></i>Matriz Componentes x {selectedState === 'msp' ? 'Distritos' : 'Regiões'}</h3></div><div className="corp-card-body overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2 bg-gray-100 rounded-l-lg font-semibold">{selectedState === 'msp' ? 'Distrito' : 'Região'}</th>{Array.from({length: config?.indicatorCount || 11}, (_,i) => <th key={i} className="p-2 bg-gray-100 text-center text-xs font-semibold">C{i+1}</th>)}<th className="p-2 bg-gray-100 rounded-r-lg text-center font-semibold">Taxa</th></tr></thead><tbody>{(selectedState === 'msp' ? getUnique('distrito') : getRegioes()).map(item => { const dados = rawData.filter(r => selectedState === 'msp' ? r.distrito === item : r.regiao === item); const totalPac = dados.reduce((s,r) => s + (r.totalPacientes||0), 0); const soma = dados.reduce((s,r) => s + r.somatorio, 0); const taxa = totalPac > 0 ? soma/totalPac : 0; const cat = getCategoriaTaxa(taxa); const comps = Array.from({length: config?.indicatorCount || 11}, (_,i) => { const sum = dados.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0); return totalPac > 0 ? (sum/totalPac)*100 : 0; }); return <tr key={item} className="border-b border-gray-100 hover:bg-gray-50"><td className="p-2 font-medium text-gray-800">{item}</td>{comps.map((c,i) => { const catC = getCategoriaComponente(c); return <td key={i} className="p-1 text-center"><span className="inline-block px-2 py-1 rounded text-xs text-white font-semibold" style={{backgroundColor: catC.color}}>{c.toFixed(0)}%</span></td>; })}<td className="p-2 text-center font-bold" style={{color: cat.color}}>{taxa.toFixed(2)}</td></tr>; })}</tbody></table></div></div></div>);
+        </div><div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6"><div className="corp-card"><div className="corp-card-header flex items-center justify-between"><h3 className="corp-card-title"><i className="fas fa-chart-area"></i>{chartMode === 'mensal' ? 'Evolução Mensal' : chartMode === 'acumulado' ? 'Evolução Acumulada' : 'Por Quadrimestre'}</h3><div className="flex gap-1"><button onClick={() => setChartMode('mensal')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'mensal' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Série mensal">Mensal</button><button onClick={() => setChartMode('acumulado')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'acumulado' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Valores acumulados">Acumulado</button><button onClick={() => setChartMode('quadrimestre')} className={`px-3 py-1 text-xs rounded-lg transition-all ${chartMode === 'quadrimestre' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} title="Agrupado por quadrimestre">Quadrimestre</button></div></div><div className="corp-card-body"><div style={{height:'280px'}}><LineChart data={chartData} /></div>{variation && chartMode === 'mensal' && <div className="mt-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between"><span className="text-sm text-gray-600">Variação no período:</span><span className={`font-bold ${variation.diff >= 0 ? 'text-green-600' : 'text-red-600'}`}>{variation.diff >= 0 ? '+' : ''}{variation.diff.toFixed(2)}</span></div>}</div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-layer-group"></i>Componentes</h3></div><div className="corp-card-body"><div className="space-y-2 max-h-72 overflow-y-auto">{ind.map(i => { const c = getCategoria(i.pct); return <div key={i.index} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer group/item"><span className="w-8 h-8 rounded text-xs font-bold text-white flex items-center justify-center group-hover/item:scale-110 transition-transform" style={{backgroundColor: c.color}}>C{i.index}</span><div className="flex-1"><div className="flex justify-between text-sm"><span className="truncate" style={{maxWidth:'150px'}}>{i.name}</span><span className="font-bold">{i.pct.toFixed(1)}%</span></div><div className="indicator-bar"><div className="indicator-fill" style={{width: Math.min(i.pct,100)+'%', backgroundColor: c.color}}></div></div></div></div>; })}</div></div></div></div><div className="corp-card"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-th"></i>Matriz de Desempenho</h3></div><div className="corp-card-body"><HeatmapWithFilters data={hm} rawData={filteredData} indicatorCount={config?.indicatorCount || 11} shortNames={config?.shortNames || []} /></div></div><div className="corp-card mt-6"><div className="corp-card-header"><h3 className="corp-card-title"><i className="fas fa-table text-indigo-500"></i>Matriz Componentes x {selectedState === 'msp' ? 'Distritos' : 'Regiões'}</h3></div><div className="corp-card-body overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="text-left p-2 bg-gray-100 rounded-l-lg font-semibold">{selectedState === 'msp' ? 'Distrito' : 'Região'}</th>{Array.from({length: config?.indicatorCount || 11}, (_,i) => <th key={i} className="p-2 bg-gray-100 text-center text-xs font-semibold">C{i+1}</th>)}<th className="p-2 bg-gray-100 rounded-r-lg text-center font-semibold">Taxa</th></tr></thead><tbody>{(selectedState === 'msp' ? getUnique('distrito') : getRegioes()).map(item => { const dados = rawData.filter(r => selectedState === 'msp' ? r.distrito === item : r.regiao === item); const totalPac = dados.reduce((s,r) => s + (r.totalPacientes||0), 0); const soma = dados.reduce((s,r) => s + r.somatorio, 0); const taxa = totalPac > 0 ? soma/totalPac : 0; const cat = getCategoriaTaxa(taxa); const comps = Array.from({length: config?.indicatorCount || 11}, (_,i) => { const sum = dados.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0); return totalPac > 0 ? (sum/totalPac)*100 : 0; }); return <tr key={item} className="border-b border-gray-100 hover:bg-gray-50"><td className="p-2 font-medium text-gray-800">{item}</td>{comps.map((c,i) => { const catC = getCategoriaComponente(c); return <td key={i} className="p-1 text-center"><span className="inline-block px-2 py-1 rounded text-xs text-white font-semibold" style={{backgroundColor: catC.color}}>{c.toFixed(0)}%</span></td>; })}<td className="p-2 text-center font-bold" style={{color: cat.color}}>{taxa.toFixed(2)}</td></tr>; })}</tbody></table></div></div></div>);
     };
 
     const IndicatorsView = () => {
@@ -3033,36 +3094,6 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="corp-card lg:col-span-2">
-                            <div className="corp-card-header">
-                                <h3 className="corp-card-title"><i className="fas fa-th"></i> Matriz Componentes x Regiões</h3>
-                            </div>
-                            <div className="corp-card-body overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr>
-                                            <th className="text-left p-2 bg-gray-100 rounded-l-lg">Região</th>
-                                            {Array.from({ length: config?.indicatorCount || 11 }, (_, i) => (
-                                                <th key={i} className="p-2 bg-gray-100 text-center">C{i + 1}</th>
-                                            ))}
-                                            <th className="p-2 bg-gray-100 rounded-r-lg text-center">Média</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {regioesSaude.slice(0, 10).map(r => (
-                                            <tr key={r.regiao} className="border-b border-gray-100">
-                                                <td className="p-2 font-medium">{r.regiao}</td>
-                                                {r.componentes.map((c, i) => {
-                                                    const cat = getCategoriaComponente(c);
-                                                    return <td key={i} className="p-1 text-center"><span className="inline-block px-2 py-1 rounded text-xs text-white font-semibold" style={{ backgroundColor: cat.color }}>{c.toFixed(0)}%</span></td>;
-                                                })}
-                                                <td className="p-2 text-center font-bold" style={{ color: r.cat.color }}>{r.taxa.toFixed(1)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
                     </div>
                 )}
 
@@ -4281,7 +4312,487 @@ const Dashboard = () => {
         );
     };
 
-    if (!indicatorType) return (<><AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} mode={authMode} setMode={setAuthMode} onLogin={setUser} /><LandingPage onSelectIndicator={handleSelectIndicator} user={user} onOpenAuth={() => setAuthModal(true)} /></>);
+    const handleSelectComponent = (comp) => {
+        if (comp === 'equidade') {
+            setActiveComponent('equidade');
+            loadEquidadeData();
+        }
+    };
+
+    const loadEquidadeData = async () => {
+        setEquidadeLoading(true);
+        try {
+            const loadXlsx = async (url) => {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                const sheets = {};
+                workbook.SheetNames.forEach(name => {
+                    sheets[name] = XLSX.utils.sheet_to_json(workbook.Sheets[name]);
+                });
+                return sheets;
+            };
+            const [jan, fev] = await Promise.all([
+                loadXlsx('./componente equidade/janeiro.xlsx'),
+                loadXlsx('./componente equidade/fevereiro.xlsx')
+            ]);
+            setEquidadeData({ janeiro: jan, fevereiro: fev });
+        } catch (err) {
+            console.error('Erro ao carregar dados de equidade:', err);
+        }
+        setEquidadeLoading(false);
+    };
+
+    const EquidadeDashboard = () => {
+        const [equidadeFilters, setEquidadeFilters] = useState({ uf: 'Todas', municipio: 'Todos', classVinculo: 'Todas', classQualidade: 'Todas' });
+        const [chartViewType, setChartViewType] = useState('total');
+        
+        const data = equidadeData[selectedEquidadeMes];
+        const tabs = data ? Object.keys(data).filter(t => t === 'eSF') : [];
+        
+        const formatCurrency = (value) => {
+            if (!value && value !== 0) return 'R$ 0,00';
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        };
+
+        const getFieldValue = (row, fieldBase) => {
+            const suffixes = ['eSF', 'eAP', 'eMulti', 'eSB', 'NASF', 'eAPP'];
+            for (const suffix of suffixes) {
+                const val = row[`${fieldBase} ${suffix}`] || row[`${fieldBase}${suffix}`];
+                if (val !== undefined && val !== null && val !== '') return parseFloat(val) || 0;
+            }
+            return row[fieldBase] ? parseFloat(row[fieldBase]) || 0 : 0;
+        };
+
+        const getMunicipioField = (row) => row['Município'] || row['MUNICÍPIO'] || row['Municipio'] || row['IBGE'] || '-';
+        const getUFField = (row) => row['UF'] || row['uf'] || row['Uf'] || '-';
+
+        const rawTabData = data ? data[selectedEquidadeTab] : null;
+        
+        const tabData = rawTabData ? rawTabData.filter(row => {
+            if (equidadeFilters.uf !== 'Todas' && getUFField(row) !== equidadeFilters.uf) return false;
+            if (equidadeFilters.municipio !== 'Todos' && getMunicipioField(row) !== equidadeFilters.municipio) return false;
+            if (equidadeFilters.classVinculo !== 'Todas' && (row['Classificação Componente Vínculo'] || '-') !== equidadeFilters.classVinculo) return false;
+            if (equidadeFilters.classQualidade !== 'Todas' && (row['Classificação Componente Qualidade'] || '-') !== equidadeFilters.classQualidade) return false;
+            return true;
+        }) : null;
+
+        const ufOptions = rawTabData ? [...new Set(rawTabData.map(r => getUFField(r)))].filter(v => v && v !== '-').sort() : [];
+        const municipioOptions = rawTabData ? [...new Set(rawTabData.filter(r => equidadeFilters.uf === 'Todas' || getUFField(r) === equidadeFilters.uf).map(r => getMunicipioField(r)))].filter(v => v && v !== '-').sort() : [];
+        const classVinculoOptions = rawTabData ? [...new Set(rawTabData.map(r => r['Classificação Componente Vínculo'] || '-'))].filter(Boolean).sort() : [];
+        const classQualidadeOptions = rawTabData ? [...new Set(rawTabData.map(r => r['Classificação Componente Qualidade'] || '-'))].filter(Boolean).sort() : [];
+
+        const getTableColumns = () => {
+            if (!rawTabData || !rawTabData[0]) return [];
+            const sampleRow = rawTabData[0];
+            const keys = Object.keys(sampleRow);
+            const excludePatterns = ['__EMPTY', 'undefined'];
+            return keys.filter(k => !excludePatterns.some(p => k.includes(p)) && sampleRow[k] !== undefined && sampleRow[k] !== null && sampleRow[k] !== '');
+        };
+
+        const tableColumns = getTableColumns();
+
+        const calcTotals = (dataToCalc) => {
+            if (!dataToCalc || !dataToCalc.length) return { equidade: 0, vinculo: 0, qualidade: 0, parcela: 0, total: 0, implantacao: 0, count: 0 };
+            return dataToCalc.reduce((acc, row) => {
+                acc.equidade += getFieldValue(row, 'Componente Equidade');
+                acc.vinculo += getFieldValue(row, 'Vínculo e Acompanhamento territorial');
+                acc.qualidade += getFieldValue(row, 'Qualidade');
+                acc.parcela += parseFloat(row['Parcela Adicional - Qualidade'] || 0);
+                acc.total += getFieldValue(row, 'Valor Total');
+                acc.implantacao += getFieldValue(row, 'Implantação');
+                acc.count++;
+                return acc;
+            }, { equidade: 0, vinculo: 0, qualidade: 0, parcela: 0, total: 0, implantacao: 0, count: 0 });
+        };
+
+        const totals = calcTotals(tabData);
+
+        const getChartData = () => {
+            const meses = ['janeiro', 'fevereiro'];
+            return meses.map(mes => {
+                const mesData = equidadeData[mes]?.[selectedEquidadeTab];
+                if (!mesData) return { mes: mes.charAt(0).toUpperCase() + mes.slice(1), valor: 0 };
+                const filteredMesData = mesData.filter(row => {
+                    if (equidadeFilters.uf !== 'Todas' && getUFField(row) !== equidadeFilters.uf) return false;
+                    if (equidadeFilters.municipio !== 'Todos' && getMunicipioField(row) !== equidadeFilters.municipio) return false;
+                    return true;
+                });
+                const t = calcTotals(filteredMesData);
+                const fieldMap = { equidade: t.equidade, vinculo: t.vinculo, qualidade: t.qualidade, parcela: t.parcela, total: t.total, implantacao: t.implantacao };
+                return { mes: mes.charAt(0).toUpperCase() + mes.slice(1), valor: fieldMap[chartViewType] || 0 };
+            });
+        };
+
+        const chartData = getChartData();
+
+        const EquidadeLineChart = () => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                if (chartRef.current) chartRef.current.destroy();
+                const ctx = canvasRef.current.getContext('2d');
+                const colorMap = { equidade: '#10b981', vinculo: '#3b82f6', qualidade: '#8b5cf6', parcela: '#f59e0b', total: '#374151', implantacao: '#14b8a6' };
+                const labelMap = { equidade: 'Componente Equidade', vinculo: 'Vínculo e Acompanhamento', qualidade: 'Qualidade', parcela: 'Parcela Adicional', total: 'Valor Total', implantacao: 'Implantação' };
+                chartRef.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(d => d.mes),
+                        datasets: [{
+                            label: labelMap[chartViewType],
+                            data: chartData.map(d => d.valor),
+                            borderColor: colorMap[chartViewType],
+                            backgroundColor: colorMap[chartViewType] + '20',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: colorMap[chartViewType],
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => `${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`
+                                }
+                            },
+                            datalabels: {
+                                display: true,
+                                color: colorMap[chartViewType],
+                                anchor: 'end',
+                                align: 'top',
+                                font: { weight: 'bold', size: 11 },
+                                formatter: (value) => formatCurrency(value)
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { callback: (v) => formatCurrency(v) }
+                            }
+                        }
+                    },
+                    plugins: [ChartDataLabels]
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [chartData, chartViewType]);
+            return <canvas ref={canvasRef}></canvas>;
+        };
+
+        const getClassificationStats = () => {
+            if (!tabData) return { vinculo: {}, qualidade: {} };
+            const vinculo = tabData.reduce((acc, row) => {
+                const cls = row['Classificação Componente Vínculo'] || 'Não classificado';
+                acc[cls] = (acc[cls] || 0) + 1;
+                return acc;
+            }, {});
+            const qualidade = tabData.reduce((acc, row) => {
+                const cls = row['Classificação Componente Qualidade'] || 'Não classificado';
+                acc[cls] = (acc[cls] || 0) + 1;
+                return acc;
+            }, {});
+            return { vinculo, qualidade };
+        };
+
+        const classStats = getClassificationStats();
+
+        if (equidadeLoading) {
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-50">
+                    <div className="text-center">
+                        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-xl animate-pulse">
+                            <i className="fas fa-balance-scale text-white text-3xl"></i>
+                        </div>
+                        <p className="text-gray-600 text-lg font-medium">Carregando dados de Equidade...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-emerald-50/30">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setActiveComponent(null)} className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-all">
+                                    <i className="fas fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h1 className="text-2xl font-bold">Componente I - Equidade</h1>
+                                    <p className="text-emerald-100">Financiamento eSF - {selectedEquidadeMes.charAt(0).toUpperCase() + selectedEquidadeMes.slice(1)}/2025</p>
+                                </div>
+                            </div>
+                            <select value={selectedEquidadeMes} onChange={e => setSelectedEquidadeMes(e.target.value)} className="bg-white/20 border border-white/30 rounded-xl px-4 py-2 text-white">
+                                <option value="janeiro" className="text-gray-800">Janeiro</option>
+                                <option value="fevereiro" className="text-gray-800">Fevereiro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Filtros */}
+                <div className="bg-white border-b shadow-sm sticky top-0 z-20">
+                    <div className="max-w-7xl mx-auto px-6 py-4">
+                        <div className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-xl">
+                            <div className="flex items-center gap-2 text-gray-500 text-sm font-medium"><i className="fas fa-filter"></i><span>Filtros:</span></div>
+                            {ufOptions.length > 0 && (
+                                <select className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" value={equidadeFilters.uf} onChange={e => setEquidadeFilters({...equidadeFilters, uf: e.target.value, municipio: 'Todos'})}>
+                                    <option value="Todas">Todas UFs</option>
+                                    {ufOptions.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                                </select>
+                            )}
+                            <select className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" value={equidadeFilters.municipio} onChange={e => setEquidadeFilters({...equidadeFilters, municipio: e.target.value})}>
+                                <option value="Todos">Todos Municípios</option>
+                                {municipioOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                            {classVinculoOptions.length > 1 && (
+                                <select className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" value={equidadeFilters.classVinculo} onChange={e => setEquidadeFilters({...equidadeFilters, classVinculo: e.target.value})}>
+                                    <option value="Todas">Class. Vínculo</option>
+                                    {classVinculoOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            )}
+                            {classQualidadeOptions.length > 1 && (
+                                <select className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" value={equidadeFilters.classQualidade} onChange={e => setEquidadeFilters({...equidadeFilters, classQualidade: e.target.value})}>
+                                    <option value="Todas">Class. Qualidade</option>
+                                    {classQualidadeOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            )}
+                            {(equidadeFilters.uf !== 'Todas' || equidadeFilters.municipio !== 'Todos' || equidadeFilters.classVinculo !== 'Todas' || equidadeFilters.classQualidade !== 'Todas') && (
+                                <button onClick={() => setEquidadeFilters({ uf: 'Todas', municipio: 'Todos', classVinculo: 'Todas', classQualidade: 'Todas' })} className="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors">
+                                    <i className="fas fa-times mr-1"></i>Limpar
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Conteúdo */}
+                <div className="max-w-7xl mx-auto p-6">
+                    {tabData && tabData.length > 0 ? (
+                        <>
+                            {/* Cards de Resumo */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-balance-scale text-2xl"></i>
+                                            </div>
+                                            <span className="text-emerald-100 text-sm">{totals.count} registros</span>
+                                        </div>
+                                        <p className="text-emerald-100 text-sm mb-1">Componente Equidade</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.equidade)}</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-link text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        <p className="text-blue-100 text-sm mb-1">Vínculo e Acompanhamento</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.vinculo)}</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-star text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        <p className="text-purple-100 text-sm mb-1">Qualidade</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.qualidade)}</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-plus-circle text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        <p className="text-amber-100 text-sm mb-1">Parcela Adicional</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.parcela)}</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-coins text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        <p className="text-gray-300 text-sm mb-1">Valor Total</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.total)}</p>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-teal-500 to-cyan-500 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-shadow">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                                                <i className="fas fa-rocket text-2xl"></i>
+                                            </div>
+                                        </div>
+                                        <p className="text-teal-100 text-sm mb-1">Implantação</p>
+                                        <p className="text-3xl font-bold">{formatCurrency(totals.implantacao)}</p>
+                                    </div>
+                                </div>
+
+                                {/* Gráfico de Linhas */}
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                            <i className="fas fa-chart-line text-emerald-600"></i>
+                                            Evolução Mensal
+                                        </h3>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {[
+                                                { key: 'equidade', label: 'Equidade', color: 'emerald' },
+                                                { key: 'vinculo', label: 'Vínculo', color: 'blue' },
+                                                { key: 'qualidade', label: 'Qualidade', color: 'purple' },
+                                                { key: 'parcela', label: 'Parcela Adic.', color: 'amber' },
+                                                { key: 'total', label: 'Valor Total', color: 'gray' },
+                                                { key: 'implantacao', label: 'Implantação', color: 'teal' }
+                                            ].map(opt => (
+                                                <button key={opt.key} onClick={() => setChartViewType(opt.key)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${chartViewType === opt.key ? `bg-${opt.color}-500 text-white` : `bg-${opt.color}-50 text-${opt.color}-700 hover:bg-${opt.color}-100`}`}>
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div style={{ height: '300px' }}>
+                                        <EquidadeLineChart />
+                                    </div>
+                                </div>
+
+                                {/* Análise de Classificações */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <i className="fas fa-chart-pie text-blue-600"></i>
+                                            Distribuição - Classificação Vínculo
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {Object.entries(classStats.vinculo).map(([cls, count]) => {
+                                                const pct = tabData.length ? ((count / tabData.length) * 100).toFixed(1) : 0;
+                                                const colorMap = { 'Ótimo': 'blue', 'Bom': 'green', 'Suficiente': 'amber', 'Regular': 'red', 'Não classificado': 'gray' };
+                                                const color = colorMap[cls] || 'gray';
+                                                return (
+                                                    <div key={cls} className="flex items-center gap-3">
+                                                        <span className={`w-3 h-3 rounded-full bg-${color}-500`}></span>
+                                                        <span className="flex-1 text-sm text-gray-700">{cls}</span>
+                                                        <span className="text-sm font-semibold text-gray-800">{count}</span>
+                                                        <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className={`h-full bg-${color}-500 rounded-full`} style={{ width: `${pct}%` }}></div>
+                                                        </div>
+                                                        <span className="text-xs text-gray-500 w-12 text-right">{pct}%</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                            <i className="fas fa-chart-pie text-purple-600"></i>
+                                            Distribuição - Classificação Qualidade
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {Object.entries(classStats.qualidade).map(([cls, count]) => {
+                                                const pct = tabData.length ? ((count / tabData.length) * 100).toFixed(1) : 0;
+                                                const colorMap = { 'Ótimo': 'blue', 'Bom': 'green', 'Suficiente': 'amber', 'Regular': 'red', 'Não classificado': 'gray' };
+                                                const color = colorMap[cls] || 'gray';
+                                                return (
+                                                    <div key={cls} className="flex items-center gap-3">
+                                                        <span className={`w-3 h-3 rounded-full bg-${color}-500`}></span>
+                                                        <span className="flex-1 text-sm text-gray-700">{cls}</span>
+                                                        <span className="text-sm font-semibold text-gray-800">{count}</span>
+                                                        <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                            <div className={`h-full bg-${color}-500 rounded-full`} style={{ width: `${pct}%` }}></div>
+                                                        </div>
+                                                        <span className="text-xs text-gray-500 w-12 text-right">{pct}%</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Tabela de Dados */}
+                                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                                    <div className="p-5 border-b bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+                                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                            <i className="fas fa-table text-emerald-600"></i>
+                                            Detalhamento - {selectedEquidadeTab}
+                                        </h3>
+                                        <span className="text-sm text-gray-500">{tabData.length} registros</span>
+                                    </div>
+                                    <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-gray-50 sticky top-0">
+                                                <tr>
+                                                    {tableColumns.slice(0, 12).map(col => (
+                                                        <th key={col} className="text-left p-3 font-semibold text-gray-700 whitespace-nowrap">{col}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {tabData.map((row, idx) => (
+                                                    <tr key={idx} className="border-b hover:bg-emerald-50/50 transition-colors">
+                                                        {tableColumns.slice(0, 12).map(col => {
+                                                            const val = row[col];
+                                                            const colLower = col.toLowerCase();
+                                                            const isCurrency = colLower.includes('valor') || (colLower.includes('componente') && !colLower.includes('classificação')) || colLower.includes('vínculo e acompanhamento') || colLower.includes('implantação') || colLower.includes('parcela adicional') || colLower.includes('qualidade eSF') || colLower.includes('equidade');
+                                                            const isClassification = colLower.includes('classificação');
+                                                            const isNumeric = typeof val === 'number' || !isNaN(parseFloat(val));
+                                                            
+                                                            if (isClassification) {
+                                                                const colorMap = { 'Ótimo': 'bg-blue-100 text-blue-800', 'Bom': 'bg-green-100 text-green-800', 'Suficiente': 'bg-amber-100 text-amber-800', 'Regular': 'bg-red-100 text-red-800' };
+                                                                return (
+                                                                    <td key={col} className="p-3">
+                                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorMap[val] || 'bg-gray-100 text-gray-600'}`}>
+                                                                            {val || '-'}
+                                                                        </span>
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            
+                                                            if (isCurrency && isNumeric && val) {
+                                                                return (
+                                                                    <td key={col} className="p-3 text-right font-medium text-emerald-700">
+                                                                        {formatCurrency(parseFloat(val))}
+                                                                    </td>
+                                                                );
+                                                            }
+                                                            
+                                                            return (
+                                                                <td key={col} className={`p-3 ${isNumeric && val ? 'text-right' : ''}`}>
+                                                                    {isNumeric && val ? parseFloat(val).toLocaleString('pt-BR') : (val || '-')}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                        </>
+                    ) : (
+                        <div className="text-center py-16">
+                            <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                                <i className="fas fa-database text-4xl text-gray-300"></i>
+                            </div>
+                            <p className="text-gray-500 text-lg">Nenhum dado disponível para eSF</p>
+                            <p className="text-gray-400 text-sm mt-2">Verifique se os dados foram carregados corretamente</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    if (activeComponent === 'equidade') return <EquidadeDashboard />;
+    if (!indicatorType) return (<><AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} mode={authMode} setMode={setAuthMode} onLogin={setUser} /><LandingPage onSelectIndicator={handleSelectIndicator} onSelectComponent={handleSelectComponent} user={user} onOpenAuth={() => setAuthModal(true)} /></>);
     if (loading) return <div className="min-h-screen flex items-center justify-center landing-bg"><div className="text-center"><i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i><p className="text-white text-lg">Carregando dados...</p></div></div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</div>;
 

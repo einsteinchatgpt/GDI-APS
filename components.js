@@ -1,11 +1,20 @@
 // Configuração de estados
 const STATE_CONFIG = {
-    acre: { name: 'Acre', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-12-mun.json' },
-    rn: { name: 'Rio Grande do Norte', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
-    am: { name: 'Amazonas', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
-    mt: { name: 'Mato Grosso', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' },
-    msp: { name: 'São Paulo (Capital)', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' }
+    acre: { name: 'Acre', uf: 'AC', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-12-mun.json' },
+    rn: { name: 'Rio Grande do Norte', uf: 'RN', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
+    am: { name: 'Amazonas', uf: 'AM', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
+    mt: { name: 'Mato Grosso', uf: 'MT', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' },
+    msp: { name: 'São Paulo (Capital)', uf: 'SP', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' }
 };
+
+// Lista de UFs disponíveis para cadastro
+const AVAILABLE_UFS = [
+    { key: 'acre', name: 'Acre', uf: 'AC' },
+    { key: 'am', name: 'Amazonas', uf: 'AM' },
+    { key: 'mt', name: 'Mato Grosso', uf: 'MT' },
+    { key: 'rn', name: 'Rio Grande do Norte', uf: 'RN' },
+    { key: 'msp', name: 'São Paulo (Capital)', uf: 'SP' }
+];
 
 // Configurações por tipo de indicador
 const INDICATOR_CONFIG = {
@@ -17,11 +26,11 @@ const INDICATOR_CONFIG = {
         totalField: 'totalGestantes',
         totalLabel: 'gestantes',
         csvFiles: {
-            acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
-            rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
-            am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
-            mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
-            msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
+            acre: { file: './estados/acre/Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
+            rn: { file: './estados/rio grande do norte/RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
+            am: { file: './estados/amazonas/GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
+            mt: { file: './estados/mato grosso/GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
+            msp: { file: './estados/municipio de são paulo/GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [
@@ -52,7 +61,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'hipertensos',
         csvFiles: {
-            rn: { file: './RN_HAS.csv', delimiter: ';', encoding: 'windows-1252' }
+            rn: { file: './estados/rio grande do norte/RN_HAS.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 4,
         fullNames: [
@@ -73,7 +82,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'diabéticos',
         csvFiles: {
-            rn: { file: './RN_DM.csv', delimiter: ';', encoding: 'windows-1252' }
+            rn: { file: './estados/rio grande do norte/RN_DM.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 6,
         fullNames: [
@@ -194,6 +203,151 @@ const BarChartHorizontal = ({ data, labelKey, valueKey, height }) => {
         return () => chart.current?.destroy();
     }, [data]);
     return React.createElement('canvas', { ref });
+};
+
+const HeatmapWithFilters = ({ data, indicatorCount = 11, shortNames = [], rawData = [], getHeatmapFn }) => {
+    const [matrixFilters, setMatrixFilters] = React.useState({ viewMode: 'municipio', regiao: 'Todas', municipio: 'Todos', unidade: 'Todas', equipe: 'Todas' });
+    
+    const regiaoOptions = rawData ? [...new Set(rawData.map(r => r.regiao).filter(Boolean))].sort() : [];
+    const municipioOptions = rawData ? [...new Set(rawData.filter(r => matrixFilters.regiao === 'Todas' || r.regiao === matrixFilters.regiao).map(r => r.municipio).filter(Boolean))].sort() : [];
+    const unidadeOptions = rawData ? [...new Set(rawData.filter(r => (matrixFilters.regiao === 'Todas' || r.regiao === matrixFilters.regiao) && (matrixFilters.municipio === 'Todos' || r.municipio === matrixFilters.municipio)).map(r => r.estabelecimento).filter(Boolean))].sort() : [];
+    const equipeOptions = rawData ? [...new Set(rawData.filter(r => (matrixFilters.regiao === 'Todas' || r.regiao === matrixFilters.regiao) && (matrixFilters.municipio === 'Todos' || r.municipio === matrixFilters.municipio) && (matrixFilters.unidade === 'Todas' || r.estabelecimento === matrixFilters.unidade)).map(r => r.nomeEquipe).filter(Boolean))].sort() : [];
+
+    const filteredRawData = rawData ? rawData.filter(r => {
+        if (matrixFilters.regiao !== 'Todas' && r.regiao !== matrixFilters.regiao) return false;
+        if (matrixFilters.municipio !== 'Todos' && r.municipio !== matrixFilters.municipio) return false;
+        if (matrixFilters.unidade !== 'Todas' && r.estabelecimento !== matrixFilters.unidade) return false;
+        if (matrixFilters.equipe !== 'Todas' && r.nomeEquipe !== matrixFilters.equipe) return false;
+        return true;
+    }) : [];
+
+    const getMatrixData = () => {
+        if (!filteredRawData.length) return [];
+        const groupField = matrixFilters.viewMode === 'regiao' ? 'regiao' : matrixFilters.viewMode === 'unidade' ? 'estabelecimento' : matrixFilters.viewMode === 'equipe' ? 'nomeEquipe' : 'municipio';
+        const groups = [...new Set(filteredRawData.map(r => r[groupField]).filter(Boolean))];
+        return groups.map(g => {
+            const d = filteredRawData.filter(r => r[groupField] === g);
+            const tg = d.reduce((s,r) => s + (r.totalPacientes||0), 0);
+            const sm = d.reduce((s,r) => s + r.somatorio, 0);
+            const comps = Array.from({length: indicatorCount}, (_,i) => {
+                const sum = d.reduce((s,r) => s + (r['ind'+(i+1)]||0), 0);
+                return tg ? (sum/tg)*100 : 0;
+            });
+            return { municipio: g, taxa: tg ? sm/tg : 0, tg, sm, comps };
+        }).sort((a,b) => b.taxa - a.taxa);
+    };
+
+    const matrixData = getMatrixData();
+    const indicators = Array.from({length: indicatorCount}, (_, i) => i + 1);
+    const viewModeLabels = { municipio: 'Municípios', regiao: 'Regiões', unidade: 'Unidades', equipe: 'Equipes' };
+    const hasFilters = matrixFilters.regiao !== 'Todas' || matrixFilters.municipio !== 'Todos' || matrixFilters.unidade !== 'Todas' || matrixFilters.equipe !== 'Todas';
+
+    return React.createElement('div', null,
+        // Filtros internos
+        React.createElement('div', { className: 'bg-gray-50 rounded-xl p-4 mb-4' },
+            React.createElement('div', { className: 'flex flex-wrap items-center gap-3' },
+                React.createElement('div', { className: 'flex items-center gap-2 text-gray-500 text-sm font-medium' },
+                    React.createElement('i', { className: 'fas fa-filter' }),
+                    React.createElement('span', null, 'Filtros:')
+                ),
+                React.createElement('select', { 
+                    className: 'px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm',
+                    value: matrixFilters.viewMode,
+                    onChange: (e) => setMatrixFilters({...matrixFilters, viewMode: e.target.value})
+                },
+                    React.createElement('option', { value: 'municipio' }, 'Por Município'),
+                    React.createElement('option', { value: 'regiao' }, 'Por Região'),
+                    React.createElement('option', { value: 'unidade' }, 'Por Unidade'),
+                    React.createElement('option', { value: 'equipe' }, 'Por Equipe')
+                ),
+                regiaoOptions.length > 0 && React.createElement('select', { 
+                    className: 'px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm',
+                    value: matrixFilters.regiao,
+                    onChange: (e) => setMatrixFilters({...matrixFilters, regiao: e.target.value, municipio: 'Todos', unidade: 'Todas', equipe: 'Todas'})
+                },
+                    React.createElement('option', { value: 'Todas' }, 'Todas Regiões'),
+                    regiaoOptions.map(r => React.createElement('option', { key: r, value: r }, r))
+                ),
+                municipioOptions.length > 0 && React.createElement('select', { 
+                    className: 'px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm',
+                    value: matrixFilters.municipio,
+                    onChange: (e) => setMatrixFilters({...matrixFilters, municipio: e.target.value, unidade: 'Todas', equipe: 'Todas'})
+                },
+                    React.createElement('option', { value: 'Todos' }, 'Todos Municípios'),
+                    municipioOptions.map(m => React.createElement('option', { key: m, value: m }, m))
+                ),
+                unidadeOptions.length > 0 && unidadeOptions.length <= 100 && React.createElement('select', { 
+                    className: 'px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm',
+                    value: matrixFilters.unidade,
+                    onChange: (e) => setMatrixFilters({...matrixFilters, unidade: e.target.value, equipe: 'Todas'})
+                },
+                    React.createElement('option', { value: 'Todas' }, 'Todas Unidades'),
+                    unidadeOptions.map(u => React.createElement('option', { key: u, value: u }, u.length > 30 ? u.slice(0,30)+'...' : u))
+                ),
+                equipeOptions.length > 0 && equipeOptions.length <= 50 && React.createElement('select', { 
+                    className: 'px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm',
+                    value: matrixFilters.equipe,
+                    onChange: (e) => setMatrixFilters({...matrixFilters, equipe: e.target.value})
+                },
+                    React.createElement('option', { value: 'Todas' }, 'Todas Equipes'),
+                    equipeOptions.map(eq => React.createElement('option', { key: eq, value: eq }, eq.length > 25 ? eq.slice(0,25)+'...' : eq))
+                ),
+                hasFilters && React.createElement('button', {
+                    className: 'px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100 transition-colors',
+                    onClick: () => setMatrixFilters({ viewMode: 'municipio', regiao: 'Todas', municipio: 'Todos', unidade: 'Todas', equipe: 'Todas' })
+                },
+                    React.createElement('i', { className: 'fas fa-times mr-1' }),
+                    'Limpar'
+                )
+            )
+        ),
+        // Contador
+        React.createElement('div', { className: 'flex items-center justify-between mb-3' },
+            React.createElement('p', { className: 'text-sm text-gray-600' }, 
+                React.createElement('i', { className: 'fas fa-list-ol mr-2 text-blue-500' }),
+                React.createElement('strong', null, matrixData.length),
+                ' ' + viewModeLabels[matrixFilters.viewMode].toLowerCase() + ' encontrados'
+            ),
+            React.createElement('p', { className: 'text-xs text-gray-400' }, 'Role para ver todos')
+        ),
+        // Tabela
+        matrixData.length > 0 ? React.createElement('div', { className: 'heatmap-scroll-container' },
+            React.createElement('table', { className: 'corp-heatmap' },
+                React.createElement('thead', null,
+                    React.createElement('tr', null,
+                        React.createElement('th', { style: { minWidth: '160px', textAlign: 'left', position: 'sticky', left: 0, background: '#f8fafc', zIndex: 2 } }, viewModeLabels[matrixFilters.viewMode].slice(0,-1)),
+                        React.createElement('th', { style: { minWidth: '80px' } }, 'Taxa'),
+                        indicators.map(i => React.createElement('th', { key: i, style: { minWidth: '60px' }, title: shortNames[i-1] || '' }, 'C' + i))
+                    )
+                ),
+                React.createElement('tbody', null,
+                    matrixData.map((r, i) => React.createElement('tr', { key: i },
+                        React.createElement('td', { style: { position: 'sticky', left: 0, background: 'white', zIndex: 1 } },
+                            React.createElement('div', { className: 'corp-heatmap-mun', title: r.municipio }, r.municipio)
+                        ),
+                        React.createElement('td', null,
+                            React.createElement('div', { className: 'corp-heatmap-cell', style: { backgroundColor: getTaxaColor(r.taxa) } }, r.taxa.toFixed(2))
+                        ),
+                        r.comps.slice(0, indicatorCount).map((v, j) => React.createElement('td', { key: j },
+                            React.createElement('div', { className: 'corp-heatmap-cell', style: { backgroundColor: getColor(v) }, title: (shortNames[j] || 'C'+(j+1)) + ': ' + v.toFixed(1) + '%' }, v.toFixed(0) + '%')
+                        ))
+                    ))
+                )
+            )
+        ) : React.createElement('div', { className: 'text-center py-8 text-gray-500' },
+            React.createElement('i', { className: 'fas fa-search text-3xl mb-2 text-gray-300' }),
+            React.createElement('p', null, 'Nenhum dado encontrado com os filtros selecionados')
+        ),
+        // Legenda
+        React.createElement('div', { className: 'flex justify-center mt-4 gap-6 text-xs flex-wrap' },
+            [['#ef4444','Regular (0-24%)'],['#fbbf24','Suficiente (25-49%)'],['#84cc16','Bom (50-74%)'],['#1e3a5f','Ótimo (75-100%)']].map(function(arr) {
+                return React.createElement('span', { key: arr[1], className: 'flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-full' },
+                    React.createElement('span', { className: 'w-3 h-3 rounded-full', style: { backgroundColor: arr[0] } }),
+                    arr[1]
+                );
+            })
+        )
+    );
 };
 
 const Heatmap = ({ data, indicatorCount = 11, shortNames = [] }) => {
