@@ -227,10 +227,10 @@ const LandingPage = ({ onSelectIndicator, onSelectComponent, user, onOpenAuth })
     ];
     
     const boasPraticas = [
-        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt'], municipios: ['msp'], stats: '11 Boas Práticas' },
+        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt', 'to'], municipios: ['msp'], stats: '11 Boas Práticas' },
         { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['acre', 'rn'], stats: '4 Boas Práticas' },
         { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['acre', 'rn'], stats: '6 Boas Práticas' },
-        { key: 'infantil', title: 'Desenvolvimento Infantil', icon: 'fa-child', color: '#10b981', desc: 'Acompanhamento de crianças até 2 anos', states: ['acre'], stats: '5 Boas Práticas' }
+        { key: 'infantil', title: 'Desenvolvimento Infantil', icon: 'fa-child', color: '#10b981', desc: 'Acompanhamento de crianças até 2 anos', states: ['acre', 'to'], stats: '5 Boas Práticas' }
     ];
     
     const [selComponent, setSelComponent] = useState(null);
@@ -399,7 +399,28 @@ const LandingPage = ({ onSelectIndicator, onSelectComponent, user, onOpenAuth })
                             <i className={`fas ${selComponent.icon} text-white text-2xl`}></i>
                         </div>
                         <h3 className="text-2xl font-bold text-center text-gray-800 mb-2">{selComponent.title}</h3>
-                        <p className="text-gray-500 text-center mb-6">Selecione a Boa Prática</p>
+                        <p className="text-gray-500 text-center mb-6">Selecione uma opção</p>
+                        
+                        {/* Botão Gerencial - Visão consolidada */}
+                        <button 
+                            onClick={() => { setSelComponent(null); onSelectComponent('gerencial'); }}
+                            className="w-full p-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all flex items-center justify-between group mb-4"
+                        >
+                            <span className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <i className="fas fa-chart-line text-white"></i>
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-white font-bold">Gerencial</p>
+                                    <p className="text-xs text-white/80">Visão consolidada de todas as Boas Práticas</p>
+                                </div>
+                            </span>
+                            <i className="fas fa-arrow-right text-white/80 group-hover:translate-x-1 transition-transform"></i>
+                        </button>
+                        
+                        <div className="border-t border-gray-200 my-4 pt-4">
+                            <p className="text-gray-500 text-center mb-4 text-sm">Ou selecione uma Boa Prática específica:</p>
+                        </div>
                         
                         <div className="space-y-3">
                             {boasPraticas.map(bp => (
@@ -1367,8 +1388,8 @@ const Dashboard = () => {
         useEffect(() => {
             if (!mapRef.current || !geoJson) return;
             if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; }
-            const coords = selectedState === 'acre' ? [-9, -70] : selectedState === 'am' ? [-4, -65] : selectedState === 'mt' ? [-13, -56] : selectedState === 'msp' ? [-23.55, -46.63] : [-5.8, -36.5];
-            const zoom = selectedState === 'acre' ? 5 : selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 9 : 6;
+            const coords = selectedState === 'acre' ? [-9, -70] : selectedState === 'am' ? [-4, -65] : selectedState === 'mt' ? [-13, -56] : selectedState === 'msp' ? [-23.55, -46.63] : selectedState === 'to' ? [-10, -48] : [-5.8, -36.5];
+            const zoom = selectedState === 'acre' ? 5 : selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 9 : selectedState === 'to' ? 6 : 6;
             const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false }).setView(coords, zoom);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
             L.geoJSON(geoJson, { filter: f => isMunicipio ? f.properties.id === municipioCode : true, style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: isMunicipio ? 2 : 0.5, color: isMunicipio ? '#4f46e5' : 'white', fillOpacity: 0.8 }; } }).addTo(map);
@@ -1387,7 +1408,7 @@ const Dashboard = () => {
         const regiaoStats = getRegioes().map(r => { const d = filteredData.filter(x => x.regiao === r); let valor = 0; if (indFilter === 'taxa') { const s = d.reduce((a,x) => a + x.somatorio, 0), t = d.reduce((a,x) => a + (x.totalPacientes||0), 0); valor = t ? s/t : 0; } else { const idx = parseInt(indFilter.replace('ind','')); const t = d.reduce((a,x) => a + (x.totalPacientes||0), 0), val = d.reduce((a,x) => a + (x['ind'+idx]||0), 0); valor = t ? (val/t)*100 : 0; } return { regiao: r, taxa: valor, municipios: new Set(d.map(x => x.municipio)).size }; }).sort((a,b) => b.taxa - a.taxa);
         const clusters = { otimo: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Ótimo').length, bom: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Bom').length, suficiente: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Suficiente').length, regular: hm.filter(m => (indFilter === 'taxa' ? getCategoriaTaxa(m.taxa) : getCategoriaComponente(m.taxa)).label === 'Regular').length };
         
-        useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const coords = selectedState === 'acre' ? [-9,-70] : selectedState === 'am' ? [-4,-65] : selectedState === 'mt' ? [-13,-56] : selectedState === 'msp' ? [-23.55,-46.63] : [-5.8,-36.5]; const zoom = selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 10 : 7; const map = L.map(mapRef.current).setView(coords, zoom); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { filter: f => isMunicipio ? f.properties.id === municipioCode : true, style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: isMunicipio ? 3 : 1, color: isMunicipio ? '#4f46e5' : 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter, isMunicipio, municipioCode]);
+        useEffect(() => { if (!mapRef.current || !geoJson) return; if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } const coords = selectedState === 'acre' ? [-9,-70] : selectedState === 'am' ? [-4,-65] : selectedState === 'mt' ? [-13,-56] : selectedState === 'msp' ? [-23.55,-46.63] : selectedState === 'to' ? [-10,-48] : [-5.8,-36.5]; const zoom = selectedState === 'am' ? 5 : selectedState === 'mt' ? 5 : selectedState === 'msp' ? 10 : selectedState === 'to' ? 6 : 7; const map = L.map(mapRef.current).setView(coords, zoom); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.geoJSON(geoJson, { filter: f => isMunicipio ? f.properties.id === municipioCode : true, style: f => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); return { fillColor: d ? getTaxaColor(d.taxa) : '#ccc', weight: isMunicipio ? 3 : 1, color: isMunicipio ? '#4f46e5' : 'white', fillOpacity: 0.7 }; }, onEachFeature: (f, l) => { const d = hm.find(m => normalizeMunicipioForGeoJSON(m.municipio) === normalizeMunicipioForGeoJSON(f.properties.name)); const c = d ? (indFilter === 'taxa' ? getCategoriaTaxa(d.taxa) : getCategoriaComponente(d.taxa)) : null; const label = indFilter === 'taxa' ? 'Taxa' : (config?.shortNames[parseInt(indFilter.replace('ind',''))-1] || 'Componente'); l.bindPopup('<b>'+f.properties.name+'</b><br>'+label+': '+(d ? d.taxa.toFixed(2)+(indFilter === 'taxa' ? '' : '%') : 'N/A')+(c ? '<br>'+c.label : '')); } }).addTo(map); mapInstance.current = map; return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } }; }, [geoJson, filteredData, filters, indFilter, isMunicipio, municipioCode]);
         return (<div className="animate-fadeIn"><div className="mb-6 relative overflow-hidden rounded-2xl bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 p-8 shadow-2xl"><div className="absolute inset-0 bg-black/10"></div><div className="relative z-10"><h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3"><i className="fas fa-map-marked-alt animate-pulse"></i>Análise Espacial</h1><p className="text-white/90 text-lg">Visualização geográfica dos indicadores</p></div><div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 animate-pulse"></div><div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 animate-pulse" style={{animationDelay: '1s'}}></div></div><FilterBar showInd indFilter={indFilter} setIndFilter={setIndFilter} /><div className="grid grid-cols-4 gap-4 mb-6"><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-800 to-blue-900 flex items-center justify-center"><i className="fas fa-trophy text-white"></i></div><div><p className="text-xs text-gray-500">Ótimo</p><p className="text-2xl font-bold text-blue-900">{clusters.otimo}</p></div></div><div className="popup-content"><p className="font-semibold text-blue-900 mb-1">Municípios com Desempenho Ótimo</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 75% a 100%' : 'Componente de 75% a 100%'} - Excelente cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lime-400 to-lime-600 flex items-center justify-center"><i className="fas fa-thumbs-up text-white"></i></div><div><p className="text-xs text-gray-500">Bom</p><p className="text-2xl font-bold text-lime-600">{clusters.bom}</p></div></div><div className="popup-content"><p className="font-semibold text-lime-600 mb-1">Municípios com Desempenho Bom</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 50% a 74,99%' : 'Componente de 50% a 74,99%'} - Boa cobertura</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center"><i className="fas fa-exclamation text-white"></i></div><div><p className="text-xs text-gray-500">Suficiente</p><p className="text-2xl font-bold text-amber-600">{clusters.suficiente}</p></div></div><div className="popup-content"><p className="font-semibold text-amber-600 mb-1">Municípios com Desempenho Suficiente</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 25% a 49,99%' : 'Componente de 25% a 49,99%'} - Necessita melhorias</p></div></div><div className="card p-4 popup-card"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center"><i className="fas fa-exclamation-triangle text-white"></i></div><div><p className="text-xs text-gray-500">Regular</p><p className="text-2xl font-bold text-red-600">{clusters.regular}</p></div></div><div className="popup-content"><p className="font-semibold text-red-600 mb-1">Municípios com Desempenho Regular</p><p className="text-sm text-gray-600">{indFilter === 'taxa' ? 'Taxa de 0% a 24,99%' : 'Componente de 0% a 24,99%'} - Atenção prioritária</p></div></div></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><h3 className="font-bold mb-4">Mapa de Desempenho</h3><div ref={mapRef} style={{height:'450px',borderRadius:'16px'}}></div><div className="flex justify-center gap-4 mt-4 text-xs"><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#ef4444'}}></span>Regular</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#fbbf24'}}></span>Suficiente</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#84cc16'}}></span>Bom</span><span className="flex items-center gap-1"><span className="w-4 h-4 rounded" style={{backgroundColor:'#1e3a5f'}}></span>Ótimo</span></div>{indFilter !== 'taxa' && config && <div className="mt-4 p-3 bg-gray-50 rounded-lg"><p className="text-xs font-semibold text-gray-600 mb-2">Componente selecionado:</p><div className="text-sm text-gray-700"><span className="font-medium">C{parseInt(indFilter.replace('ind',''))}:</span> {config.fullNames[parseInt(indFilter.replace('ind',''))-1]}</div></div>}</div><div className="space-y-4"><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-layer-group mr-2 text-blue-500"></i>Clusters por Região</h3><div className="space-y-2">{regiaoStats.map((r,i) => { const c = getCategoriaTaxa(r.taxa); return <div key={i} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg"><div><p className="font-medium text-sm">{r.regiao}</p><p className="text-xs text-gray-500">{r.municipios} mun.</p></div><div className="text-right"><span className="font-bold" style={{color: c.color}}>{r.taxa.toFixed(2)}</span><span className="ml-1 text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: c.color}}>{c.label}</span></div></div>; })}</div></div><div className="card p-6"><h3 className="font-bold mb-4"><i className="fas fa-chart-pie mr-2 text-purple-500"></i>Distribuição</h3><div className="space-y-2">{[{l:'Ótimo',c:'#1e3a5f',v:clusters.otimo},{l:'Bom',c:'#84cc16',v:clusters.bom},{l:'Suficiente',c:'#fbbf24',v:clusters.suficiente},{l:'Regular',c:'#ef4444',v:clusters.regular}].map(x => { const pct = hm.length ? (x.v/hm.length*100) : 0; return <div key={x.l}><div className="flex justify-between text-sm mb-1"><span>{x.l}</span><span className="font-bold">{pct.toFixed(0)}%</span></div><div className="h-2 bg-gray-200 rounded-full"><div className="h-2 rounded-full" style={{width: pct+'%', backgroundColor: x.c}}></div></div></div>; })}</div></div></div></div><div className="card p-6 mt-6"><h3 className="font-bold mb-4 flex items-center gap-2"><i className="fas fa-th text-blue-500"></i>Mosaico de Mapas Mensais<span className="ml-auto text-xs font-normal text-gray-500">Evolução temporal do território</span></h3><div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{getUnique('competencia').slice(0, 12).map(month => { const monthData = rawData.filter(r => r.competencia === month); const monthMetrics = monthData.length ? { total: monthData.reduce((s,r) => s + (r.totalPacientes||0), 0), taxa: monthData.reduce((s,r) => s + r.somatorio, 0) / monthData.reduce((s,r) => s + (r.totalPacientes||0), 0) || 0 } : { total: 0, taxa: 0 }; const monthCat = getCategoriaTaxa(monthMetrics.taxa); return (<div key={month} className="mosaic-card bg-gray-50 rounded-xl p-3 hover:shadow-lg transition-all"><div className="flex items-center justify-between mb-2"><span className="text-sm font-bold text-gray-700">{month}</span><span className="text-xs px-2 py-0.5 rounded-full text-white" style={{backgroundColor: monthCat.color}}>{monthMetrics.taxa.toFixed(2)}</span></div><div className="relative bg-white rounded-lg overflow-hidden shadow-inner" style={{height:'260px'}}><MiniMap monthData={monthData} indFilter={indFilter} /></div><div className="mt-2 text-xs text-gray-500 text-center">{monthMetrics.total.toLocaleString()} pacientes</div></div>); })}</div></div></div>);
     };
 
@@ -2857,7 +2878,7 @@ const Dashboard = () => {
         // Calcular métricas por UF (usando selectedState como base)
         const ufData = {
             name: STATE_CONFIG[selectedState]?.name || 'Estado',
-            uf: selectedState === 'acre' ? 'AC' : selectedState === 'rn' ? 'RN' : selectedState === 'am' ? 'AM' : selectedState === 'mt' ? 'MT' : selectedState === 'msp' ? 'SP' : ''
+            uf: selectedState === 'acre' ? 'AC' : selectedState === 'rn' ? 'RN' : selectedState === 'am' ? 'AM' : selectedState === 'mt' ? 'MT' : selectedState === 'msp' ? 'SP' : selectedState === 'to' ? 'TO' : ''
         };
         
         // Calcular métricas por região de saúde
@@ -3559,6 +3580,9 @@ const Dashboard = () => {
                 if (selectedState === 'rn') return 'RN';
                 if (selectedState === 'acre') return 'AC';
                 if (selectedState === 'am') return 'AM';
+                if (selectedState === 'to') return 'TO';
+                if (selectedState === 'mt') return 'MT';
+                if (selectedState === 'msp') return 'SP';
                 return '';
             }).filter(Boolean))]
             : [];
@@ -3890,7 +3914,7 @@ const Dashboard = () => {
                     }
                     
                     // Verificar se a UF do ARQUIVO corresponde à UF da base atual do dashboard
-                    const ufBase = selectedState === 'rn' ? 'RN' : selectedState === 'acre' ? 'AC' : selectedState === 'am' ? 'AM' : '';
+                    const ufBase = selectedState === 'rn' ? 'RN' : selectedState === 'acre' ? 'AC' : selectedState === 'am' ? 'AM' : selectedState === 'to' ? 'TO' : selectedState === 'mt' ? 'MT' : selectedState === 'msp' ? 'SP' : '';
                     const ufArquivo = result.ufArquivo || '';
                     
                     if (!ufArquivo) {
@@ -4021,7 +4045,7 @@ const Dashboard = () => {
                             <p className="text-sm text-blue-600">Base de dados atual</p>
                             <p className="font-bold text-blue-800">{config?.title || 'Nenhum indicador selecionado'}</p>
                             <p className="text-xs text-blue-500">
-                                {selectedState === 'rn' ? 'Rio Grande do Norte (RN)' : selectedState === 'acre' ? 'Acre (AC)' : selectedState === 'am' ? 'Amazonas (AM)' : 'Estado não selecionado'}
+                                {selectedState === 'rn' ? 'Rio Grande do Norte (RN)' : selectedState === 'acre' ? 'Acre (AC)' : selectedState === 'am' ? 'Amazonas (AM)' : selectedState === 'to' ? 'Tocantins (TO)' : selectedState === 'mt' ? 'Mato Grosso (MT)' : selectedState === 'msp' ? 'São Paulo (SP)' : 'Estado não selecionado'}
                                 {' • '}{rawData.length} registros na base
                             </p>
                         </div>
@@ -4441,6 +4465,8 @@ const Dashboard = () => {
         if (comp === 'equidade') {
             setActiveComponent('equidade');
             loadEquidadeData();
+        } else if (comp === 'gerencial') {
+            setActiveComponent('gerencial');
         }
     };
 
@@ -4484,6 +4510,519 @@ const Dashboard = () => {
             console.error('Erro ao carregar dados de equidade:', err);
         }
         setEquidadeLoading(false);
+    };
+
+    // ==================== DASHBOARD GERENCIAL ====================
+    const GerencialDashboard = ({ onBack }) => {
+        const [gerencialData, setGerencialData] = useState({});
+        const [gerencialLoading, setGerencialLoading] = useState(true);
+        const [gerencialFilters, setGerencialFilters] = useState({
+            regiao: 'Todas',
+            municipio: 'Todos',
+            unidade: 'Todas',
+            equipe: 'Todas',
+            competencia: 'Todas',
+            boasPraticas: ['gestantes', 'has', 'dm', 'infantil'] // Multi-select
+        });
+        const [chartViewMode, setChartViewMode] = useState('mensal'); // mensal, acumulado, quadrimestral
+
+        const boasPraticasConfig = {
+            gestantes: { title: 'Gestantes e Puérperas', color: '#ec4899', icon: 'fa-baby', file: './Gestantes.csv' },
+            has: { title: 'Hipertensão Arterial', color: '#ef4444', icon: 'fa-heart-pulse', file: './Hipertensão_Acre.csv' },
+            dm: { title: 'Diabetes Mellitus', color: '#3b82f6', icon: 'fa-droplet', file: './Diabetes_Acre.csv' },
+            infantil: { title: 'Desenvolvimento Infantil', color: '#10b981', icon: 'fa-child', file: './Infantil_Acre.csv' }
+        };
+
+        const MONTH_ORDER = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+        // Carregar dados de todas as boas práticas
+        useEffect(() => {
+            const loadAllData = async () => {
+                setGerencialLoading(true);
+                const allData = {};
+                
+                for (const [key, config] of Object.entries(boasPraticasConfig)) {
+                    try {
+                        const response = await fetch(config.file + '?t=' + Date.now());
+                        if (!response.ok) continue;
+                        const buffer = await response.arrayBuffer();
+                        const text = new TextDecoder('windows-1252').decode(buffer);
+                        const results = Papa.parse(text, { header: false, skipEmptyLines: true, delimiter: ';' });
+                        
+                        const parseNum = v => {
+                            if (!v) return 0;
+                            let c = String(v).replace(/"/g, '').trim();
+                            c = c.replace(/\./g, '').replace(',', '.');
+                            return Math.round(parseFloat(c)) || 0;
+                        };
+
+                        const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
+                            let regiao = r[7] || '';
+                            if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                            
+                            // Mapeamento de colunas por tipo - incluindo indicadores individuais
+                            let somatorio = 0, totalPacientes = 0, pontuacao = 0;
+                            let indicadores = [];
+                            
+                            if (key === 'gestantes') {
+                                // Gestantes: 11 indicadores (col 10-20), somatório (21), total (22)
+                                for (let i = 10; i <= 20; i++) indicadores.push(parseNum(r[i]));
+                                somatorio = parseNum(r[21]);
+                                totalPacientes = parseNum(r[22]);
+                                pontuacao = parseNum(r[23]);
+                            } else if (key === 'has') {
+                                // HAS: 4 indicadores (col 10-13), somatório (14), total (15)
+                                for (let i = 10; i <= 13; i++) indicadores.push(parseNum(r[i]));
+                                somatorio = parseNum(r[14]);
+                                totalPacientes = parseNum(r[15]);
+                                pontuacao = parseNum(r[16]);
+                            } else if (key === 'dm') {
+                                // DM: 6 indicadores (col 10-15), somatório (16), total (17)
+                                for (let i = 10; i <= 15; i++) indicadores.push(parseNum(r[i]));
+                                somatorio = parseNum(r[16]);
+                                totalPacientes = parseNum(r[17]);
+                                pontuacao = parseNum(r[18]);
+                            } else if (key === 'infantil') {
+                                // Infantil: 5 indicadores (col 10-14), somatório (15), total (16)
+                                for (let i = 10; i <= 14; i++) indicadores.push(parseNum(r[i]));
+                                somatorio = parseNum(r[15]);
+                                totalPacientes = parseNum(r[16]);
+                                pontuacao = parseNum(r[17]);
+                            }
+
+                            return {
+                                cnes: r[0],
+                                estabelecimento: r[1],
+                                municipio: r[6],
+                                regiao,
+                                competencia: r[8],
+                                nomeEquipe: r[4] || '',
+                                sigla: r[5] || '',
+                                somatorio,
+                                totalPacientes,
+                                pontuacao,
+                                indicadores,
+                                boaPratica: key
+                            };
+                        });
+                        
+                        allData[key] = data;
+                    } catch (err) {
+                        console.error(`Erro ao carregar ${key}:`, err);
+                    }
+                }
+                
+                setGerencialData(allData);
+                setGerencialLoading(false);
+            };
+            
+            loadAllData();
+        }, []);
+
+        // Combinar e filtrar dados
+        const getFilteredData = () => {
+            let combined = [];
+            gerencialFilters.boasPraticas.forEach(bp => {
+                if (gerencialData[bp]) {
+                    combined = [...combined, ...gerencialData[bp]];
+                }
+            });
+
+            if (gerencialFilters.regiao !== 'Todas') combined = combined.filter(r => r.regiao === gerencialFilters.regiao);
+            if (gerencialFilters.municipio !== 'Todos') combined = combined.filter(r => r.municipio === gerencialFilters.municipio);
+            if (gerencialFilters.unidade !== 'Todas') combined = combined.filter(r => r.estabelecimento === gerencialFilters.unidade);
+            if (gerencialFilters.equipe !== 'Todas') combined = combined.filter(r => r.nomeEquipe === gerencialFilters.equipe);
+            if (gerencialFilters.competencia !== 'Todas') combined = combined.filter(r => r.competencia === gerencialFilters.competencia);
+
+            return combined;
+        };
+
+        const filteredData = getFilteredData();
+
+        // Opções de filtros
+        const getAllData = () => {
+            let all = [];
+            Object.values(gerencialData).forEach(d => { all = [...all, ...d]; });
+            return all;
+        };
+        const allData = getAllData();
+        const regiaoOptions = [...new Set(allData.map(r => r.regiao))].filter(Boolean).sort();
+        const municipioOptions = [...new Set(allData.filter(r => gerencialFilters.regiao === 'Todas' || r.regiao === gerencialFilters.regiao).map(r => r.municipio))].filter(Boolean).sort();
+        const unidadeOptions = [...new Set(allData.filter(r => (gerencialFilters.regiao === 'Todas' || r.regiao === gerencialFilters.regiao) && (gerencialFilters.municipio === 'Todos' || r.municipio === gerencialFilters.municipio)).map(r => r.estabelecimento))].filter(Boolean).sort();
+        const equipeOptions = [...new Set(allData.map(r => r.nomeEquipe))].filter(Boolean).sort();
+        const competenciaOptions = MONTH_ORDER.filter(m => allData.some(r => r.competencia === m));
+
+        // Calcular dados do gráfico
+        const getChartData = () => {
+            const dataByMonth = {};
+            
+            gerencialFilters.boasPraticas.forEach(bp => {
+                if (!gerencialData[bp]) return;
+                
+                let bpData = gerencialData[bp];
+                if (gerencialFilters.regiao !== 'Todas') bpData = bpData.filter(r => r.regiao === gerencialFilters.regiao);
+                if (gerencialFilters.municipio !== 'Todos') bpData = bpData.filter(r => r.municipio === gerencialFilters.municipio);
+                
+                MONTH_ORDER.forEach(month => {
+                    if (!dataByMonth[month]) dataByMonth[month] = {};
+                    const monthData = bpData.filter(r => r.competencia === month);
+                    const totalPac = monthData.reduce((s, r) => s + r.totalPacientes, 0);
+                    const totalSom = monthData.reduce((s, r) => s + r.somatorio, 0);
+                    const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
+                    dataByMonth[month][bp] = { taxa, somatorio: totalSom, total: totalPac };
+                });
+            });
+
+            // Converter para formato de gráfico
+            const chartData = MONTH_ORDER.filter(m => competenciaOptions.includes(m)).map(month => {
+                const entry = { month };
+                gerencialFilters.boasPraticas.forEach(bp => {
+                    entry[bp] = dataByMonth[month]?.[bp]?.taxa || 0;
+                });
+                return entry;
+            });
+
+            // Aplicar modo de visualização
+            if (chartViewMode === 'acumulado') {
+                const accumulated = {};
+                gerencialFilters.boasPraticas.forEach(bp => { accumulated[bp] = 0; });
+                return chartData.map(entry => {
+                    const newEntry = { month: entry.month };
+                    gerencialFilters.boasPraticas.forEach(bp => {
+                        accumulated[bp] += entry[bp];
+                        newEntry[bp] = accumulated[bp] / (chartData.indexOf(entry) + 1);
+                    });
+                    return newEntry;
+                });
+            } else if (chartViewMode === 'quadrimestral') {
+                const quadri = [];
+                for (let i = 0; i < chartData.length; i += 4) {
+                    const chunk = chartData.slice(i, i + 4);
+                    if (chunk.length === 0) continue;
+                    const entry = { month: `Q${Math.floor(i / 4) + 1}` };
+                    gerencialFilters.boasPraticas.forEach(bp => {
+                        entry[bp] = chunk.reduce((s, c) => s + c[bp], 0) / chunk.length;
+                    });
+                    quadri.push(entry);
+                }
+                return quadri;
+            }
+
+            return chartData;
+        };
+
+        const chartData = getChartData();
+
+        // Número de componentes por boa prática
+        const componentCount = { gestantes: 11, has: 4, dm: 6, infantil: 5 };
+
+        // Calcular resumo por boa prática
+        const getSummaryByBP = () => {
+            return gerencialFilters.boasPraticas.map(bp => {
+                const bpData = filteredData.filter(r => r.boaPratica === bp);
+                const totalSom = bpData.reduce((s, r) => s + r.somatorio, 0);
+                const totalPac = bpData.reduce((s, r) => s + r.totalPacientes, 0);
+                const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
+                const config = boasPraticasConfig[bp];
+                
+                // Calcular componentes individuais (C1, C2, ...)
+                const numComponents = componentCount[bp] || 0;
+                const componentes = [];
+                for (let i = 0; i < numComponents; i++) {
+                    const compSum = bpData.reduce((s, r) => s + (r.indicadores?.[i] || 0), 0);
+                    const compPct = totalPac > 0 ? (compSum / totalPac * 100) : 0;
+                    componentes.push(compPct);
+                }
+                
+                let categoria = 'Regular';
+                let catColor = '#ef4444';
+                if (taxa >= 75) { categoria = 'Ótimo'; catColor = '#10b981'; }
+                else if (taxa >= 50) { categoria = 'Bom'; catColor = '#22c55e'; }
+                else if (taxa >= 25) { categoria = 'Suficiente'; catColor = '#f59e0b'; }
+
+                return {
+                    key: bp,
+                    title: config.title,
+                    color: config.color,
+                    icon: config.icon,
+                    somatorio: totalSom,
+                    total: totalPac,
+                    taxa,
+                    categoria,
+                    catColor,
+                    componentes,
+                    numComponents
+                };
+            });
+        };
+
+        const summaryData = getSummaryByBP();
+
+        // Gráfico de linhas
+        const GerencialLineChart = () => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+
+            useEffect(() => {
+                if (!canvasRef.current || chartData.length === 0) return;
+                if (chartRef.current) chartRef.current.destroy();
+
+                const datasets = gerencialFilters.boasPraticas.map(bp => ({
+                    label: boasPraticasConfig[bp].title,
+                    data: chartData.map(d => d[bp]),
+                    borderColor: boasPraticasConfig[bp].color,
+                    backgroundColor: boasPraticasConfig[bp].color + '20',
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }));
+
+                chartRef.current = new Chart(canvasRef.current, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(d => d.month),
+                        datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { 
+                                    callback: v => v.toFixed(0) + '%'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [chartData, gerencialFilters.boasPraticas]);
+
+            return <canvas ref={canvasRef} />;
+        };
+
+        // Toggle boa prática
+        const toggleBoaPratica = (bp) => {
+            setGerencialFilters(prev => {
+                const current = prev.boasPraticas;
+                if (current.includes(bp)) {
+                    if (current.length === 1) return prev; // Manter pelo menos uma
+                    return { ...prev, boasPraticas: current.filter(b => b !== bp) };
+                }
+                return { ...prev, boasPraticas: [...current, bp] };
+            });
+        };
+
+        if (gerencialLoading) {
+            return (
+                <div className="min-h-screen flex items-center justify-center landing-bg">
+                    <div className="text-center">
+                        <i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i>
+                        <p className="text-white text-lg">Carregando dados gerenciais...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="min-h-screen bg-gray-50">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors">
+                                    <i className="fas fa-arrow-left"></i>
+                                </button>
+                                <div>
+                                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                                        <i className="fas fa-chart-line"></i>
+                                        Dashboard Gerencial
+                                    </h1>
+                                    <p className="text-white/80 text-sm">Visão consolidada de todas as Boas Práticas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto p-6">
+                    {/* Filtros */}
+                    <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <i className="fas fa-filter text-gray-400"></i>
+                            <span className="font-semibold text-gray-700">Filtros</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+                            <select value={gerencialFilters.regiao} onChange={e => setGerencialFilters(p => ({ ...p, regiao: e.target.value, municipio: 'Todos', unidade: 'Todas' }))} className="px-3 py-2 border rounded-lg text-sm">
+                                <option value="Todas">Todas Regiões</option>
+                                {regiaoOptions.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                            <select value={gerencialFilters.municipio} onChange={e => setGerencialFilters(p => ({ ...p, municipio: e.target.value, unidade: 'Todas' }))} className="px-3 py-2 border rounded-lg text-sm">
+                                <option value="Todos">Todos Municípios</option>
+                                {municipioOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                            <select value={gerencialFilters.unidade} onChange={e => setGerencialFilters(p => ({ ...p, unidade: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
+                                <option value="Todas">Todas Unidades</option>
+                                {unidadeOptions.map(u => <option key={u} value={u}>{u.substring(0, 40)}...</option>)}
+                            </select>
+                            <select value={gerencialFilters.equipe} onChange={e => setGerencialFilters(p => ({ ...p, equipe: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
+                                <option value="Todas">Todas Equipes</option>
+                                {equipeOptions.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+                            </select>
+                            <select value={gerencialFilters.competencia} onChange={e => setGerencialFilters(p => ({ ...p, competencia: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
+                                <option value="Todas">Todas Competências</option>
+                                {competenciaOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+
+                        {/* Filtro de Boas Práticas (multi-select) */}
+                        <div className="border-t pt-4">
+                            <p className="text-sm text-gray-600 mb-2">Boas Práticas:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(boasPraticasConfig).map(([key, config]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => toggleBoaPratica(key)}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all ${
+                                            gerencialFilters.boasPraticas.includes(key)
+                                                ? 'text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        }`}
+                                        style={gerencialFilters.boasPraticas.includes(key) ? { backgroundColor: config.color } : {}}
+                                    >
+                                        <i className={`fas ${config.icon}`}></i>
+                                        {config.title}
+                                        {gerencialFilters.boasPraticas.includes(key) && <i className="fas fa-check text-xs"></i>}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Gráfico de Linhas */}
+                    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <i className="fas fa-chart-line text-amber-500"></i>
+                                Evolução das Boas Práticas
+                            </h2>
+                            <div className="flex gap-2">
+                                {['mensal', 'acumulado', 'quadrimestral'].map(mode => (
+                                    <button
+                                        key={mode}
+                                        onClick={() => setChartViewMode(mode)}
+                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                            chartViewMode === mode
+                                                ? 'bg-amber-500 text-white'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="h-80">
+                            <GerencialLineChart />
+                        </div>
+                    </div>
+
+                    {/* Tabela de Resumo por Boa Prática */}
+                    <div className="bg-white rounded-xl shadow-sm p-6">
+                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
+                            <i className="fas fa-table text-amber-500"></i>
+                            Resumo por Boa Prática
+                        </h2>
+                        
+                        {summaryData.map(row => {
+                            const getCatColor = (pct) => {
+                                if (pct >= 75) return '#10b981';
+                                if (pct >= 50) return '#22c55e';
+                                if (pct >= 25) return '#f59e0b';
+                                return '#ef4444';
+                            };
+                            
+                            return (
+                                <div key={row.key} className="mb-6 last:mb-0">
+                                    {/* Header da Boa Prática */}
+                                    <div className="flex items-center justify-between p-4 rounded-t-xl" style={{ backgroundColor: row.color + '15' }}>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: row.color }}>
+                                                <i className={`fas ${row.icon} text-white`}></i>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-gray-800">{row.title}</h3>
+                                                <p className="text-xs text-gray-500">{row.numComponents} componentes</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-right">
+                                                <p className="text-xs text-gray-500">Somatório</p>
+                                                <p className="font-bold text-gray-800">{row.somatorio.toLocaleString('pt-BR')}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs text-gray-500">Total</p>
+                                                <p className="font-bold text-gray-800">{row.total.toLocaleString('pt-BR')}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs text-gray-500">Taxa</p>
+                                                <p className="font-bold text-lg" style={{ color: row.catColor }}>{row.taxa.toFixed(2)}%</p>
+                                            </div>
+                                            <span className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: row.catColor }}>
+                                                {row.categoria}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Componentes */}
+                                    <div className="border border-t-0 rounded-b-xl p-4">
+                                        <p className="text-xs text-gray-500 mb-3">Componentes (% do total):</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {row.componentes.map((comp, idx) => (
+                                                <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border">
+                                                    <span className="text-xs font-bold text-gray-500">C{idx + 1}</span>
+                                                    <span className="font-bold" style={{ color: getCatColor(comp) }}>{comp.toFixed(1)}%</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Legenda de categorias */}
+                        <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t">
+                            <span className="flex items-center gap-2 text-sm">
+                                <span className="w-3 h-3 rounded-full bg-red-500"></span> Regular (0-24%)
+                            </span>
+                            <span className="flex items-center gap-2 text-sm">
+                                <span className="w-3 h-3 rounded-full bg-amber-500"></span> Suficiente (25-49%)
+                            </span>
+                            <span className="flex items-center gap-2 text-sm">
+                                <span className="w-3 h-3 rounded-full bg-green-500"></span> Bom (50-74%)
+                            </span>
+                            <span className="flex items-center gap-2 text-sm">
+                                <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Ótimo (75-100%)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const EquidadeDashboard = () => {
@@ -4946,6 +5485,7 @@ const Dashboard = () => {
     };
 
     if (activeComponent === 'equidade') return <EquidadeDashboard />;
+    if (activeComponent === 'gerencial') return <GerencialDashboard onBack={() => setActiveComponent(null)} />;
     if (!indicatorType) return (<><AuthModal isOpen={authModal} onClose={() => setAuthModal(false)} mode={authMode} setMode={setAuthMode} onLogin={setUser} /><LandingPage onSelectIndicator={handleSelectIndicator} onSelectComponent={handleSelectComponent} user={user} onOpenAuth={() => setAuthModal(true)} /></>);
     if (loading) return <div className="min-h-screen flex items-center justify-center landing-bg"><div className="text-center"><i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i><p className="text-white text-lg">Carregando dados...</p></div></div>;
     if (error) return <div className="min-h-screen flex items-center justify-center text-red-500"><i className="fas fa-exclamation-triangle mr-2"></i>{error}</div>;

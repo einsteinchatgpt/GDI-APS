@@ -4,7 +4,8 @@ const STATE_CONFIG = {
     rn: { name: 'Rio Grande do Norte', uf: 'RN', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-24-mun.json' },
     am: { name: 'Amazonas', uf: 'AM', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
     mt: { name: 'Mato Grosso', uf: 'MT', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' },
-    msp: { name: 'São Paulo (Capital)', uf: 'SP', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' }
+    msp: { name: 'São Paulo (Capital)', uf: 'SP', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' },
+    to: { name: 'Tocantins', uf: 'TO', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-17-mun.json' }
 };
 
 // Lista de UFs disponíveis para cadastro
@@ -13,7 +14,8 @@ const AVAILABLE_UFS = [
     { key: 'am', name: 'Amazonas', uf: 'AM' },
     { key: 'mt', name: 'Mato Grosso', uf: 'MT' },
     { key: 'rn', name: 'Rio Grande do Norte', uf: 'RN' },
-    { key: 'msp', name: 'São Paulo (Capital)', uf: 'SP' }
+    { key: 'msp', name: 'São Paulo (Capital)', uf: 'SP' },
+    { key: 'to', name: 'Tocantins', uf: 'TO' }
 ];
 
 // Configurações por tipo de indicador
@@ -30,7 +32,8 @@ const INDICATOR_CONFIG = {
             rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
             am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
             mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
-            msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' }
+            msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' },
+            to: { file: './TO_GESTANTE.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [
@@ -108,7 +111,8 @@ const INDICATOR_CONFIG = {
         totalField: 'totalPacientes',
         totalLabel: 'crianças',
         csvFiles: {
-            acre: { file: './Infantil_Acre.csv', delimiter: ';', encoding: 'windows-1252' }
+            acre: { file: './Infantil_Acre.csv', delimiter: ';', encoding: 'windows-1252' },
+            to: { file: './TO_INFANTIL.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 5,
         fullNames: [
