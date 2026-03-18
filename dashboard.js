@@ -4512,103 +4512,204 @@ const Dashboard = () => {
         setEquidadeLoading(false);
     };
 
+    // ==================== COMPONENTE MAPA BRASIL LEAFLET ====================
+    const BrazilMapLeaflet = ({ estadosData, getCatColor }) => {
+        const mapRef = useRef(null);
+        const mapInstance = useRef(null);
+        const [brazilGeoJson, setBrazilGeoJson] = useState(null);
+        
+        useEffect(() => {
+            fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
+                .then(r => r.json())
+                .then(data => setBrazilGeoJson(data))
+                .catch(err => console.error('Erro ao carregar GeoJSON:', err));
+        }, []);
+        
+        useEffect(() => {
+            if (!mapRef.current || !brazilGeoJson) return;
+            
+            if (mapInstance.current) {
+                mapInstance.current.remove();
+                mapInstance.current = null;
+            }
+            
+            const map = L.map(mapRef.current, {
+                zoomControl: true,
+                attributionControl: false,
+                scrollWheelZoom: true,
+                dragging: true
+            }).setView([-14.235, -51.925], 4);
+            
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19
+            }).addTo(map);
+            
+            const getStateData = (stateName) => {
+                return estadosData.find(e => {
+                    const eName = e.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const sName = stateName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    return eName.includes(sName.split(' ')[0]) || sName.includes(eName.split(' ')[0]);
+                });
+            };
+            
+            // Estados a excluir (não existem nas bases)
+            const excludeStates = ['Rio de Janeiro', 'Rio Grande do Sul'];
+            
+            L.geoJSON(brazilGeoJson, {
+                filter: (feature) => !excludeStates.includes(feature.properties.name),
+                style: (feature) => {
+                    const stateName = feature.properties.name;
+                    const stateData = getStateData(stateName);
+                    const color = stateData ? getCatColor(stateData.taxa) : '#e5e7eb';
+                    return { fillColor: color, weight: 2, opacity: 1, color: '#ffffff', fillOpacity: 0.8 };
+                },
+                onEachFeature: (feature, layer) => {
+                    const stateName = feature.properties.name;
+                    const stateData = getStateData(stateName);
+                    const taxa = stateData?.taxa || 0;
+                    const cat = taxa >= 75 ? 'Ótimo' : taxa >= 50 ? 'Bom' : taxa >= 25 ? 'Suficiente' : 'Regular';
+                    
+                    layer.bindPopup(`<div style="text-align: center; min-width: 150px;"><strong style="font-size: 14px;">${stateName}</strong><br/><span style="color: ${stateData ? getCatColor(taxa) : '#999'}; font-size: 18px; font-weight: bold;">${stateData ? taxa.toFixed(2) : 'Sem dados'}</span><br/>${stateData ? `<span style="font-size: 12px; color: #666;">${cat}</span>` : ''}</div>`);
+                    
+                    layer.on({
+                        mouseover: (e) => { e.target.setStyle({ weight: 3, fillOpacity: 1 }); },
+                        mouseout: (e) => { e.target.setStyle({ weight: 2, fillOpacity: 0.8 }); }
+                    });
+                }
+            }).addTo(map);
+            
+            mapInstance.current = map;
+            
+            return () => {
+                if (mapInstance.current) {
+                    mapInstance.current.remove();
+                    mapInstance.current = null;
+                }
+            };
+        }, [brazilGeoJson, estadosData, getCatColor]);
+        
+        return <div ref={mapRef} style={{ height: '450px', width: '100%', borderRadius: '12px' }} className="shadow-inner border border-gray-200" />;
+    };
+
     // ==================== DASHBOARD GERENCIAL ====================
     const GerencialDashboard = ({ onBack }) => {
         const [gerencialData, setGerencialData] = useState({});
         const [gerencialLoading, setGerencialLoading] = useState(true);
         const [gerencialFilters, setGerencialFilters] = useState({
-            regiao: 'Todas',
-            municipio: 'Todos',
-            unidade: 'Todas',
-            equipe: 'Todas',
-            competencia: 'Todas',
-            boasPraticas: ['gestantes', 'has', 'dm', 'infantil'] // Multi-select
+            estados: [], // Array vazio = todos
+            regioes: [], // Array vazio = todas
+            municipios: [], // Array vazio = todos
+            competencias: [], // Array vazio = todas
+            boasPraticas: ['gestantes'] // Foco em gestantes inicialmente
         });
-        const [chartViewMode, setChartViewMode] = useState('mensal'); // mensal, acumulado, quadrimestral
+        const [showFilterDropdown, setShowFilterDropdown] = useState(null); // 'estados', 'regioes', 'municipios', 'competencias'
+        const [chartViewMode, setChartViewMode] = useState('mensal');
+        const [compareMode, setCompareMode] = useState('estado'); // estado, regiao, municipio
+        const [activeTab, setActiveTab] = useState('visaoGeral'); // visaoGeral, comparativo, ranking, insights
 
         const boasPraticasConfig = {
-            gestantes: { title: 'Gestantes e Puérperas', color: '#ec4899', icon: 'fa-baby', file: './Gestantes.csv' },
-            has: { title: 'Hipertensão Arterial', color: '#ef4444', icon: 'fa-heart-pulse', file: './Hipertensão_Acre.csv' },
-            dm: { title: 'Diabetes Mellitus', color: '#3b82f6', icon: 'fa-droplet', file: './Diabetes_Acre.csv' },
-            infantil: { title: 'Desenvolvimento Infantil', color: '#10b981', icon: 'fa-child', file: './Infantil_Acre.csv' }
+            gestantes: { title: 'Gestantes e Puérperas', color: '#ec4899', icon: 'fa-baby', indicatorCount: 11 },
+            has: { title: 'Hipertensão Arterial', color: '#ef4444', icon: 'fa-heart-pulse', indicatorCount: 4 },
+            dm: { title: 'Diabetes Mellitus', color: '#3b82f6', icon: 'fa-droplet', indicatorCount: 6 },
+            infantil: { title: 'Desenvolvimento Infantil', color: '#10b981', icon: 'fa-child', indicatorCount: 5 }
         };
 
         const MONTH_ORDER = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-        // Carregar dados de todas as boas práticas
+        // Carregar dados de TODOS os estados para cada boa prática
         useEffect(() => {
             const loadAllData = async () => {
                 setGerencialLoading(true);
                 const allData = {};
                 
-                for (const [key, config] of Object.entries(boasPraticasConfig)) {
-                    try {
-                        const response = await fetch(config.file + '?t=' + Date.now());
-                        if (!response.ok) continue;
-                        const buffer = await response.arrayBuffer();
-                        const text = new TextDecoder('windows-1252').decode(buffer);
-                        const results = Papa.parse(text, { header: false, skipEmptyLines: true, delimiter: ';' });
+                for (const [bpKey, bpConfig] of Object.entries(boasPraticasConfig)) {
+                    const indicatorCfg = INDICATOR_CONFIG[bpKey];
+                    if (!indicatorCfg?.csvFiles) continue;
+                    
+                    allData[bpKey] = [];
+                    
+                    for (const [stateKey, fileCfg] of Object.entries(indicatorCfg.csvFiles)) {
+                        // Excluir MSP (São Paulo) da análise gerencial - é apenas um município
+                        if (stateKey === 'msp') continue;
                         
-                        const parseNum = v => {
-                            if (!v) return 0;
-                            let c = String(v).replace(/"/g, '').trim();
-                            c = c.replace(/\./g, '').replace(',', '.');
-                            return Math.round(parseFloat(c)) || 0;
-                        };
-
-                        const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
-                            let regiao = r[7] || '';
-                            if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                        try {
+                            const response = await fetch(fileCfg.file + '?t=' + Date.now());
+                            if (!response.ok) continue;
+                            const buffer = await response.arrayBuffer();
+                            const encoding = fileCfg.encoding || 'windows-1252';
+                            const text = new TextDecoder(encoding).decode(buffer);
+                            const delimiter = fileCfg.delimiter || ';';
+                            const results = Papa.parse(text, { header: false, skipEmptyLines: true, delimiter });
                             
-                            // Mapeamento de colunas por tipo - incluindo indicadores individuais
-                            let somatorio = 0, totalPacientes = 0, pontuacao = 0;
-                            let indicadores = [];
-                            
-                            if (key === 'gestantes') {
-                                // Gestantes: 11 indicadores (col 10-20), somatório (21), total (22)
-                                for (let i = 10; i <= 20; i++) indicadores.push(parseNum(r[i]));
-                                somatorio = parseNum(r[21]);
-                                totalPacientes = parseNum(r[22]);
-                                pontuacao = parseNum(r[23]);
-                            } else if (key === 'has') {
-                                // HAS: 4 indicadores (col 10-13), somatório (14), total (15)
-                                for (let i = 10; i <= 13; i++) indicadores.push(parseNum(r[i]));
-                                somatorio = parseNum(r[14]);
-                                totalPacientes = parseNum(r[15]);
-                                pontuacao = parseNum(r[16]);
-                            } else if (key === 'dm') {
-                                // DM: 6 indicadores (col 10-15), somatório (16), total (17)
-                                for (let i = 10; i <= 15; i++) indicadores.push(parseNum(r[i]));
-                                somatorio = parseNum(r[16]);
-                                totalPacientes = parseNum(r[17]);
-                                pontuacao = parseNum(r[18]);
-                            } else if (key === 'infantil') {
-                                // Infantil: 5 indicadores (col 10-14), somatório (15), total (16)
-                                for (let i = 10; i <= 14; i++) indicadores.push(parseNum(r[i]));
-                                somatorio = parseNum(r[15]);
-                                totalPacientes = parseNum(r[16]);
-                                pontuacao = parseNum(r[17]);
-                            }
-
-                            return {
-                                cnes: r[0],
-                                estabelecimento: r[1],
-                                municipio: r[6],
-                                regiao,
-                                competencia: r[8],
-                                nomeEquipe: r[4] || '',
-                                sigla: r[5] || '',
-                                somatorio,
-                                totalPacientes,
-                                pontuacao,
-                                indicadores,
-                                boaPratica: key
+                            const parseNum = v => {
+                                if (!v) return 0;
+                                let c = String(v).replace(/"/g, '').trim();
+                                c = c.replace(/\./g, '').replace(',', '.');
+                                return Math.round(parseFloat(c)) || 0;
                             };
-                        });
-                        
-                        allData[key] = data;
-                    } catch (err) {
-                        console.error(`Erro ao carregar ${key}:`, err);
+
+                            const stateName = STATE_CONFIG[stateKey]?.name || stateKey;
+                            const stateUF = STATE_CONFIG[stateKey]?.uf || stateKey.toUpperCase();
+
+                            // Detectar estrutura do arquivo (SP tem colunas extras: Distrito, OSS)
+                            const header = results.data[0] || [];
+                            const hasExtraCols = header.some(h => String(h).toLowerCase().includes('distrito') || String(h).toLowerCase().includes('oss'));
+                            const colOffset = hasExtraCols ? 2 : 0; // SP tem 2 colunas extras
+
+                            // Função para normalizar mês (Março, MARÇO, Marco -> Março)
+                            const normalizeCompetencia = (comp) => {
+                                if (!comp) return '';
+                                const c = comp.trim().toLowerCase();
+                                if (c === 'janeiro') return 'Janeiro';
+                                if (c === 'fevereiro') return 'Fevereiro';
+                                if (c === 'março' || c === 'marco') return 'Março';
+                                if (c === 'abril') return 'Abril';
+                                if (c === 'maio') return 'Maio';
+                                if (c === 'junho') return 'Junho';
+                                if (c === 'julho') return 'Julho';
+                                if (c === 'agosto') return 'Agosto';
+                                if (c === 'setembro') return 'Setembro';
+                                if (c === 'outubro') return 'Outubro';
+                                if (c === 'novembro') return 'Novembro';
+                                if (c === 'dezembro') return 'Dezembro';
+                                return comp.charAt(0).toUpperCase() + comp.slice(1).toLowerCase();
+                            };
+
+                            const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
+                                let regiao = r[7] || '';
+                                if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                                let competencia = normalizeCompetencia(r[8 + colOffset]);
+                                let municipio = fixMunicipioDisplay(r[6]) || r[6] || '';
+                                
+                                let somatorio = 0, totalPacientes = 0, indicadores = [];
+                                const numInd = bpConfig.indicatorCount;
+                                const indStart = 10 + colOffset; // Início dos indicadores
+                                for (let i = 0; i < numInd; i++) indicadores.push(parseNum(r[indStart + i]));
+                                somatorio = parseNum(r[indStart + numInd]);
+                                totalPacientes = parseNum(r[indStart + numInd + 1]);
+
+                                return {
+                                    cnes: r[0],
+                                    estabelecimento: r[1],
+                                    municipio,
+                                    regiao,
+                                    competencia,
+                                    nomeEquipe: r[4] || '',
+                                    sigla: r[5] || '',
+                                    somatorio,
+                                    totalPacientes,
+                                    indicadores,
+                                    boaPratica: bpKey,
+                                    estado: stateName,
+                                    uf: stateUF,
+                                    stateKey
+                                };
+                            });
+                            
+                            allData[bpKey] = [...allData[bpKey], ...data];
+                        } catch (err) {
+                            console.error(`Erro ao carregar ${bpKey}/${stateKey}:`, err);
+                        }
                     }
                 }
                 
@@ -4628,11 +4729,11 @@ const Dashboard = () => {
                 }
             });
 
-            if (gerencialFilters.regiao !== 'Todas') combined = combined.filter(r => r.regiao === gerencialFilters.regiao);
-            if (gerencialFilters.municipio !== 'Todos') combined = combined.filter(r => r.municipio === gerencialFilters.municipio);
-            if (gerencialFilters.unidade !== 'Todas') combined = combined.filter(r => r.estabelecimento === gerencialFilters.unidade);
-            if (gerencialFilters.equipe !== 'Todas') combined = combined.filter(r => r.nomeEquipe === gerencialFilters.equipe);
-            if (gerencialFilters.competencia !== 'Todas') combined = combined.filter(r => r.competencia === gerencialFilters.competencia);
+            // Filtros multi-select: array vazio = todos
+            if (gerencialFilters.estados.length > 0) combined = combined.filter(r => gerencialFilters.estados.includes(r.estado));
+            if (gerencialFilters.regioes.length > 0) combined = combined.filter(r => gerencialFilters.regioes.includes(r.regiao));
+            if (gerencialFilters.municipios.length > 0) combined = combined.filter(r => gerencialFilters.municipios.includes(r.municipio));
+            if (gerencialFilters.competencias.length > 0) combined = combined.filter(r => gerencialFilters.competencias.includes(r.competencia));
 
             return combined;
         };
@@ -4646,170 +4747,163 @@ const Dashboard = () => {
             return all;
         };
         const allData = getAllData();
-        const regiaoOptions = [...new Set(allData.map(r => r.regiao))].filter(Boolean).sort();
-        const municipioOptions = [...new Set(allData.filter(r => gerencialFilters.regiao === 'Todas' || r.regiao === gerencialFilters.regiao).map(r => r.municipio))].filter(Boolean).sort();
-        const unidadeOptions = [...new Set(allData.filter(r => (gerencialFilters.regiao === 'Todas' || r.regiao === gerencialFilters.regiao) && (gerencialFilters.municipio === 'Todos' || r.municipio === gerencialFilters.municipio)).map(r => r.estabelecimento))].filter(Boolean).sort();
-        const equipeOptions = [...new Set(allData.map(r => r.nomeEquipe))].filter(Boolean).sort();
+        const estadoOptions = [...new Set(allData.map(r => r.estado))].filter(Boolean).sort();
+        const regiaoOptions = [...new Set(allData.filter(r => gerencialFilters.estados.length === 0 || gerencialFilters.estados.includes(r.estado)).map(r => r.regiao))].filter(Boolean).sort();
+        const municipioOptions = [...new Set(allData.filter(r => (gerencialFilters.estados.length === 0 || gerencialFilters.estados.includes(r.estado)) && (gerencialFilters.regioes.length === 0 || gerencialFilters.regioes.includes(r.regiao))).map(r => r.municipio))].filter(Boolean).sort();
         const competenciaOptions = MONTH_ORDER.filter(m => allData.some(r => r.competencia === m));
 
-        // Calcular dados do gráfico
-        const getChartData = () => {
+        // Toggle para filtros multi-select
+        const toggleFilter = (filterName, value) => {
+            setGerencialFilters(prev => {
+                const current = prev[filterName];
+                if (current.includes(value)) {
+                    return { ...prev, [filterName]: current.filter(v => v !== value) };
+                }
+                return { ...prev, [filterName]: [...current, value] };
+            });
+        };
+
+        const selectAllFilter = (filterName, options) => {
+            setGerencialFilters(prev => ({ ...prev, [filterName]: [...options] }));
+        };
+
+        const clearFilter = (filterName) => {
+            setGerencialFilters(prev => ({ ...prev, [filterName]: [] }));
+        };
+
+        // Calcular métricas por agrupamento
+        const calcByGroup = (field, data = filteredData) => {
+            const groups = [...new Set(data.map(r => r[field]).filter(Boolean))];
+            return groups.map(g => {
+                const d = data.filter(x => x[field] === g);
+                const totalPac = d.reduce((a, x) => a + (x.totalPacientes || 0), 0);
+                const totalSom = d.reduce((a, x) => a + x.somatorio, 0);
+                const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
+                const equipes = new Set(d.map(x => x.cnes + x.nomeEquipe)).size;
+                const municipios = new Set(d.map(x => x.municipio)).size;
+                return { label: g, taxa, totalPac, totalSom, equipes, municipios };
+            }).sort((a, b) => b.taxa - a.taxa);
+        };
+
+        // Calcular dados do gráfico por estado
+        const getChartDataByState = () => {
+            const estados = estadoOptions;
             const dataByMonth = {};
             
-            gerencialFilters.boasPraticas.forEach(bp => {
-                if (!gerencialData[bp]) return;
-                
-                let bpData = gerencialData[bp];
-                if (gerencialFilters.regiao !== 'Todas') bpData = bpData.filter(r => r.regiao === gerencialFilters.regiao);
-                if (gerencialFilters.municipio !== 'Todos') bpData = bpData.filter(r => r.municipio === gerencialFilters.municipio);
-                
+            estados.forEach(estado => {
+                let stateData = filteredData.filter(r => r.estado === estado);
                 MONTH_ORDER.forEach(month => {
                     if (!dataByMonth[month]) dataByMonth[month] = {};
-                    const monthData = bpData.filter(r => r.competencia === month);
+                    const monthData = stateData.filter(r => r.competencia === month);
                     const totalPac = monthData.reduce((s, r) => s + r.totalPacientes, 0);
                     const totalSom = monthData.reduce((s, r) => s + r.somatorio, 0);
                     const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
-                    dataByMonth[month][bp] = { taxa, somatorio: totalSom, total: totalPac };
+                    dataByMonth[month][estado] = taxa;
                 });
             });
 
-            // Converter para formato de gráfico
-            const chartData = MONTH_ORDER.filter(m => competenciaOptions.includes(m)).map(month => {
+            return MONTH_ORDER.filter(m => competenciaOptions.includes(m)).map(month => {
                 const entry = { month };
-                gerencialFilters.boasPraticas.forEach(bp => {
-                    entry[bp] = dataByMonth[month]?.[bp]?.taxa || 0;
+                estados.forEach(estado => {
+                    entry[estado] = dataByMonth[month]?.[estado] || 0;
                 });
                 return entry;
             });
+        };
 
-            // Aplicar modo de visualização
-            if (chartViewMode === 'acumulado') {
-                const accumulated = {};
-                gerencialFilters.boasPraticas.forEach(bp => { accumulated[bp] = 0; });
-                return chartData.map(entry => {
-                    const newEntry = { month: entry.month };
-                    gerencialFilters.boasPraticas.forEach(bp => {
-                        accumulated[bp] += entry[bp];
-                        newEntry[bp] = accumulated[bp] / (chartData.indexOf(entry) + 1);
-                    });
-                    return newEntry;
-                });
-            } else if (chartViewMode === 'quadrimestral') {
-                const quadri = [];
-                for (let i = 0; i < chartData.length; i += 4) {
-                    const chunk = chartData.slice(i, i + 4);
-                    if (chunk.length === 0) continue;
-                    const entry = { month: `Q${Math.floor(i / 4) + 1}` };
-                    gerencialFilters.boasPraticas.forEach(bp => {
-                        entry[bp] = chunk.reduce((s, c) => s + c[bp], 0) / chunk.length;
-                    });
-                    quadri.push(entry);
+        // Calcular resumo geral
+        const getOverallMetrics = () => {
+            const totalPac = filteredData.reduce((s, r) => s + r.totalPacientes, 0);
+            const totalSom = filteredData.reduce((s, r) => s + r.somatorio, 0);
+            const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
+            const estados = new Set(filteredData.map(r => r.estado)).size;
+            const municipios = new Set(filteredData.map(r => r.municipio)).size;
+            const equipes = new Set(filteredData.map(r => r.cnes + r.nomeEquipe)).size;
+            return { totalPac, totalSom, taxa, estados, municipios, equipes };
+        };
+
+        const overallMetrics = getOverallMetrics();
+        const estadosData = calcByGroup('estado');
+        const regioesData = calcByGroup('regiao');
+        const municipiosData = calcByGroup('municipio');
+        const chartDataByState = getChartDataByState();
+
+        // Gerar insights automáticos
+        const getInsights = () => {
+            const insights = [];
+            if (estadosData.length > 0) {
+                const melhor = estadosData[0];
+                const pior = estadosData[estadosData.length - 1];
+                insights.push({ type: 'success', icon: 'fa-trophy', title: 'Melhor Desempenho', text: `${melhor.label} lidera com taxa de ${melhor.taxa.toFixed(2)}` });
+                if (pior.taxa < 30) {
+                    insights.push({ type: 'warning', icon: 'fa-exclamation-triangle', title: 'Atenção Necessária', text: `${pior.label} apresenta taxa de apenas ${pior.taxa.toFixed(2)}` });
                 }
-                return quadri;
+                const diff = melhor.taxa - pior.taxa;
+                if (diff > 20) {
+                    insights.push({ type: 'info', icon: 'fa-chart-bar', title: 'Disparidade Regional', text: `Diferença de ${diff.toFixed(2)} entre melhor e pior estado` });
+                }
             }
-
-            return chartData;
+            if (overallMetrics.taxa < 50) {
+                insights.push({ type: 'danger', icon: 'fa-arrow-down', title: 'Taxa Geral Baixa', text: `Taxa média de ${overallMetrics.taxa.toFixed(2)} está abaixo da meta` });
+            } else if (overallMetrics.taxa >= 75) {
+                insights.push({ type: 'success', icon: 'fa-check-circle', title: 'Meta Atingida', text: `Taxa média de ${overallMetrics.taxa.toFixed(2)} está na faixa Ótimo` });
+            }
+            return insights;
         };
 
-        const chartData = getChartData();
+        const insights = getInsights();
 
-        // Número de componentes por boa prática
-        const componentCount = { gestantes: 11, has: 4, dm: 6, infantil: 5 };
-
-        // Calcular resumo por boa prática
-        const getSummaryByBP = () => {
-            return gerencialFilters.boasPraticas.map(bp => {
-                const bpData = filteredData.filter(r => r.boaPratica === bp);
-                const totalSom = bpData.reduce((s, r) => s + r.somatorio, 0);
-                const totalPac = bpData.reduce((s, r) => s + r.totalPacientes, 0);
-                const taxa = totalPac > 0 ? (totalSom / totalPac) : 0;
-                const config = boasPraticasConfig[bp];
-                
-                // Calcular componentes individuais (C1, C2, ...)
-                const numComponents = componentCount[bp] || 0;
-                const componentes = [];
-                for (let i = 0; i < numComponents; i++) {
-                    const compSum = bpData.reduce((s, r) => s + (r.indicadores?.[i] || 0), 0);
-                    const compPct = totalPac > 0 ? (compSum / totalPac * 100) : 0;
-                    componentes.push(compPct);
-                }
-                
-                let categoria = 'Regular';
-                let catColor = '#ef4444';
-                if (taxa >= 75) { categoria = 'Ótimo'; catColor = '#10b981'; }
-                else if (taxa >= 50) { categoria = 'Bom'; catColor = '#22c55e'; }
-                else if (taxa >= 25) { categoria = 'Suficiente'; catColor = '#f59e0b'; }
-
-                return {
-                    key: bp,
-                    title: config.title,
-                    color: config.color,
-                    icon: config.icon,
-                    somatorio: totalSom,
-                    total: totalPac,
-                    taxa,
-                    categoria,
-                    catColor,
-                    componentes,
-                    numComponents
-                };
-            });
-        };
-
-        const summaryData = getSummaryByBP();
-
-        // Gráfico de linhas
-        const GerencialLineChart = () => {
+        // Gráfico comparativo de estados
+        const StateCompareChart = () => {
             const canvasRef = useRef(null);
             const chartRef = useRef(null);
-
             useEffect(() => {
-                if (!canvasRef.current || chartData.length === 0) return;
+                if (!canvasRef.current || estadosData.length === 0) return;
                 if (chartRef.current) chartRef.current.destroy();
-
-                const datasets = gerencialFilters.boasPraticas.map(bp => ({
-                    label: boasPraticasConfig[bp].title,
-                    data: chartData.map(d => d[bp]),
-                    borderColor: boasPraticasConfig[bp].color,
-                    backgroundColor: boasPraticasConfig[bp].color + '20',
-                    tension: 0.4,
-                    fill: false,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }));
-
+                const colors = estadosData.map(e => e.taxa >= 75 ? '#10b981' : e.taxa >= 50 ? '#22c55e' : e.taxa >= 25 ? '#f59e0b' : '#ef4444');
                 chartRef.current = new Chart(canvasRef.current, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
-                        labels: chartData.map(d => d.month),
-                        datasets
+                        labels: estadosData.map(e => e.label),
+                        datasets: [{ data: estadosData.map(e => e.taxa), backgroundColor: colors, borderRadius: 8 }]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { position: 'top' },
-                            tooltip: {
-                                callbacks: {
-                                    label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%`
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: { 
-                                    callback: v => v.toFixed(0) + '%'
-                                }
-                            }
-                        }
+                        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `Taxa: ${ctx.raw.toFixed(2)}` } } },
+                        scales: { x: { ticks: { callback: v => v.toFixed(0) } } }
                     }
                 });
-
                 return () => { if (chartRef.current) chartRef.current.destroy(); };
-            }, [chartData, gerencialFilters.boasPraticas]);
+            }, [estadosData]);
+            return <canvas ref={canvasRef} />;
+        };
 
+        // Gráfico de evolução temporal
+        const TrendChart = () => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
+            useEffect(() => {
+                if (!canvasRef.current || chartDataByState.length === 0) return;
+                if (chartRef.current) chartRef.current.destroy();
+                const colorPalette = ['#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4'];
+                const datasets = estadoOptions.map((estado, i) => ({
+                    label: estado,
+                    data: chartDataByState.map(d => d[estado] || 0),
+                    borderColor: colorPalette[i % colorPalette.length],
+                    backgroundColor: colorPalette[i % colorPalette.length] + '20',
+                    tension: 0.4, fill: false, pointRadius: 4
+                }));
+                chartRef.current = new Chart(canvasRef.current, {
+                    type: 'line',
+                    data: { labels: chartDataByState.map(d => d.month), datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)}` } } },
+                        scales: { y: { beginAtZero: true, ticks: { callback: v => v.toFixed(0) } } }
+                    }
+                });
+                return () => { if (chartRef.current) chartRef.current.destroy(); };
+            }, [chartDataByState, estadoOptions]);
             return <canvas ref={canvasRef} />;
         };
 
@@ -4818,207 +4912,513 @@ const Dashboard = () => {
             setGerencialFilters(prev => {
                 const current = prev.boasPraticas;
                 if (current.includes(bp)) {
-                    if (current.length === 1) return prev; // Manter pelo menos uma
+                    if (current.length === 1) return prev;
                     return { ...prev, boasPraticas: current.filter(b => b !== bp) };
                 }
                 return { ...prev, boasPraticas: [...current, bp] };
             });
         };
 
+        const getCatColor = (taxa) => taxa >= 75 ? '#10b981' : taxa >= 50 ? '#22c55e' : taxa >= 25 ? '#f59e0b' : '#ef4444';
+        const getCatLabel = (taxa) => taxa >= 75 ? 'Ótimo' : taxa >= 50 ? 'Bom' : taxa >= 25 ? 'Suficiente' : 'Regular';
+
         if (gerencialLoading) {
             return (
-                <div className="min-h-screen flex items-center justify-center landing-bg">
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-500 via-rose-500 to-pink-600">
                     <div className="text-center">
-                        <i className="fas fa-spinner fa-spin text-5xl text-white mb-4"></i>
-                        <p className="text-white text-lg">Carregando dados gerenciais...</p>
+                        <div className="w-20 h-20 mx-auto mb-4 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center animate-pulse">
+                            <i className="fas fa-chart-pie text-white text-3xl"></i>
+                        </div>
+                        <p className="text-white text-lg font-medium">Carregando dados de todos os estados...</p>
+                        <p className="text-white/70 text-sm mt-2">Consolidando informações gerenciais</p>
                     </div>
                 </div>
             );
         }
 
         return (
-            <div className="min-h-screen bg-gray-50">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white p-6">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-pink-50/30 to-rose-50/50">
+                {/* Header - Visual similar ao dashboard de gestantes */}
+                <div className="bg-gradient-to-r from-pink-600 via-rose-500 to-pink-500 text-white p-6 shadow-xl">
                     <div className="max-w-7xl mx-auto">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center gap-4">
-                                <button onClick={onBack} className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors">
-                                    <i className="fas fa-arrow-left"></i>
+                                <button onClick={onBack} className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center hover:bg-white/30 transition-all hover:scale-105">
+                                    <i className="fas fa-arrow-left text-lg"></i>
                                 </button>
                                 <div>
-                                    <h1 className="text-2xl font-bold flex items-center gap-2">
-                                        <i className="fas fa-chart-line"></i>
-                                        Dashboard Gerencial
+                                    <h1 className="text-2xl font-bold flex items-center gap-3">
+                                        <i className="fas fa-chart-pie"></i>
+                                        Dashboard Gerencial - Qualidade
                                     </h1>
-                                    <p className="text-white/80 text-sm">Visão consolidada de todas as Boas Práticas</p>
+                                    <p className="text-pink-100 text-sm mt-1">Visão consolidada de todos os estados e regiões</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-xl">
+                                    <span className="text-pink-100 text-xs">Estados</span>
+                                    <p className="font-bold text-lg">{overallMetrics.estados}</p>
+                                </div>
+                                <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-xl">
+                                    <span className="text-pink-100 text-xs">Municípios</span>
+                                    <p className="font-bold text-lg">{overallMetrics.municipios}</p>
+                                </div>
+                                <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-xl">
+                                    <span className="text-pink-100 text-xs">Equipes</span>
+                                    <p className="font-bold text-lg">{overallMetrics.equipes.toLocaleString()}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="max-w-7xl mx-auto p-6">
-                    {/* Filtros */}
-                    <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <i className="fas fa-filter text-gray-400"></i>
-                            <span className="font-semibold text-gray-700">Filtros</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
-                            <select value={gerencialFilters.regiao} onChange={e => setGerencialFilters(p => ({ ...p, regiao: e.target.value, municipio: 'Todos', unidade: 'Todas' }))} className="px-3 py-2 border rounded-lg text-sm">
-                                <option value="Todas">Todas Regiões</option>
-                                {regiaoOptions.map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
-                            <select value={gerencialFilters.municipio} onChange={e => setGerencialFilters(p => ({ ...p, municipio: e.target.value, unidade: 'Todas' }))} className="px-3 py-2 border rounded-lg text-sm">
-                                <option value="Todos">Todos Municípios</option>
-                                {municipioOptions.map(m => <option key={m} value={m}>{m}</option>)}
-                            </select>
-                            <select value={gerencialFilters.unidade} onChange={e => setGerencialFilters(p => ({ ...p, unidade: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
-                                <option value="Todas">Todas Unidades</option>
-                                {unidadeOptions.map(u => <option key={u} value={u}>{u.substring(0, 40)}...</option>)}
-                            </select>
-                            <select value={gerencialFilters.equipe} onChange={e => setGerencialFilters(p => ({ ...p, equipe: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
-                                <option value="Todas">Todas Equipes</option>
-                                {equipeOptions.map(eq => <option key={eq} value={eq}>{eq}</option>)}
-                            </select>
-                            <select value={gerencialFilters.competencia} onChange={e => setGerencialFilters(p => ({ ...p, competencia: e.target.value }))} className="px-3 py-2 border rounded-lg text-sm">
-                                <option value="Todas">Todas Competências</option>
-                                {competenciaOptions.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-
-                        {/* Filtro de Boas Práticas (multi-select) */}
-                        <div className="border-t pt-4">
-                            <p className="text-sm text-gray-600 mb-2">Boas Práticas:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {Object.entries(boasPraticasConfig).map(([key, config]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => toggleBoaPratica(key)}
-                                        className={`px-3 py-1.5 rounded-full text-sm font-medium flex items-center gap-2 transition-all ${
-                                            gerencialFilters.boasPraticas.includes(key)
-                                                ? 'text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                        }`}
-                                        style={gerencialFilters.boasPraticas.includes(key) ? { backgroundColor: config.color } : {}}
-                                    >
-                                        <i className={`fas ${config.icon}`}></i>
-                                        {config.title}
-                                        {gerencialFilters.boasPraticas.includes(key) && <i className="fas fa-check text-xs"></i>}
-                                    </button>
-                                ))}
+                {/* Filtros Multi-Select */}
+                <div className="bg-white border-b shadow-sm sticky top-0 z-20">
+                    <div className="max-w-7xl mx-auto px-6 py-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                                <i className="fas fa-filter"></i><span>Filtros:</span>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Gráfico de Linhas */}
-                    <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <i className="fas fa-chart-line text-amber-500"></i>
-                                Evolução das Boas Práticas
-                            </h2>
-                            <div className="flex gap-2">
-                                {['mensal', 'acumulado', 'quadrimestral'].map(mode => (
-                                    <button
-                                        key={mode}
-                                        onClick={() => setChartViewMode(mode)}
-                                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                                            chartViewMode === mode
-                                                ? 'bg-amber-500 text-white'
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="h-80">
-                            <GerencialLineChart />
-                        </div>
-                    </div>
-
-                    {/* Tabela de Resumo por Boa Prática */}
-                    <div className="bg-white rounded-xl shadow-sm p-6">
-                        <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2 mb-4">
-                            <i className="fas fa-table text-amber-500"></i>
-                            Resumo por Boa Prática
-                        </h2>
-                        
-                        {summaryData.map(row => {
-                            const getCatColor = (pct) => {
-                                if (pct >= 75) return '#10b981';
-                                if (pct >= 50) return '#22c55e';
-                                if (pct >= 25) return '#f59e0b';
-                                return '#ef4444';
-                            };
                             
-                            return (
-                                <div key={row.key} className="mb-6 last:mb-0">
-                                    {/* Header da Boa Prática */}
-                                    <div className="flex items-center justify-between p-4 rounded-t-xl" style={{ backgroundColor: row.color + '15' }}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: row.color }}>
-                                                <i className={`fas ${row.icon} text-white`}></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-gray-800">{row.title}</h3>
-                                                <p className="text-xs text-gray-500">{row.numComponents} componentes</p>
-                                            </div>
+                            {/* Estados Multi-Select */}
+                            <div className="relative">
+                                <button onClick={() => setShowFilterDropdown(showFilterDropdown === 'estados' ? null : 'estados')} className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${gerencialFilters.estados.length > 0 ? 'bg-pink-500 text-white' : 'bg-pink-50 border border-pink-200 text-pink-700'}`}>
+                                    <i className="fas fa-map-marker-alt"></i>
+                                    Estados {gerencialFilters.estados.length > 0 && `(${gerencialFilters.estados.length})`}
+                                    <i className={`fas fa-chevron-${showFilterDropdown === 'estados' ? 'up' : 'down'} text-xs`}></i>
+                                </button>
+                                {showFilterDropdown === 'estados' && (
+                                    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border z-50 w-64 max-h-80 overflow-auto">
+                                        <div className="p-2 border-b flex gap-2">
+                                            <button onClick={() => selectAllFilter('estados', estadoOptions)} className="flex-1 px-2 py-1 bg-pink-100 text-pink-700 rounded text-xs hover:bg-pink-200">Todos</button>
+                                            <button onClick={() => clearFilter('estados')} className="flex-1 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">Limpar</button>
                                         </div>
-                                        <div className="flex items-center gap-6">
-                                            <div className="text-right">
-                                                <p className="text-xs text-gray-500">Somatório</p>
-                                                <p className="font-bold text-gray-800">{row.somatorio.toLocaleString('pt-BR')}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-gray-500">Total</p>
-                                                <p className="font-bold text-gray-800">{row.total.toLocaleString('pt-BR')}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs text-gray-500">Taxa</p>
-                                                <p className="font-bold text-lg" style={{ color: row.catColor }}>{row.taxa.toFixed(2)}%</p>
-                                            </div>
-                                            <span className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: row.catColor }}>
-                                                {row.categoria}
-                                            </span>
-                                        </div>
+                                        {estadoOptions.map(e => (
+                                            <label key={e} className="flex items-center gap-2 px-3 py-2 hover:bg-pink-50 cursor-pointer">
+                                                <input type="checkbox" checked={gerencialFilters.estados.includes(e)} onChange={() => toggleFilter('estados', e)} className="rounded text-pink-500" />
+                                                <span className="text-sm">{e}</span>
+                                            </label>
+                                        ))}
                                     </div>
-                                    
-                                    {/* Componentes */}
-                                    <div className="border border-t-0 rounded-b-xl p-4">
-                                        <p className="text-xs text-gray-500 mb-3">Componentes (% do total):</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {row.componentes.map((comp, idx) => (
-                                                <div key={idx} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 border">
-                                                    <span className="text-xs font-bold text-gray-500">C{idx + 1}</span>
-                                                    <span className="font-bold" style={{ color: getCatColor(comp) }}>{comp.toFixed(1)}%</span>
-                                                </div>
+                                )}
+                            </div>
+
+                            {/* Regiões Multi-Select */}
+                            <div className="relative">
+                                <button onClick={() => setShowFilterDropdown(showFilterDropdown === 'regioes' ? null : 'regioes')} className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${gerencialFilters.regioes.length > 0 ? 'bg-purple-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                                    <i className="fas fa-map"></i>
+                                    Regiões {gerencialFilters.regioes.length > 0 && `(${gerencialFilters.regioes.length})`}
+                                    <i className={`fas fa-chevron-${showFilterDropdown === 'regioes' ? 'up' : 'down'} text-xs`}></i>
+                                </button>
+                                {showFilterDropdown === 'regioes' && (
+                                    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border z-50 w-72 max-h-80 overflow-auto">
+                                        <div className="p-2 border-b flex gap-2">
+                                            <button onClick={() => selectAllFilter('regioes', regiaoOptions)} className="flex-1 px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs hover:bg-purple-200">Todas</button>
+                                            <button onClick={() => clearFilter('regioes')} className="flex-1 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">Limpar</button>
+                                        </div>
+                                        {regiaoOptions.map(r => (
+                                            <label key={r} className="flex items-center gap-2 px-3 py-2 hover:bg-purple-50 cursor-pointer">
+                                                <input type="checkbox" checked={gerencialFilters.regioes.includes(r)} onChange={() => toggleFilter('regioes', r)} className="rounded text-purple-500" />
+                                                <span className="text-sm">{r}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Municípios Multi-Select */}
+                            <div className="relative">
+                                <button onClick={() => setShowFilterDropdown(showFilterDropdown === 'municipios' ? null : 'municipios')} className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${gerencialFilters.municipios.length > 0 ? 'bg-blue-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                                    <i className="fas fa-city"></i>
+                                    Municípios {gerencialFilters.municipios.length > 0 && `(${gerencialFilters.municipios.length})`}
+                                    <i className={`fas fa-chevron-${showFilterDropdown === 'municipios' ? 'up' : 'down'} text-xs`}></i>
+                                </button>
+                                {showFilterDropdown === 'municipios' && (
+                                    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border z-50 w-72 max-h-80 overflow-auto">
+                                        <div className="p-2 border-b flex gap-2">
+                                            <button onClick={() => selectAllFilter('municipios', municipioOptions.slice(0, 50))} className="flex-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200">Top 50</button>
+                                            <button onClick={() => clearFilter('municipios')} className="flex-1 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">Limpar</button>
+                                        </div>
+                                        {municipioOptions.slice(0, 100).map(m => (
+                                            <label key={m} className="flex items-center gap-2 px-3 py-2 hover:bg-blue-50 cursor-pointer">
+                                                <input type="checkbox" checked={gerencialFilters.municipios.includes(m)} onChange={() => toggleFilter('municipios', m)} className="rounded text-blue-500" />
+                                                <span className="text-sm truncate">{m}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Competências Multi-Select */}
+                            <div className="relative">
+                                <button onClick={() => setShowFilterDropdown(showFilterDropdown === 'competencias' ? null : 'competencias')} className={`px-3 py-2 rounded-xl text-sm font-medium flex items-center gap-2 ${gerencialFilters.competencias.length > 0 ? 'bg-amber-500 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                                    <i className="fas fa-calendar"></i>
+                                    Competências {gerencialFilters.competencias.length > 0 && `(${gerencialFilters.competencias.length})`}
+                                    <i className={`fas fa-chevron-${showFilterDropdown === 'competencias' ? 'up' : 'down'} text-xs`}></i>
+                                </button>
+                                {showFilterDropdown === 'competencias' && (
+                                    <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border z-50 w-56 max-h-80 overflow-auto">
+                                        <div className="p-2 border-b flex gap-2">
+                                            <button onClick={() => selectAllFilter('competencias', competenciaOptions)} className="flex-1 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs hover:bg-amber-200">Todas</button>
+                                            <button onClick={() => clearFilter('competencias')} className="flex-1 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">Limpar</button>
+                                        </div>
+                                        {competenciaOptions.map(c => (
+                                            <label key={c} className="flex items-center gap-2 px-3 py-2 hover:bg-amber-50 cursor-pointer">
+                                                <input type="checkbox" checked={gerencialFilters.competencias.includes(c)} onChange={() => toggleFilter('competencias', c)} className="rounded text-amber-500" />
+                                                <span className="text-sm">{c}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Botão Limpar Todos */}
+                            {(gerencialFilters.estados.length > 0 || gerencialFilters.regioes.length > 0 || gerencialFilters.municipios.length > 0 || gerencialFilters.competencias.length > 0) && (
+                                <button onClick={() => setGerencialFilters(p => ({ ...p, estados: [], regioes: [], municipios: [], competencias: [] }))} className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm hover:bg-red-100 transition-colors">
+                                    <i className="fas fa-times mr-1"></i>Limpar Filtros
+                                </button>
+                            )}
+                        </div>
+                        {/* Boas Práticas */}
+                        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
+                            <span className="text-xs text-gray-500 font-medium">Indicadores:</span>
+                            {Object.entries(boasPraticasConfig).map(([key, config]) => (
+                                <button key={key} onClick={() => toggleBoaPratica(key)} className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2 transition-all ${gerencialFilters.boasPraticas.includes(key) ? 'text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`} style={gerencialFilters.boasPraticas.includes(key) ? { backgroundColor: config.color } : {}}>
+                                    <i className={`fas ${config.icon}`}></i>{config.title}
+                                    {gerencialFilters.boasPraticas.includes(key) && <i className="fas fa-check text-xs"></i>}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl mx-auto p-6">
+                    {/* Cards de Métricas Gerais */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-gradient-to-br from-pink-500 to-rose-600 rounded-2xl p-5 text-white shadow-xl">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i className="fas fa-percentage text-xl"></i>
+                                </div>
+                                <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: getCatColor(overallMetrics.taxa), color: 'white' }}>{getCatLabel(overallMetrics.taxa)}</span>
+                            </div>
+                            <p className="text-pink-100 text-sm">Taxa Geral</p>
+                            <p className="text-3xl font-bold">{overallMetrics.taxa.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-5 text-white shadow-xl">
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+                                <i className="fas fa-calculator text-xl"></i>
+                            </div>
+                            <p className="text-purple-100 text-sm">Somatório Total</p>
+                            <p className="text-3xl font-bold">{overallMetrics.totalSom.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-5 text-white shadow-xl">
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+                                <i className="fas fa-users text-xl"></i>
+                            </div>
+                            <p className="text-blue-100 text-sm">Total de Pacientes</p>
+                            <p className="text-3xl font-bold">{overallMetrics.totalPac.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-xl">
+                            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+                                <i className="fas fa-lightbulb text-xl"></i>
+                            </div>
+                            <p className="text-amber-100 text-sm">Insights</p>
+                            <p className="text-3xl font-bold">{insights.length}</p>
+                        </div>
+                    </div>
+
+                    {/* Insights Automáticos */}
+                    {insights.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-lightbulb text-amber-500"></i>
+                                Insights Gerenciais
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {insights.map((insight, idx) => (
+                                    <div key={idx} className={`p-4 rounded-xl border-l-4 ${insight.type === 'success' ? 'bg-green-50 border-green-500' : insight.type === 'warning' ? 'bg-amber-50 border-amber-500' : insight.type === 'danger' ? 'bg-red-50 border-red-500' : 'bg-blue-50 border-blue-500'}`}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <i className={`fas ${insight.icon} ${insight.type === 'success' ? 'text-green-600' : insight.type === 'warning' ? 'text-amber-600' : insight.type === 'danger' ? 'text-red-600' : 'text-blue-600'}`}></i>
+                                            <span className="font-bold text-gray-800 text-sm">{insight.title}</span>
+                                        </div>
+                                        <p className="text-gray-600 text-sm">{insight.text}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Gráficos */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        {/* Comparativo por Estado */}
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-chart-bar text-pink-500"></i>
+                                Comparativo por Estado
+                            </h3>
+                            <div style={{ height: estadosData.length > 5 ? '400px' : '300px' }}>
+                                <StateCompareChart />
+                            </div>
+                        </div>
+
+                        {/* Evolução Temporal */}
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-chart-line text-purple-500"></i>
+                                Evolução Temporal por Estado
+                            </h3>
+                            <div style={{ height: '300px' }}>
+                                <TrendChart />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Mapa do Brasil por Estado - Leaflet */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i className="fas fa-map text-pink-500"></i>
+                            Mapa de Desempenho por Estado
+                        </h3>
+                        <div className="flex flex-col lg:flex-row gap-6">
+                            {/* Mapa Leaflet do Brasil */}
+                            <div className="flex-1">
+                                <BrazilMapLeaflet estadosData={estadosData} getCatColor={getCatColor} />
+                            </div>
+                            {/* Legenda */}
+                            <div className="lg:w-64 space-y-3">
+                                <h4 className="font-semibold text-gray-700 mb-3">Legenda</h4>
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                                        <div className="w-5 h-5 rounded bg-emerald-500 shadow"></div>
+                                        <span className="text-sm font-medium text-gray-700">Ótimo (75+)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-green-50 border border-green-200">
+                                        <div className="w-5 h-5 rounded bg-green-500 shadow"></div>
+                                        <span className="text-sm font-medium text-gray-700">Bom (50-74.99)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-amber-50 border border-amber-200">
+                                        <div className="w-5 h-5 rounded bg-amber-500 shadow"></div>
+                                        <span className="text-sm font-medium text-gray-700">Suficiente (25-49.99)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-red-50 border border-red-200">
+                                        <div className="w-5 h-5 rounded bg-red-500 shadow"></div>
+                                        <span className="text-sm font-medium text-gray-700">Regular (0-24.99)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-200">
+                                        <div className="w-5 h-5 rounded bg-gray-300 shadow"></div>
+                                        <span className="text-sm font-medium text-gray-700">Sem dados</span>
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-4 border-t">
+                                    <h4 className="font-semibold text-gray-700 mb-2">Estados com Dados</h4>
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                        {estadosData.map(estado => (
+                                            <div key={estado.label} className="flex items-center justify-between text-sm p-1 hover:bg-gray-50 rounded">
+                                                <span className="text-gray-600">{estado.label}</span>
+                                                <span className="font-bold px-2 py-0.5 rounded text-white text-xs" style={{ backgroundColor: getCatColor(estado.taxa) }}>
+                                                    {estado.taxa.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Ranking de Estados por Taxa */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i className="fas fa-trophy text-amber-500"></i>
+                            Ranking de Estados
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {estadosData.map((estado, idx) => (
+                                <div key={estado.label} className="p-3 rounded-xl border hover:shadow-md transition-all" style={{ borderColor: getCatColor(estado.taxa) + '40', backgroundColor: getCatColor(estado.taxa) + '08' }}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            {idx === 0 && <i className="fas fa-trophy text-amber-500"></i>}
+                                            {idx === 1 && <i className="fas fa-medal text-gray-400"></i>}
+                                            {idx === 2 && <i className="fas fa-medal text-amber-700"></i>}
+                                            <span className="font-medium text-gray-800">{estado.label}</span>
+                                        </div>
+                                        <span className="px-2 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: getCatColor(estado.taxa) }}>
+                                            {estado.taxa.toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-gray-100 rounded-full h-2">
+                                        <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(estado.taxa, 100)}%`, backgroundColor: getCatColor(estado.taxa) }}></div>
+                                    </div>
+                                    <div className="flex justify-between mt-2 text-xs text-gray-500">
+                                        <span>{estado.municipios} municípios</span>
+                                        <span>{estado.equipes} equipes</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Comparação de Componentes (C1, C2, etc) */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i className="fas fa-layer-group text-indigo-500"></i>
+                            Comparação de Componentes por Estado
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4">Análise detalhada dos 11 componentes das boas práticas por estado</p>
+                        {(() => {
+                            const componentNames = [
+                                'C1: 1ª consulta até 12 semanas',
+                                'C2: 7+ consultas pré-natal',
+                                'C3: 7+ registros pressão arterial',
+                                'C4: 7+ registros peso/altura',
+                                'C5: 3+ visitas ACS/TACS',
+                                'C6: Dose DTPA após 20ª semana',
+                                'C7: Testes 1º trimestre',
+                                'C8: Testes 3º trimestre',
+                                'C9: Consulta puerpério',
+                                'C10: Visita puerpério',
+                                'C11: Avaliação odontológica'
+                            ];
+                            
+                            const componentsByState = estadosData.map(estado => {
+                                const stateData = getFilteredData().filter(r => r.estado === estado.label);
+                                const totals = Array(11).fill(0);
+                                let totalPac = 0;
+                                stateData.forEach(r => {
+                                    if (r.indicadores) {
+                                        r.indicadores.forEach((v, i) => { if (i < 11) totals[i] += v; });
+                                    }
+                                    totalPac += r.totalPacientes || 0;
+                                });
+                                return {
+                                    estado: estado.label,
+                                    components: totals.map(t => totalPac > 0 ? (t / totalPac * 100) : 0)
+                                };
+                            });
+
+                            return (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-xs">
+                                        <thead>
+                                            <tr className="bg-gradient-to-r from-indigo-50 to-purple-50">
+                                                <th className="text-left p-2 font-semibold text-gray-700 sticky left-0 bg-indigo-50">Estado</th>
+                                                {componentNames.map((name, i) => (
+                                                    <th key={i} className="text-center p-2 font-semibold text-gray-700 min-w-16" title={name}>C{i+1}</th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {componentsByState.map((row, idx) => (
+                                                <tr key={row.estado} className="border-b hover:bg-gray-50">
+                                                    <td className="p-2 font-medium text-gray-800 sticky left-0 bg-white">{row.estado}</td>
+                                                    {row.components.map((val, i) => (
+                                                        <td key={i} className="p-2 text-center">
+                                                            <span className="px-2 py-1 rounded text-white text-xs font-bold" style={{ backgroundColor: getCatColor(val) }}>
+                                                                {val.toFixed(1)}
+                                                            </span>
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    <div className="mt-4 text-xs text-gray-500">
+                                        <p className="font-medium mb-1">Legenda dos Componentes:</p>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+                                            {componentNames.map((name, i) => (
+                                                <span key={i} className="text-gray-600">{name}</span>
                                             ))}
                                         </div>
                                     </div>
                                 </div>
                             );
-                        })}
+                        })()}
+                    </div>
 
-                        {/* Legenda de categorias */}
-                        <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t">
-                            <span className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 rounded-full bg-red-500"></span> Regular (0-24%)
-                            </span>
-                            <span className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 rounded-full bg-amber-500"></span> Suficiente (25-49%)
-                            </span>
-                            <span className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 rounded-full bg-green-500"></span> Bom (50-74%)
-                            </span>
-                            <span className="flex items-center gap-2 text-sm">
-                                <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Ótimo (75-100%)
-                            </span>
+                    {/* Ranking de Estados */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <i className="fas fa-trophy text-amber-500"></i>
+                            Ranking de Estados
+                        </h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-gradient-to-r from-pink-50 to-rose-50">
+                                        <th className="text-left p-3 font-semibold text-gray-700">#</th>
+                                        <th className="text-left p-3 font-semibold text-gray-700">Estado</th>
+                                        <th className="text-right p-3 font-semibold text-gray-700">Taxa</th>
+                                        <th className="text-right p-3 font-semibold text-gray-700">Somatório</th>
+                                        <th className="text-right p-3 font-semibold text-gray-700">Total Pacientes</th>
+                                        <th className="text-right p-3 font-semibold text-gray-700">Municípios</th>
+                                        <th className="text-right p-3 font-semibold text-gray-700">Equipes</th>
+                                        <th className="text-center p-3 font-semibold text-gray-700">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {estadosData.map((estado, idx) => (
+                                        <tr key={estado.label} className="border-b hover:bg-pink-50/50 transition-colors">
+                                            <td className="p-3">
+                                                {idx === 0 ? <i className="fas fa-medal text-amber-500"></i> : idx === 1 ? <i className="fas fa-medal text-gray-400"></i> : idx === 2 ? <i className="fas fa-medal text-amber-700"></i> : <span className="text-gray-400">{idx + 1}</span>}
+                                            </td>
+                                            <td className="p-3 font-medium text-gray-800">{estado.label}</td>
+                                            <td className="p-3 text-right font-bold" style={{ color: getCatColor(estado.taxa) }}>{estado.taxa.toFixed(2)}</td>
+                                            <td className="p-3 text-right text-gray-600">{estado.totalSom.toLocaleString()}</td>
+                                            <td className="p-3 text-right text-gray-600">{estado.totalPac.toLocaleString()}</td>
+                                            <td className="p-3 text-right text-gray-600">{estado.municipios}</td>
+                                            <td className="p-3 text-right text-gray-600">{estado.equipes}</td>
+                                            <td className="p-3 text-center">
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: getCatColor(estado.taxa) }}>{getCatLabel(estado.taxa)}</span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
+                    </div>
+
+                    {/* Ranking de Regiões (se filtrado por estado) */}
+                    {gerencialFilters.estados.length === 1 && regioesData.length > 0 && (
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <i className="fas fa-map-marked-alt text-blue-500"></i>
+                                Ranking de Regiões - {gerencialFilters.estados[0]}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {regioesData.slice(0, 12).map((regiao, idx) => (
+                                    <div key={regiao.label} className="p-4 rounded-xl border hover:shadow-md transition-shadow" style={{ borderColor: getCatColor(regiao.taxa) + '40' }}>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-medium text-gray-800">{regiao.label}</span>
+                                            <span className="px-2 py-1 rounded-full text-xs font-bold text-white" style={{ backgroundColor: getCatColor(regiao.taxa) }}>{regiao.taxa.toFixed(2)}</span>
+                                        </div>
+                                        <div className="w-full bg-gray-100 rounded-full h-2">
+                                            <div className="h-2 rounded-full transition-all" style={{ width: `${Math.min(regiao.taxa, 100)}%`, backgroundColor: getCatColor(regiao.taxa) }}></div>
+                                        </div>
+                                        <div className="flex justify-between mt-2 text-xs text-gray-500">
+                                            <span>{regiao.municipios} municípios</span>
+                                            <span>{regiao.equipes} equipes</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legenda */}
+                    <div className="flex items-center justify-center gap-6 py-4">
+                        <span className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="w-3 h-3 rounded-full bg-red-500"></span> Regular (0-24.99)
+                        </span>
+                        <span className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="w-3 h-3 rounded-full bg-amber-500"></span> Suficiente (25-49.99)
+                        </span>
+                        <span className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="w-3 h-3 rounded-full bg-green-500"></span> Bom (50-74.99)
+                        </span>
+                        <span className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Ótimo (75+)
+                        </span>
                     </div>
                 </div>
             </div>
