@@ -5,7 +5,8 @@ const STATE_CONFIG = {
     am: { name: 'Amazonas', uf: 'AM', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-13-mun.json' },
     mt: { name: 'Mato Grosso', uf: 'MT', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-51-mun.json' },
     msp: { name: 'São Paulo (Capital)', uf: 'SP', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-35-mun.json', isMunicipio: true, municipioCode: '3550308' },
-    to: { name: 'Tocantins', uf: 'TO', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-17-mun.json' }
+    to: { name: 'Tocantins', uf: 'TO', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-17-mun.json' },
+    go: { name: 'Goiás', uf: 'GO', geojson: 'https://raw.githubusercontent.com/tbrugz/geodata-br/master/geojson/geojs-52-mun.json' }
 };
 
 // Lista de UFs disponíveis para cadastro
@@ -15,7 +16,8 @@ const AVAILABLE_UFS = [
     { key: 'mt', name: 'Mato Grosso', uf: 'MT' },
     { key: 'rn', name: 'Rio Grande do Norte', uf: 'RN' },
     { key: 'msp', name: 'São Paulo (Capital)', uf: 'SP' },
-    { key: 'to', name: 'Tocantins', uf: 'TO' }
+    { key: 'to', name: 'Tocantins', uf: 'TO' },
+    { key: 'go', name: 'Goiás', uf: 'GO' }
 ];
 
 // Configurações por tipo de indicador
@@ -33,7 +35,8 @@ const INDICATOR_CONFIG = {
             am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
             mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },
             msp: { file: './GESTANTES_MSP.csv', delimiter: ';', encoding: 'windows-1252' },
-            to: { file: './TO_GESTANTE.csv', delimiter: ';', encoding: 'windows-1252' }
+            to: { file: './TO_GESTANTE.csv', delimiter: ';', encoding: 'windows-1252' },
+            go: { file: './GO_GESTANTE.csv', delimiter: ';', encoding: 'windows-1252' }
         },
         indicatorCount: 11,
         fullNames: [

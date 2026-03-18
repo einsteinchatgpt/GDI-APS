@@ -7,7 +7,7 @@ if (typeof ChartDataLabels !== 'undefined') {
 
 const fixMunicipioDisplay = (name) => {
     if (!name) return name;
-    const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus', 'Mau�s': 'Maués', 'Nhamund�': 'Nhamundá', 'S�o Sebasti�o do Uatum�': 'São Sebastião do Uatumã', 'Urucar�': 'Urucará', 'Maues': 'Maués', 'Nhamunda': 'Nhamundá', 'Sao Sebastiao do Uatuma': 'São Sebastião do Uatumã', 'Urucara': 'Urucará', 'S�O PAULO': 'São Paulo', 'SAO PAULO': 'São Paulo', 'SÃO PAULO': 'São Paulo', 'Sï¿½O PAULO': 'São Paulo' };
+    const fixes = { 'Acrelandia': 'Acrelândia', 'Brasileia': 'Brasiléia', 'Epitaciolandia': 'Epitaciolândia', 'Feijo': 'Feijó', 'Jordao': 'Jordão', 'Mancio Lima': 'Mâncio Lima', 'Placido de Castro': 'Plácido de Castro', 'Tarauaca': 'Tarauacá', 'AcrelÃ¢ndia': 'Acrelândia', 'BrasilÃ©ia': 'Brasiléia', 'Santa Rosa': 'Santa Rosa do Purus', 'Mau�s': 'Maués', 'Nhamund�': 'Nhamundá', 'S�o Sebasti�o do Uatum�': 'São Sebastião do Uatumã', 'Urucar�': 'Urucará', 'Maues': 'Maués', 'Nhamunda': 'Nhamundá', 'Sao Sebastiao do Uatuma': 'São Sebastião do Uatumã', 'Urucara': 'Urucará', 'S�O PAULO': 'São Paulo', 'SAO PAULO': 'São Paulo', 'SÃO PAULO': 'São Paulo', 'Sï¿½O PAULO': 'São Paulo', 'CRIX�S': 'Crixás', 'IPIRANGA DE GOI�S': 'Ipiranga de Goiás', 'MORRO AGUDO DE GOI�S': 'Morro Agudo de Goiás', 'NIQUEL�NDIA': 'Niquelândia', 'NOVA AM�RICA': 'Nova América', 'NOVA GL�RIA': 'Nova Glória', 'NOVA IGUA�U DE GOI�S': 'Nova Iguaçu de Goiás', 'PILAR DE GOI�S': 'Pilar de Goiás', 'RIAN�POLIS': 'Rianápolis', 'SANTA TEREZINHA DE GOI�S': 'Santa Terezinha de Goiás', 'S�O LU�Z DO NORTE': 'São Luíz do Norte', 'S�O PATR�CIO': 'São Patrício', 'URUA�U': 'Uruaçu' };
     return fixes[name] || name;
 };
 const normalizeMunicipioForGeoJSON = (name) => name ? name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
@@ -227,7 +227,7 @@ const LandingPage = ({ onSelectIndicator, onSelectComponent, user, onOpenAuth })
     ];
     
     const boasPraticas = [
-        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt', 'to'], municipios: ['msp'], stats: '11 Boas Práticas' },
+        { key: 'gestantes', title: 'Gestantes e Puérperas', icon: 'fa-baby', color: '#ec4899', desc: 'Acompanhamento pré-natal e puerpério', states: ['acre', 'rn', 'am', 'mt', 'to', 'go'], municipios: ['msp'], stats: '11 Boas Práticas' },
         { key: 'has', title: 'Hipertensão Arterial', icon: 'fa-heart-pulse', color: '#ef4444', desc: 'Monitoramento de hipertensos', states: ['acre', 'rn'], stats: '4 Boas Práticas' },
         { key: 'dm', title: 'Diabetes Mellitus', icon: 'fa-droplet', color: '#3b82f6', desc: 'Controle de diabéticos', states: ['acre', 'rn'], stats: '6 Boas Práticas' },
         { key: 'infantil', title: 'Desenvolvimento Infantil', icon: 'fa-child', color: '#10b981', desc: 'Acompanhamento de crianças até 2 anos', states: ['acre', 'to'], stats: '5 Boas Práticas' }
