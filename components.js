@@ -30,7 +30,7 @@ const INDICATOR_CONFIG = {
         totalField: 'totalGestantes',
         totalLabel: 'gestantes',
         csvFiles: {
-            acre: { file: './Gestantes_clean.csv', delimiter: ',', encoding: 'utf-8' },
+            acre: { file: './Gestantes.csv', delimiter: ';', encoding: 'windows-1252' },
             rn: { file: './RN_GESTANTES.csv', delimiter: ';', encoding: 'windows-1252' },
             am: { file: './GESTANTES_AMAZONAS_fixed.csv', delimiter: ';', encoding: 'utf-8' },
             mt: { file: './GESTANTES_MT.csv', delimiter: ';', encoding: 'windows-1252' },

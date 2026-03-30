@@ -805,16 +805,20 @@ const Dashboard = () => {
                 const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
                     let regiao = r[7] || ''; 
                     if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                    if (regiao === 'alto Acre') regiao = 'Alto Acre';
                     
                     const isMSP = state === 'msp';
                     const offset = isMSP ? 2 : 0;
+                    
+                    // Para HAS e DM, a competência está na coluna 9 (após INDICADOR na coluna 8)
+                    const competenciaCol = (type === 'has' || type === 'dm') ? 9 : 8;
                     
                     const base = { 
                         cnes: r[0], 
                         estabelecimento: r[1], 
                         municipio: fixMunicipioDisplay(r[6]), 
                         regiao, 
-                        competencia: normalizeMonth(r[8 + offset]), 
+                        competencia: normalizeMonth(r[competenciaCol + offset]), 
                         ine: r[3], 
                         nomeEquipe: r[4] || '',
                         sigla: r[5] || '',
@@ -838,7 +842,7 @@ const Dashboard = () => {
                     }
                     
                     if (type === 'has') {
-                        // HAS: col 10 é INDICADOR (texto), indicadores col 11-14, somatório col 15, total col 16
+                        // HAS: col 8=INDICADOR(texto), col 9=COMPETÊNCIA, indicadores col 10-13, somatório col 14, total col 15
                         return { 
                             ...base, 
                             ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), 
@@ -849,7 +853,7 @@ const Dashboard = () => {
                     }
                     
                     if (type === 'dm') {
-                        // DM: col 10 é INDICADOR (texto), indicadores col 11-16, somatório col 17, total col 18
+                        // DM: col 8=INDICADOR(texto), col 9=COMPETÊNCIA, indicadores col 10-15, somatório col 16, total col 17
                         return { 
                             ...base, 
                             ind1: parseNum(r[10 + offset]), ind2: parseNum(r[11 + offset]), 
@@ -4678,6 +4682,7 @@ const Dashboard = () => {
                             const data = results.data.slice(1).filter(r => r[0]?.trim()).map(r => {
                                 let regiao = r[7] || '';
                                 if (regiao === 'Baxo Acre') regiao = 'Baixo Acre';
+                                if (regiao === 'alto Acre') regiao = 'Alto Acre';
                                 let competencia = normalizeCompetencia(r[8 + colOffset]);
                                 let municipio = fixMunicipioDisplay(r[6]) || r[6] || '';
                                 
